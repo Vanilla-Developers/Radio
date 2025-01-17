@@ -1,0 +1,42 @@
+{
+	"schemaVersion": 1,
+	"id": "vpl",
+	"version": "${version}",
+	"name": "Vanilla+ Damir00109",
+	"description": "Это бета версия мода для лора на проекте vanilla+!",
+	"authors": [
+		"Damir00109!"
+	],
+	"contact": {
+		"homepage": "https://mcvanilla.ru",
+		"sources": "https://mcvanilla.ru"
+	},
+	"license": "all rights reserved",
+	"icon": "assets/vpl/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.damir00109.VanillaDamir00109"
+		],
+		"client": [
+			"com.damir00109.VanillaDamir00109Client"
+		]
+	},
+	"mixins": [
+		"vpl.mixins.json",
+		{
+			"config": "vpl.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.9",
+		"minecraft": "~1.21.4",
+		"java": ">=21",
+		"voicechat": "*",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
