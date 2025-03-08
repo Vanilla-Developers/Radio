@@ -1,7 +1,6 @@
 package com.damir00109;
 
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
-import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -33,7 +32,7 @@ public class DModBlocks {
 
     public static final IntProperty POWER = IntProperty.of("power", 0, 15);
     public static final EnumProperty<Direction> FACING = EnumProperty.of("facing", Direction.class);
-    public static final BooleanProperty LISTEN = BooleanProperty.of("listen"); // Изменяем тип на BooleanProperty
+    public static final BooleanProperty LISTEN = BooleanProperty.of("listen");
 
     public static final Block RADIO = registerBlock("radio", new RadioBlock(Block.Settings.create()
             .mapColor(MapColor.STONE_GRAY)
@@ -56,52 +55,6 @@ public class DModBlocks {
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.REDSTONE).register(entries -> {
             entries.add(RADIO);
         });
-
-        // Регистрируем обработчик события размещения блока
-        UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
-            BlockPos pos = hitResult.getBlockPos();
-            BlockState state = world.getBlockState(pos);
-
-            if (state.isOf(Blocks.LIGHTNING_ROD)) {
-                BlockPos belowPos = pos.down();
-                BlockState belowState = world.getBlockState(belowPos);
-
-                if (belowState.isOf(RADIO)) {
-                    // Проверяем, что громоотвод не появился с одной из сторон блока
-                    boolean isValidPlacement = true;
-                    for (Direction direction : Direction.values()) {
-                        if (direction != Direction.UP && direction != Direction.DOWN) {
-                            BlockPos sidePos = belowPos.offset(direction);
-                            BlockState sideState = world.getBlockState(sidePos);
-                            if (sideState.isOf(Blocks.LIGHTNING_ROD)) {
-                                isValidPlacement = false;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (isValidPlacement) {
-                        world.setBlockState(belowPos, belowState.with(POWER, 15).with(LISTEN, true), 2); // Устанавливаем listen в true
-                    }
-                }
-            }
-
-            return ActionResult.PASS;
-        });
-
-        // Регистрируем обработчик события разрушения блока
-        PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, blockEntity) -> {
-            if (state.isOf(Blocks.LIGHTNING_ROD)) {
-                BlockPos belowPos = pos.down();
-                BlockState belowState = world.getBlockState(belowPos);
-
-                if (belowState.isOf(RADIO)) {
-                    world.setBlockState(belowPos, belowState.with(POWER, 0).with(LISTEN, false), 2); // Устанавливаем listen в false
-                }
-            }
-
-            return true;
-        });
     }
 
     public static class RadioBlock extends Block {
@@ -110,12 +63,12 @@ public class DModBlocks {
             this.setDefaultState(this.stateManager.getDefaultState()
                     .with(POWER, 0)
                     .with(FACING, Direction.EAST)
-                    .with(LISTEN, false)); // Устанавливаем значение по умолчанию для параметра listen
+                    .with(LISTEN, false));
         }
 
         @Override
         protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-            builder.add(POWER, FACING, LISTEN); // Добавляем параметр listen
+            builder.add(POWER, FACING, LISTEN);
         }
 
         @Override
@@ -123,33 +76,44 @@ public class DModBlocks {
             return this.getDefaultState()
                     .with(FACING, ctx.getHorizontalPlayerFacing().getOpposite())
                     .with(POWER, ctx.getWorld().getReceivedRedstonePower(ctx.getBlockPos()))
-                    .with(LISTEN, false); // Устанавливаем значение по умолчанию для параметра listen
+                    .with(LISTEN, false);
         }
 
         @Override
         public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify) {
             if (!world.isClient) {
-                // Проверяем, был ли установлен lightning_rod сверху
-                BlockPos abovePos = pos.up();  // Позиция сверху
-
+                BlockPos abovePos = pos.up();
                 BlockState aboveState = world.getBlockState(abovePos);
-                if (aboveState.isOf(Blocks.LIGHTNING_ROD)) {
-                    // Проверяем, что громоотвод был установлен на блоке радио
-                    if (world.getBlockState(pos).getBlock() == RADIO) {
-                        // Отправляем сообщение всем игрокам в мире
-                        world.getPlayers().forEach(player -> player.sendMessage(
-                                Text.literal("На блоке Radio был установлен Lightning Rod сверху!"),
-                                false
-                        ));
+                boolean hasRodAbove = aboveState.isOf(Blocks.LIGHTNING_ROD);
+                boolean hasAdjacentRod = false;
+
+                // Check horizontal directions for adjacent Lightning Rods
+                for (Direction dir : Direction.Type.HORIZONTAL) {
+                    BlockPos sidePos = pos.offset(dir);
+                    if (world.getBlockState(sidePos).isOf(Blocks.LIGHTNING_ROD)) {
+                        hasAdjacentRod = true;
+                        break;
                     }
                 }
 
-                // Обновляем мощность, если сигнал редстоуна изменился
-                int currentPower = state.get(POWER);
-                int newPower = world.getReceivedRedstonePower(pos);
+                int newPower;
+                boolean newListen;
 
-                if (currentPower != newPower) {
-                    world.setBlockState(pos, state.with(POWER, newPower), 2);
+                if (hasRodAbove && !hasAdjacentRod) {
+                    newPower = 15;
+                    newListen = true;
+                    // Optional: Notify players
+                    world.getPlayers().forEach(player -> player.sendMessage(
+                            Text.literal("Lightning Rod detected on Radio!"),
+                            false
+                    ));
+                } else {
+                    newPower = world.getReceivedRedstonePower(pos);
+                    newListen = false;
+                }
+
+                if (state.get(POWER) != newPower || state.get(LISTEN) != newListen) {
+                    world.setBlockState(pos, state.with(POWER, newPower).with(LISTEN, newListen), 2);
                 }
             }
         }

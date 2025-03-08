@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "vpl:block/radio_west"
+    "model": "vpl:block/radio_north"
   }
 }
