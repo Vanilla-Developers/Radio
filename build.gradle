@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version '1.9-SNAPSHOT'
+	id 'fabric-loom' version '1.10-SNAPSHOT'
 	id 'maven-publish'
 }
 
@@ -47,11 +47,11 @@ dependencies {
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	implementation "de.maxhenkel.voicechat:voicechat-api:2.5.0"
-	modRuntimeOnly "maven.modrinth:simple-voice-chat:fabric-1.21.4-2.5.26"
-	modRuntimeOnly "maven.modrinth:modmenu:13.0.0-beta.1"
-	modRuntimeOnly "maven.modrinth:lithium:t1FlWYl9"
-	modRuntimeOnly "maven.modrinth:sodium:mc1.21.4-0.6.2-fabric"
+	implementation "de.maxhenkel.voicechat:voicechat-api:${project.voicechat_api}"
+	modRuntimeOnly "maven.modrinth:simple-voice-chat:${project.voicechat_version}"
+	modRuntimeOnly "maven.modrinth:modmenu:${project.modmenu_version}"
+	modRuntimeOnly "maven.modrinth:lithium:${project.lithium_version}"
+	modRuntimeOnly "maven.modrinth:sodium:${project.sodium_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	
 }
