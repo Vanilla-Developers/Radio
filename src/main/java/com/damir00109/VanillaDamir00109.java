@@ -4,6 +4,7 @@ import de.maxhenkel.voicechat.api.VoicechatApi;
 import de.maxhenkel.voicechat.api.VoicechatConnection;
 import de.maxhenkel.voicechat.api.VoicechatPlugin;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
+import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
 import de.maxhenkel.voicechat.api.events.EventRegistration;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import de.maxhenkel.voicechat.api.events.VoicechatServerStartedEvent;
@@ -13,14 +14,32 @@ import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.UUID;
 
 public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public static final String MOD_ID = "vpl";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	private static VoicechatServerApi vc_api;
+	private static final LocationalAudioChannel[] channels = new LocationalAudioChannel[15];
+
+	public static LocationalAudioChannel createChannelBy(int id, Vec3d pos, World level) {
+		VoicechatServerApi api = VanillaDamir00109.vc_api;
+		LocationalAudioChannel lac = api.createLocationalAudioChannel(UUID.randomUUID(), api.fromServerLevel(level), api.createPosition(pos.x, pos.y, pos.z));
+		VanillaDamir00109.channels[id] = lac;
+		return lac;
+	}
+
+	public static LocationalAudioChannel[] getAllChannels() {
+		return VanillaDamir00109.channels;
+	}
+	public static LocationalAudioChannel getChannelByNum(int num) {
+		return VanillaDamir00109.channels[num];
+	}
 
 	@Override
 	public void onInitialize() {

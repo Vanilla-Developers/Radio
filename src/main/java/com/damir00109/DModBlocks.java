@@ -62,6 +62,7 @@ public class DModBlocks {
 
 	public static class RadioBlock extends Block {
 		private boolean listen_sate = true;
+		private int power = 0;
 		private LocationalAudioChannel channel;
 
 		public RadioBlock(Settings settings) {
@@ -90,11 +91,13 @@ public class DModBlocks {
 				BlockState state,
 				World world,
 				BlockPos pos) {
+			channel = VanillaDamir00109.getChannelByNum(power);
 
 			if (new_listen) {
-
+				// If Radio mode is "listen"
 			} else {
-
+				// If Radio mode is "speaking"
+				if (channel == null) channel = VanillaDamir00109.createChannelBy(power, pos.toCenterPos(), world);
 			}
 		}
 
@@ -131,10 +134,8 @@ public class DModBlocks {
 			for (int yOffset = 1; yOffset <= radius; yOffset++) {
 				mutablePos.set(pos.getX(), pos.getY() + yOffset, pos.getZ());
 
-				//if (mutablePos.getY() > world.getTopY()) continue;
-
 				BlockState blockstate = getAnyBlockAbove(mutablePos, world, radius);
-				VanillaDamir00109.LOGGER.info("Block up: {}", blockstate);
+				//VanillaDamir00109.LOGGER.info("Block up: {}", blockstate);
 				if (blockstate != null && blockstate.isOf(target)) {
 					return blockstate;
 				}
@@ -167,6 +168,7 @@ public class DModBlocks {
 
 				if (state.get(POWER) != newPower || state.get(LISTEN) != newListen) {
 					world.setBlockState(pos, state.with(POWER, newPower).with(LISTEN, newListen), 2);
+					this.power = newPower;
 				}
 			}
 		}
