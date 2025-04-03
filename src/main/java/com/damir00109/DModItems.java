@@ -10,20 +10,20 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.Identifier;
 
 public class DModItems {
-    public static final Item TEST = registerItem("test", new Item(new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(VanillaDamir00109.MOD_ID, "test")))));
-    public static final Item RAW_PINK_GARNET = registerItem("raw_pink_garnet", new Item(new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(VanillaDamir00109.MOD_ID, "raw_pink_garnet")))));
+	public static final Item TEST = registerItem("test", new Item(new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(VanillaDamir00109.MOD_ID, "test")))));
+	public static final Item RAW_PINK_GARNET = registerItem("raw_pink_garnet", new Item(new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(VanillaDamir00109.MOD_ID, "raw_pink_garnet")))));
 
-    private static Item registerItem(String name, Item item) {
-        Identifier id = Identifier.of(VanillaDamir00109.MOD_ID, name);
-        return Registry.register(Registries.ITEM, id, item);
-    }
+	private static Item registerItem(String name, Item item) {
+		Identifier id = Identifier.of(VanillaDamir00109.MOD_ID, name);
+		return Registry.register(Registries.ITEM, id, item);
+	}
 
-    public static void registerModItems() {
-        VanillaDamir00109.LOGGER.info("Registering Mod Items for " + VanillaDamir00109.MOD_ID);
+	public static void registerModItems() {
+		VanillaDamir00109.LOGGER.info("Registering Mod Items for " + VanillaDamir00109.MOD_ID);
 
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS).register(entries -> {
-            entries.add(TEST);
-            entries.add(RAW_PINK_GARNET);
-        });
-    }
+		ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS).register(entries -> {
+			entries.add(TEST);
+			entries.add(RAW_PINK_GARNET);
+		});
+	}
 }

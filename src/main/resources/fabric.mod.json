@@ -20,6 +20,9 @@
 		],
 		"client": [
 			"com.damir00109.VanillaDamir00109Client"
+		],
+		"voicechat": [
+			"com.damir00109.VanillaDamir00109"
 		]
 	},
 	"mixins": [
