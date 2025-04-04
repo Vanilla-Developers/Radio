@@ -1,0 +1,19 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "#W#",
+        "NRN",
+        "#n#"
+    ],
+    "key": {
+        "#": "minecraft:oak_planks",
+        "W": "minecraft:waxed_chiseled_copper",
+        "N": "minecraft:note_block",
+        "R": "minecraft:redstone",
+        "n": "minecraft:netherite_ingot"
+    },
+    "result": {
+        "id": "vpl:radio",
+        "count": 1
+    }
+}
