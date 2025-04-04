@@ -47,7 +47,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public void onInitialize() {
 		DModItems.registerModItems();   // Регистрация предметов
 		Radio.registerModBlocks(); // Регистрация радио
-		DModBlocks.registerBlocks();
+		DModBlocks.registerModBlocks();
 	}
 
 	@Override
