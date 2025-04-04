@@ -5,9 +5,11 @@ import de.maxhenkel.voicechat.api.audiosender.AudioSender;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 
 public class RadioSender implements AudioSender {
+	private int num;
 	private RadioChannel channel;
 
-	public RadioSender(RadioChannel channel, VoicechatServerApi api, ServerLevel level, int x, int y, int z) {
+	public RadioSender(int index, RadioChannel channel, VoicechatServerApi api, ServerLevel level, int x, int y, int z) {
+		this.num = index;
 		this.channel = channel;
 	}
 	public RadioChannel getChannel() {
@@ -33,5 +35,9 @@ public class RadioSender implements AudioSender {
 			listener.playAudio(audio);
 		}
 		return true;
+	}
+
+	public int getIndex() {
+		return num;
 	}
 }

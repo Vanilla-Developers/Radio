@@ -9,7 +9,9 @@ public class RadioChannel {
 	private ServerLevel level;
 	private int channelNum;
 	private ArrayList<RadioSender> senders;
+	private int lastSenderIndex = 0;
 	private ArrayList<RadioListener> listeners;
+	private int lastListenerIndex = 0;
 	private VoicechatServerApi api;
 	private final int x;
 	private final int y;
@@ -32,17 +34,28 @@ public class RadioChannel {
 	}
 
 	public RadioSender newSender() {
-		RadioSender sender = new RadioSender(this, this.api, this.level, this.x, this.y, this.z);
+		int index = lastSenderIndex;
+		RadioSender sender = new RadioSender(index, this, this.api, this.level, this.x, this.y, this.z);
 		this.senders.add(sender);
+		lastSenderIndex += 1;
 		return sender;
 	}
 	public RadioListener newListener() {
-		RadioListener listener = new RadioListener(this, this.api, this.level, this.x, this.y, this.z);
+		int index = lastListenerIndex;
+		RadioListener listener = new RadioListener(index, this, this.api, this.level, this.x, this.y, this.z);
 		this.listeners.add(listener);
+		lastListenerIndex += 1;
 		return  listener;
 	}
 
 	public int getId() {
 		return this.channelNum;
+	}
+
+	public RadioSender getSender(int index) {
+		return this.senders.get(index);
+	}
+	public RadioListener getListener(int index) {
+		return this.listeners.get(index);
 	}
 }
