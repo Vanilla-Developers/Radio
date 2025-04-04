@@ -1,6 +1,5 @@
 package com.damir00109;
 
-import de.maxhenkel.voicechat.api.audiochannel.AudioChannel;
 import de.maxhenkel.voicechat.api.audiochannel.AudioPlayer;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
 import de.maxhenkel.voicechat.api.opus.OpusEncoder;
@@ -22,7 +21,6 @@ import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.EnumProperty;
 import net.minecraft.state.property.IntProperty;
-import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -30,8 +28,6 @@ import net.minecraft.world.World;
 import net.minecraft.world.block.WireOrientation;
 import net.minecraft.item.ItemPlacementContext;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.function.Supplier;
 
 public class DModBlocks {
 
@@ -94,10 +90,10 @@ public class DModBlocks {
 			if (!listen_sate) {
 				byte[] audio = packet.getOpusEncodedData();
 				OpusEncoder encoder = VanillaDamir00109.get_VCAPI().createEncoder();
-				ap = VanillaDamir00109.get_VCAPI().createAudioPlayer((AudioChannel) channel, encoder, audio);
-			} else {
+				//ap = VanillaDamir00109.get_VCAPI().createAudioPlayer((AudioChannel) channel, encoder, audio);
+			}/* else {
 				// listen the channel
-			}
+			}*/
 		}
 
 		public void flush() {
