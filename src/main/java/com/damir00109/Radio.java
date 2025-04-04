@@ -107,14 +107,14 @@ public class Radio {
                 World world,
                 BlockPos pos) {
             if(power < 1) return;
-            channel = VanillaDamir00109.getChannelByNum(power);
+            //channel = VanillaDamir00109.getChannelByNum(power);
 
             if (!new_listen) {
                 // If Radio mode is "speaking"
-                if (channel == null) return;
+                //if (channel == null) return;
             } else {
                 // If Radio mode is "listen"
-                if (channel == null) channel = VanillaDamir00109.createChannelBy(power, pos.toCenterPos(), world);
+                //if (channel == null) channel = VanillaDamir00109.createChannelBy(power, pos.toCenterPos(), world);
             }
         }
 
