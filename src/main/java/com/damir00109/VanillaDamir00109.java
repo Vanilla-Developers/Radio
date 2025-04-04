@@ -30,15 +30,18 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public static LocationalAudioChannel createChannelBy(int id, Vec3d pos, World level) {
 		VoicechatServerApi api = VanillaDamir00109.vc_api;
 		LocationalAudioChannel lac = api.createLocationalAudioChannel(UUID.randomUUID(), api.fromServerLevel(level), api.createPosition(pos.x, pos.y, pos.z));
-		VanillaDamir00109.channels[id] = lac;
+		VanillaDamir00109.channels[id-1] = lac;
 		return lac;
+	}
+	public static VoicechatServerApi get_VCAPI() {
+		return vc_api;
 	}
 
 	public static LocationalAudioChannel[] getAllChannels() {
-		return VanillaDamir00109.channels;
+		return channels;
 	}
 	public static LocationalAudioChannel getChannelByNum(int num) {
-		return VanillaDamir00109.channels[num];
+		return channels[num-1];
 	}
 
 	@Override
@@ -76,9 +79,12 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		Block target = DModBlocks.RADIO;
 
 		Block near_radio = getBlockNearby(player, target, 15);
-		player.sendMessage(Text.literal("Nearby Radio: "+near_radio.toString()), false);
+		assert near_radio != null;
+		//player.sendMessage(Text.literal("Nearby Radio: "+near_radio.toString()), false);
+		((DModBlocks.RadioBlock) near_radio).onMicrophoneNearby(event.getPacket());
+		((DModBlocks.RadioBlock) near_radio).flush();
 
-		VanillaDamir00109.LOGGER.info("Microphone! {}", event.toString());
+		//VanillaDamir00109.LOGGER.info("Microphone! {}", event.toString());
 	}
 
 	public static Block getBlockNearby(PlayerEntity player, Block target, int radius) {
