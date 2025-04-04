@@ -12,7 +12,6 @@ import net.fabricmc.api.ModInitializer;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -47,7 +46,8 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	@Override
 	public void onInitialize() {
 		DModItems.registerModItems();   // Регистрация предметов
-		DModBlocks.registerModBlocks(); // Регистрация блоков
+		Radio.registerModBlocks(); // Регистрация радио
+		DModBlocks.registerBlocks();
 	}
 
 	@Override
@@ -76,13 +76,13 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		VoicechatConnection sender = event.getSenderConnection();
 		assert sender != null;
 		PlayerEntity player = (PlayerEntity) sender.getPlayer().getPlayer();
-		Block target = DModBlocks.RADIO;
+		Block target = Radio.RADIO;
 
 		Block near_radio = getBlockNearby(player, target, 15);
 		assert near_radio != null;
 		//player.sendMessage(Text.literal("Nearby Radio: "+near_radio.toString()), false);
-		((DModBlocks.RadioBlock) near_radio).onMicrophoneNearby(event.getPacket());
-		((DModBlocks.RadioBlock) near_radio).flush();
+		((Radio.RadioBlock) near_radio).onMicrophoneNearby(event.getPacket());
+		((Radio.RadioBlock) near_radio).flush();
 
 		//VanillaDamir00109.LOGGER.info("Microphone! {}", event.toString());
 	}
