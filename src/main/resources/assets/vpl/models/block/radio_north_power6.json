@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/cube",
   "textures": {
-    "down": "vpl:block/radio_bottom",
+    "down": "vpl:block/radio_top",
     "up": "vpl:block/radio_top",
     "north": "vpl:block/radio_front_power6",
     "south": "vpl:block/radio_back",
