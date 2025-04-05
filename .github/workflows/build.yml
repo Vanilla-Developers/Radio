@@ -36,6 +36,7 @@ jobs:
             ((COUNT++))
           done
           echo "RELEASE_TAG=${BASE_TAG}#${COUNT}" >> $GITHUB_OUTPUT
+          echo "RELEASE_NUMBER=${COUNT}" >> $GITHUB_OUTPUT
           echo "Using tag: ${BASE_TAG}#${COUNT}"
 
       - name: Create Git tag
@@ -62,10 +63,12 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: "${{ steps.tags.outputs.RELEASE_TAG }}"
-          name: "Vanilla+ Radio ${{ steps.version.outputs.MOD_VERSION }} #${RELEASE_TAG##*#}"
+          name: "Vanilla+ Radio ${{ steps.version.outputs.MOD_VERSION }}"
           body: |
             ### Скачать
             Файл мода доступен во вложениях ниже.
+            
+            *Сборка #${{ steps.tags.outputs.RELEASE_NUMBER }}*
           files: build/libs/*[!-dev].jar
           draft: false
           generate_release_notes: true
