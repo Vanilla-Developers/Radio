@@ -1,41 +1,45 @@
-name: Build Vanilla+ Radio
+name: Build and Release Vanilla+ Radio
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
     branches: [ main, master ]
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
-    
+
     steps:
-      # Шаг 1: Загрузка репозитория
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Шаг 2: Установка Java 21
+      - name: Extract mod version
+        id: version
+        run: |
+          # Извлекаем версию из gradle.properties (формат: mod_version=0.7-alpha)
+          MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d "'\" ")
+          echo "MOD_VERSION=${MOD_VERSION}" >> $GITHUB_OUTPUT
+          echo "Detected version: ${MOD_VERSION}"
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'gradle'  # Автоматическое кэширование Gradle
+          cache: 'gradle'
 
-      # Шаг 3: Даём права на запуск gradlew
-      - name: Make gradlew executable
-        run: chmod +x gradlew
-
-      # Шаг 4: Сборка мода
       - name: Build mod
         run: ./gradlew build
 
-      # Шаг 5: Создание Release (только для main/master)
       - name: Create GitHub Release
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v1
         with:
-          files: build/libs/*.jar  # Загружаем все .jar файлы из сборки
-          generate_release_notes: true  # Автоматические release notes
-          draft: false  # Сразу публикуем (если true — черновик)
+          tag_name: "v${{ steps.version.outputs.MOD_VERSION }}"  # Тег: v0.7-alpha
+          name: "Vanilla+ Radio ${{ steps.version.outputs.MOD_VERSION }}"  # Название релиза
+          body: |
+            ### Версия мода
+            **${{ steps.version.outputs.MOD_VERSION }}**
+            ### Скачать
+            Основной файл: `radio-${{ steps.version.outputs.MOD_VERSION }}.jar`
+          files: build/libs/*[!-dev].jar  # Исключает dev-сборки
+          draft: false
+          generate_release_notes: true
