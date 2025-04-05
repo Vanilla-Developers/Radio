@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "vpl:block/radio_top",
+    "up": "vpl:block/radio_top",
+    "north": "vpl:block/radio_front_power7",
+    "south": "vpl:block/radio_back",
+    "west": "vpl:block/radio_side",
+    "east": "vpl:block/radio_side",
+    "particle": "vpl:block/radio_top"
+  }
+}
