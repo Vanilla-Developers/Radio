@@ -4,7 +4,7 @@
     "down": "vpl:block/radio_top",
     "up": "vpl:block/radio_top",
     "north": "vpl:block/radio_back",
-    "south": "vpl:block/radio_front_power5",
+    "south": "vpl:block/listen_radio_front_power5",
     "west": "vpl:block/radio_side",
     "east": "vpl:block/radio_side",
     "particle": "vpl:block/radio_top"
