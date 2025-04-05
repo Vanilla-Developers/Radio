@@ -4,7 +4,6 @@ on:
   push:
     branches: [ main, master ]
 
-# Добавляем разрешения для GITHUB_TOKEN
 permissions:
   contents: write
 
@@ -16,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Необходимо для работы с тегами
+          fetch-depth: 0
 
       - name: Make gradlew executable
         run: chmod +x gradlew
@@ -26,7 +25,6 @@ jobs:
         run: |
           MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d "'\" ")
           echo "MOD_VERSION=${MOD_VERSION}" >> $GITHUB_OUTPUT
-          echo "Detected version: ${MOD_VERSION}"
 
       - name: Create Git tag
         run: |
@@ -54,10 +52,8 @@ jobs:
           tag_name: "v${{ steps.version.outputs.MOD_VERSION }}"
           name: "Vanilla+ Radio ${{ steps.version.outputs.MOD_VERSION }}"
           body: |
-            ### Version
-            **${{ steps.version.outputs.MOD_VERSION }}**
-            ### Download
-            Main file: `radio-${{ steps.version.outputs.MOD_VERSION }}.jar`
+            ### Скачать
+            Файл мода доступен во вложениях ниже.
           files: build/libs/*[!-dev].jar
           draft: false
           generate_release_notes: true
