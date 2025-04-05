@@ -1,0 +1,36 @@
+name: Build Vanilla+ Radio
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Verify Java version
+      run: java -version
+      
+    - name: Build with Gradle
+      run: ./gradlew build
+      
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: fabric-mod
+        path: build/libs/*.jar
