@@ -1,10 +1,6 @@
 package com.damir00109;
 
-import de.maxhenkel.voicechat.api.VoicechatApi;
-import de.maxhenkel.voicechat.api.VoicechatConnection;
-import de.maxhenkel.voicechat.api.VoicechatPlugin;
-import de.maxhenkel.voicechat.api.VoicechatServerApi;
-import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
+import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.events.EventRegistration;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import de.maxhenkel.voicechat.api.events.VoicechatServerStartedEvent;
@@ -13,17 +9,18 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.UUID;
 
 public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public static final String MOD_ID = "vpl";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	private static VoicechatServerApi vc_api;
+
+
+	private static RadioChannel[] channels = new RadioChannel[14];
+
 
 	public static VoicechatServerApi get_VCAPI() {
 		return vc_api;
@@ -86,4 +83,17 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		return null;
 	}
 
+	public static RadioChannel[] getChannels() {
+		return channels;
+	}
+	public static RadioChannel getChannelBy(int num) {
+		if (num < 1) return null;
+		return channels[num-1];
+	}
+	public static RadioChannel createChannel(int num, ServerLevel level, int x, int y, int z) {
+		if (num < 1) return null;
+		RadioChannel channel = new RadioChannel(num-1, vc_api, level, x, y, z);
+		channels[num-1] = channel;
+		return channel;
+	}
 }

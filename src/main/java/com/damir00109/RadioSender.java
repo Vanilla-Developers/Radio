@@ -1,42 +1,43 @@
 package com.damir00109;
 
+import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.audiosender.AudioSender;
+import de.maxhenkel.voicechat.api.VoicechatServerApi;
 
 public class RadioSender implements AudioSender {
+	private int num;
 	private RadioChannel channel;
 
-	public RadioSender(RadioChannel channel) {
+	public RadioSender(int index, RadioChannel channel, VoicechatServerApi api, ServerLevel level, int x, int y, int z) {
+		this.num = index;
 		this.channel = channel;
 	}
-
-
-	@Override
-	public AudioSender whispering(boolean b) {
-		return null;
+	public RadioChannel getChannel() {
+		return this.channel;
 	}
 
-	@Override
-	public boolean isWhispering() {
-		return false;
-	}
 
 	@Override
-	public AudioSender sequenceNumber(long l) {
-		return null;
-	}
+	public AudioSender whispering(boolean b) { return null; }
+	@Override
+	public boolean isWhispering() { return false; }
+	@Override
+	public AudioSender sequenceNumber(long l) { return null; }
+	@Override
+	public boolean canSend() { return true; }
+	@Override
+	public boolean reset() { return false; }
 
 	@Override
-	public boolean canSend() {
-		return false;
+	public boolean send(byte[] audio) {
+		for (int i = 0; i < this.channel.getListeners().size(); i++) {
+			RadioListener listener = this.channel.getListeners().get(i);
+			listener.playAudio(audio);
+		}
+		return true;
 	}
 
-	@Override
-	public boolean send(byte[] bytes) {
-		return false;
-	}
-
-	@Override
-	public boolean reset() {
-		return false;
+	public int getIndex() {
+		return num;
 	}
 }
