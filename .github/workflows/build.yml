@@ -26,14 +26,26 @@ jobs:
           MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d "'\" ")
           echo "MOD_VERSION=${MOD_VERSION}" >> $GITHUB_OUTPUT
 
+      - name: Find existing tags and calculate release number
+        id: tags
+        run: |
+          git fetch --tags
+          BASE_TAG="v${{ steps.version.outputs.MOD_VERSION }}"
+          COUNT=1
+          while git rev-parse "$BASE_TAG#$COUNT" >/dev/null 2>&1; do
+            ((COUNT++))
+          done
+          echo "RELEASE_TAG=${BASE_TAG}#${COUNT}" >> $GITHUB_OUTPUT
+          echo "Using tag: ${BASE_TAG}#${COUNT}"
+
       - name: Create Git tag
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git tag -a "v${MOD_VERSION}" -m "Release v${MOD_VERSION}"
-          git push origin "v${MOD_VERSION}"
+          git tag -a "$RELEASE_TAG" -m "Release $RELEASE_TAG"
+          git push origin "$RELEASE_TAG"
         env:
-          MOD_VERSION: ${{ steps.version.outputs.MOD_VERSION }}
+          RELEASE_TAG: ${{ steps.tags.outputs.RELEASE_TAG }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up JDK 21
@@ -49,8 +61,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "v${{ steps.version.outputs.MOD_VERSION }}"
-          name: "Vanilla+ Radio ${{ steps.version.outputs.MOD_VERSION }}"
+          tag_name: "${{ steps.tags.outputs.RELEASE_TAG }}"
+          name: "Vanilla+ Radio ${{ steps.version.outputs.MOD_VERSION }} #${RELEASE_TAG##*#}"
           body: |
             ### Скачать
             Файл мода доступен во вложениях ниже.
