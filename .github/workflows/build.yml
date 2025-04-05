@@ -12,10 +12,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Добавляем шаг с установкой прав для gradlew
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
       - name: Extract mod version
         id: version
         run: |
-          # Извлекаем версию из gradle.properties (формат: mod_version=0.7-alpha)
           MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d "'\" ")
           echo "MOD_VERSION=${MOD_VERSION}" >> $GITHUB_OUTPUT
           echo "Detected version: ${MOD_VERSION}"
@@ -33,13 +36,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "v${{ steps.version.outputs.MOD_VERSION }}"  # Тег: v0.7-alpha
-          name: "Vanilla+ Radio ${{ steps.version.outputs.MOD_VERSION }}"  # Название релиза
+          tag_name: "v${{ steps.version.outputs.MOD_VERSION }}"
+          name: "Vanilla+ Radio ${{ steps.version.outputs.MOD_VERSION }}"
           body: |
-            ### Версия мода
+            ### Version
             **${{ steps.version.outputs.MOD_VERSION }}**
-            ### Скачать
-            Основной файл: `radio-${{ steps.version.outputs.MOD_VERSION }}.jar`
-          files: build/libs/*[!-dev].jar  # Исключает dev-сборки
+            ### Download
+            Main file: `radio-${{ steps.version.outputs.MOD_VERSION }}.jar`
+          files: build/libs/*[!-dev].jar
           draft: false
           generate_release_notes: true
