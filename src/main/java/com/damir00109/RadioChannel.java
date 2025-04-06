@@ -13,17 +13,10 @@ public class RadioChannel {
 	private ArrayList<RadioListener> listeners;
 	private int lastListenerIndex = 0;
 	private VoicechatServerApi api;
-	private final int x;
-	private final int y;
-	private final int z;
 
-	public RadioChannel(int id, VoicechatServerApi api, ServerLevel level, int x, int y, int z) {
+	public RadioChannel(int id, VoicechatServerApi api) {
 		this.channelNum = id;
 		this.api = api;
-		this.level = level;
-		this.x = x;
-		this.y = y;
-		this.z = z;
 	}
 
 	public ArrayList<RadioSender> getSenders() {
@@ -33,17 +26,17 @@ public class RadioChannel {
 		return this.listeners;
 	}
 
-	public RadioSender newSender() {
+	public RadioSender newSender(ServerLevel level, int x, int y, int z) {
 		int index = lastSenderIndex;
-		RadioSender sender = new RadioSender(index, this, this.api, this.level, this.x, this.y, this.z);
-		this.senders.add(sender);
+		RadioSender sender = new RadioSender(index, this, api, level, x, y, z);
+		senders.add(sender);
 		lastSenderIndex += 1;
 		return sender;
 	}
-	public RadioListener newListener() {
+	public RadioListener newListener(ServerLevel level, int x, int y, int z) {
 		int index = lastListenerIndex;
-		RadioListener listener = new RadioListener(index, this, this.api, this.level, this.x, this.y, this.z);
-		this.listeners.add(listener);
+		RadioListener listener = new RadioListener(index, this, api, level, x, y, z);
+		listeners.add(listener);
 		lastListenerIndex += 1;
 		return  listener;
 	}
@@ -60,6 +53,7 @@ public class RadioChannel {
 	}
 
 	public void broadcast(byte[] audio) {
+		VanillaDamir00109.LOGGER.info("broadcasting for byte["+audio.length+"]");
 		for (int i = 0; i < this.getListeners().size(); i++) {
 			RadioListener listener = this.getListener(i);
 			listener.playAudio(audio);

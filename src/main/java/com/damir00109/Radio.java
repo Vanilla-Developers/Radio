@@ -2,8 +2,6 @@ package com.damir00109;
 
 import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.audiochannel.AudioPlayer;
-import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
-import de.maxhenkel.voicechat.api.opus.OpusEncoder;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.block.Block;
@@ -18,6 +16,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.EnumProperty;
@@ -25,6 +24,7 @@ import net.minecraft.state.property.IntProperty;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
 import net.minecraft.world.block.WireOrientation;
 import net.minecraft.item.ItemPlacementContext;
@@ -60,6 +60,8 @@ public class Radio {
 	}
 
 	public static class RadioBlock extends Block {
+		private ServerLevel level;
+		private BlockPos pos;
 		private boolean listen_sate = true;
 		private int power = 0;
 		private RadioChannel channel;
@@ -88,6 +90,7 @@ public class Radio {
 					.with(LISTEN, true);
 		}
 		public void onMicrophoneNearby(MicrophonePacket packet) {
+			updateChannel();
 			if (channel == null) return;
 
 			if (!listen_sate) {
@@ -102,9 +105,28 @@ public class Radio {
 			}
 		}
 
-		public void flush() {
-			if (channel == null) return;
-			//channel.flush();
+		private void updateChannel() {
+			if (channel == null) {
+				if ((channel = VanillaDamir00109.getChannelBy(power)) != null) {
+					channel = VanillaDamir00109.createChannel(power);
+				}
+			}
+		}
+
+		@Override
+		protected void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
+			if (world.isClient) return;
+			super.onBlockAdded(state, world, pos, oldState, notify);
+			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
+			this.pos = pos;
+		}
+
+		@Override
+		protected void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
+			if (world.isClient) return;
+			super.randomTick(state, world, pos, random);
+			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
+			this.pos = pos;
 		}
 
 		protected void onListenSwitch(
@@ -113,11 +135,7 @@ public class Radio {
 				World world,
 				BlockPos pos) {
 			if(power < 1) return;
-			if (channel == null) {
-				if ((channel = VanillaDamir00109.getChannelBy(power)) != null) {
-					channel = VanillaDamir00109.createChannel(power, (ServerLevel) world, pos.getX(), pos.getY(), pos.getZ());
-				}
-			}
+			updateChannel();
 
 			assert channel != null;
 			if (!new_listen) {
@@ -133,17 +151,19 @@ public class Radio {
 			}
 		}
 		private RadioSender getSender() {
+			if (channel == null) return null;
 			RadioSender sender;
 			sender = channel.getSender(senderIndex);
-			if (sender == null) sender = channel.newSender();
+			if (sender == null) sender = channel.newSender(level, pos.getX(), pos.getY(), pos.getZ());
 			senderIndex = sender.getIndex();
 			return sender;
 		}
 
 		private RadioListener getListener() {
+			if (channel == null) return null;
 			RadioListener listener;
 			listener = channel.getListener(listenerIndex);
-			if (listener == null) listener = channel.newListener();
+			if (listener == null) listener = channel.newListener(level, pos.getX(), pos.getY(), pos.getZ());
 			listenerIndex = listener.getIndex();
 			return listener;
 		}
@@ -190,6 +210,9 @@ public class Radio {
 			boolean newListen = hasRodAbove && !hasAdjacentRod && !hasAdjacentBlocks;
 
 			if (hasAdjacentBlocks) newPower = 0;
+			updateChannel();
+			getSender();
+			getListener();
 
 			if (state.get(POWER) != newPower || state.get(LISTEN) != newListen) {
 				this.onListenSwitch(newListen, state, world, pos);

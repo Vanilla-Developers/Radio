@@ -4,6 +4,7 @@ import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.events.EventRegistration;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import de.maxhenkel.voicechat.api.events.VoicechatServerStartedEvent;
+import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -19,7 +20,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	private static VoicechatServerApi vc_api;
 
 
-	private static RadioChannel[] channels = new RadioChannel[14];
+	private static RadioChannel[] channels = new RadioChannel[15];
 
 
 	public static VoicechatServerApi get_VCAPI() {
@@ -57,12 +58,14 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	
 	private void onMicPacket(MicrophonePacketEvent event) {
 		VoicechatConnection sender = event.getSenderConnection();
+		MicrophonePacket packet = event.getPacket();
 		assert sender != null;
 		PlayerEntity player = (PlayerEntity) sender.getPlayer().getPlayer();
 		Block target = Radio.RADIO;
 
-		Block near_radio = getBlockNearby(player, target, 15);
-		assert near_radio != null;
+		Radio.RadioBlock near_radio = (Radio.RadioBlock) getBlockNearby(player, target, 15);
+		if (!(near_radio instanceof Radio.RadioBlock)) return;
+		near_radio.onMicrophoneNearby(packet);
 	}
 
 	public static Block getBlockNearby(PlayerEntity player, Block target, int radius) {
@@ -90,9 +93,9 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		if (num < 1) return null;
 		return channels[num-1];
 	}
-	public static RadioChannel createChannel(int num, ServerLevel level, int x, int y, int z) {
+	public static RadioChannel createChannel(int num) {
 		if (num < 1) return null;
-		RadioChannel channel = new RadioChannel(num-1, vc_api, level, x, y, z);
+		RadioChannel channel = new RadioChannel(num-1, vc_api);
 		channels[num-1] = channel;
 		return channel;
 	}
