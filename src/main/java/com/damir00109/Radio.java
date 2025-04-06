@@ -62,12 +62,11 @@ public class Radio {
 	public static class RadioBlock extends Block {
 		private ServerLevel level;
 		private BlockPos pos;
-		private boolean listen_sate = true;
 		private int power = 0;
 		private RadioChannel channel;
-		private int senderIndex = -1;
-		private int listenerIndex = -1;
-		private AudioPlayer ap;
+		private RadioSender sender;
+		private RadioListener listener;
+		private BlockState state;
 
 		public RadioBlock(Settings settings) {
 			super(settings);
@@ -92,20 +91,22 @@ public class Radio {
 		public void onMicrophoneNearby(MicrophonePacket packet) {
 			updateChannel();
 			if (channel == null) return;
+			VanillaDamir00109.LOGGER.info("LISTEN={}", state.get(LISTEN));
 
-			if (!listen_sate) {
+			if (!state.get(LISTEN)) {
 				byte[] audio = packet.getOpusEncodedData();
 
-				RadioSender unit = getSender();
-				unit.send(audio);
+				createSender();
+				if (sender == null) return;
+				sender.send(audio);
 			}
 		}
+
 
 		private void updateChannel() {
 			if (channel != null || power < 1) return;
 			channel = VanillaDamir00109.createChannel(power);
 
-			//VanillaDamir00109.LOGGER.info("Channel {}", channel.toString());
 			VanillaDamir00109.LOGGER.info("Channel num.: {}", (power-1));
 		}
 
@@ -115,42 +116,17 @@ public class Radio {
 			super.onBlockAdded(state, world, pos, oldState, notify);
 			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
 			this.pos = pos;
+			world.scheduleBlockTick(pos, this, 1/20);
 		}
-
-		@Override
-		protected void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
-			if (world.isClient) return;
-			VanillaDamir00109.LOGGER.info("randomTick");
-			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
-			this.pos = pos;
-
-			update(state, world);
-			updateChannel();
-		}
-
-		@Override
-		public void randomDisplayTick(BlockState state, World world, BlockPos pos, Random random) {
-			if (world.isClient) return;
-			VanillaDamir00109.LOGGER.info("randomDisplayTick");
-			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
-			this.pos = pos;
-
-			update(state, world);
-			updateChannel();
-		}
-
-		@Override
-		protected boolean hasRandomTicks(BlockState state) { return true; }
 
 		@Override
 		protected void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
-			if (world.isClient) return;
-			VanillaDamir00109.LOGGER.info("scheduledTick");
 			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
 			this.pos = pos;
 
 			update(state, world);
 			updateChannel();
+			world.scheduleBlockTick(pos, this, 1/20);
 		}
 
 		protected void onListenSwitch(
@@ -160,37 +136,27 @@ public class Radio {
 				BlockPos pos) {
 			updateChannel();
 			if(power < 1 || channel == null) return;
+			createSender();
+			createListener();
 
 			if (!new_listen) {
 				// If Radio mode is "speaking"
-				RadioSender sender = getSender();
+				listener.setActive(false);
 			} else {
 				// If Radio mode is "listen"
-				RadioListener sender = getListener();
+				sender.setActive(false);
 			}
 		}
-		private RadioSender getSender() {
-			if (channel == null) return null;
-			RadioSender sender;
-			if (senderIndex == -1) {
-				sender = channel.newSender(level, pos.getX(), pos.getY(), pos.getZ());
-				senderIndex = sender.getIndex();
-				return sender;
-			}
-			VanillaDamir00109.LOGGER.info("Sender index: "+senderIndex);
-			return channel.getSender(senderIndex);
+		private void createSender() {
+			if (channel == null) return;
+			if (sender != null) return;
+			sender = channel.newSender(level, pos.getX(), pos.getY(), pos.getZ());
 		}
 
-		private RadioListener getListener() {
-			if (channel == null) return null;
-			RadioListener listener;
-			if (listenerIndex == -1) {
-				listener = channel.newListener(level, pos.getX(), pos.getY(), pos.getZ());
-				listenerIndex = listener.getIndex();
-				return listener;
-			}
-			VanillaDamir00109.LOGGER.info("Listener index: "+listenerIndex);
-			return channel.getListener(listenerIndex);
+		private void createListener() {
+			if (channel == null) return;
+			if (listener != null) return;
+			listener = channel.newListener(level, pos.getX(), pos.getY(), pos.getZ());
 		}
 
 		private BlockState getAnyBlockAbove(BlockPos pos, World world, int radius) {
@@ -201,7 +167,6 @@ public class Radio {
 
 				BlockState blockstate = world.getBlockState(mutablePos);
 				if (blockstate.isOf(Blocks.VOID_AIR) || blockstate.isOf(Blocks.AIR)) continue;
-				//VanillaDamir00109.LOGGER.info("Block up: {}", blockstate);
 				return blockstate;
 
 			}
@@ -224,15 +189,18 @@ public class Radio {
 
 		public void update(BlockState state, World world) {
 			if (world.isClient) return;
+
 			BlockPos abovePos = pos.up();
 			BlockState aboveState = world.getBlockState(abovePos);
+
 			boolean hasRodAbove = aboveState.isOf(Blocks.LIGHTNING_ROD);
 			boolean hasAdjacentRod = getBlockAbove(pos.add(0, 0, 0), world, Blocks.LIGHTNING_ROD, 1) != null;
 			boolean hasAdjacentBlocks = getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
 			boolean newListen = hasRodAbove && !hasAdjacentRod && !hasAdjacentBlocks;
+
 			world.setBlockState(pos, state.with(LISTEN, newListen), 2);
 			this.onListenSwitch(newListen, state, world, pos);
-			this.listen_sate = newListen;
+			this.state = state;
 		}
 
 		@Override
@@ -244,7 +212,7 @@ public class Radio {
 
 			if (hasAdjacentBlocks) newPower = 0;
 			updateChannel();
-			if (!listen_sate) {getSender();}else{getListener();}
+			if (!state.get(LISTEN)) {createSender();}else{createListener();}
 
 			if (state.get(POWER) != newPower) {
 				world.setBlockState(pos, state.with(POWER, newPower), 2);

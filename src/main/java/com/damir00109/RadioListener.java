@@ -13,6 +13,7 @@ public class RadioListener implements AudioListener {
 	private final RadioChannel channel;
 	private final LocationalAudioChannel static_channel;
 	private final UUID uuid;
+	private boolean active = true;
 
 	public RadioListener(int index, RadioChannel channel, VoicechatServerApi api, ServerLevel level, int x, int y, int z) {
 		VanillaDamir00109.LOGGER.info("Created Listener for index {}", index);
@@ -20,8 +21,7 @@ public class RadioListener implements AudioListener {
 		num = index;
 		this.channel = channel;
 		Position position = api.createPosition(x,y,z);
-		static_channel = api.createLocationalAudioChannel(UUID.randomUUID(), level, position);
-		assert static_channel != null;
+		static_channel = api.createLocationalAudioChannel(uuid, level, position);
 		static_channel.setDistance(15);
 		static_channel.setCategory("Radio-"+index);
 	}
@@ -30,8 +30,11 @@ public class RadioListener implements AudioListener {
 	}
 
 	public void playAudio(byte[] audio) {
-		static_channel.send(audio);
+		if (isActive()) static_channel.send(audio);
 	}
+
+	public void setActive(boolean bool) { active = bool; }
+	public boolean isActive() { return active; }
 
 	public int getIndex() {
 		return num;

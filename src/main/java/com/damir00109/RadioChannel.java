@@ -57,8 +57,7 @@ public class RadioChannel {
 	public void broadcast(byte[] audio) {
 		VanillaDamir00109.LOGGER.info("broadcasting for byte["+audio.length+"]");
 		for (int i = 0; i < this.getListeners().size(); i++) {
-			RadioListener listener = this.getListener(i);
-			listener.playAudio(audio);
+			this.getListener(i).playAudio(audio);
 		}
 	}
 }

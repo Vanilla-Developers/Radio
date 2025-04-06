@@ -66,6 +66,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		Radio.RadioBlock near_radio = (Radio.RadioBlock) getBlockNearby(player, target, 15);
 		if (!(near_radio instanceof Radio.RadioBlock)) return;
 		near_radio.onMicrophoneNearby(packet);
+		VanillaDamir00109.LOGGER.info("event has cancelled: {}", event.isCancelled());
 	}
 
 	public static Block getBlockNearby(PlayerEntity player, Block target, int radius) {
