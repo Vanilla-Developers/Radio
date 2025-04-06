@@ -98,10 +98,6 @@ public class Radio {
 
 				RadioSender unit = getSender();
 				unit.send(audio);
-			} else {
-
-				RadioListener unit = getListener();
-
 			}
 		}
 
@@ -124,9 +120,11 @@ public class Radio {
 		@Override
 		protected void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
 			if (world.isClient) return;
-			super.randomTick(state, world, pos, random);
 			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
 			this.pos = pos;
+
+			update(state, world);
+			updateChannel();
 		}
 
 		protected void onListenSwitch(
@@ -196,28 +194,34 @@ public class Radio {
 			return null;
 		}
 
-		@Override
-		public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify) {
+		public void update(BlockState state, World world) {
 			if (world.isClient) return;
 			BlockPos abovePos = pos.up();
 			BlockState aboveState = world.getBlockState(abovePos);
 			boolean hasRodAbove = aboveState.isOf(Blocks.LIGHTNING_ROD);
 			boolean hasAdjacentRod = getBlockAbove(pos.add(0, 0, 0), world, Blocks.LIGHTNING_ROD, 1) != null;
 			boolean hasAdjacentBlocks = getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
+			boolean newListen = hasRodAbove && !hasAdjacentRod && !hasAdjacentBlocks;
+			world.setBlockState(pos, state.with(LISTEN, newListen), 2);
+			this.onListenSwitch(newListen, state, world, pos);
+			this.listen_sate = newListen;
+		}
+
+		@Override
+		public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify) {
+			if (world.isClient) return;
+			boolean hasAdjacentBlocks = getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
 
 			int newPower = world.getReceivedRedstonePower(pos);
-			boolean newListen = hasRodAbove && !hasAdjacentRod && !hasAdjacentBlocks;
 
 			if (hasAdjacentBlocks) newPower = 0;
 			updateChannel();
 			getSender();
 			getListener();
 
-			if (state.get(POWER) != newPower || state.get(LISTEN) != newListen) {
-				this.onListenSwitch(newListen, state, world, pos);
-				world.setBlockState(pos, state.with(POWER, newPower).with(LISTEN, newListen), 2);
+			if (state.get(POWER) != newPower) {
+				world.setBlockState(pos, state.with(POWER, newPower), 2);
 				this.power = newPower;
-				this.listen_sate = newListen;
 			}
 		}
 	}
