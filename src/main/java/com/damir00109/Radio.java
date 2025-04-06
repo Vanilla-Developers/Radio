@@ -120,6 +120,32 @@ public class Radio {
 		@Override
 		protected void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
 			if (world.isClient) return;
+			VanillaDamir00109.LOGGER.info("randomTick");
+			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
+			this.pos = pos;
+
+			update(state, world);
+			updateChannel();
+		}
+
+		@Override
+		public void randomDisplayTick(BlockState state, World world, BlockPos pos, Random random) {
+			if (world.isClient) return;
+			VanillaDamir00109.LOGGER.info("randomDisplayTick");
+			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
+			this.pos = pos;
+
+			update(state, world);
+			updateChannel();
+		}
+
+		@Override
+		protected boolean hasRandomTicks(BlockState state) { return true; }
+
+		@Override
+		protected void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
+			if (world.isClient) return;
+			VanillaDamir00109.LOGGER.info("scheduledTick");
 			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
 			this.pos = pos;
 
@@ -132,8 +158,8 @@ public class Radio {
 				BlockState state,
 				World world,
 				BlockPos pos) {
-			if(power < 1 || channel == null) return;
 			updateChannel();
+			if(power < 1 || channel == null) return;
 
 			if (!new_listen) {
 				// If Radio mode is "speaking"
@@ -146,22 +172,24 @@ public class Radio {
 		private RadioSender getSender() {
 			if (channel == null) return null;
 			RadioSender sender;
-			if (senderIndex < 0) {
+			if (senderIndex == -1) {
 				sender = channel.newSender(level, pos.getX(), pos.getY(), pos.getZ());
 				senderIndex = sender.getIndex();
 				return sender;
 			}
+			VanillaDamir00109.LOGGER.info("Sender index: "+senderIndex);
 			return channel.getSender(senderIndex);
 		}
 
 		private RadioListener getListener() {
 			if (channel == null) return null;
 			RadioListener listener;
-			if (listenerIndex < 0) {
+			if (listenerIndex == -1) {
 				listener = channel.newListener(level, pos.getX(), pos.getY(), pos.getZ());
 				listenerIndex = listener.getIndex();
 				return listener;
 			}
+			VanillaDamir00109.LOGGER.info("Listener index: "+listenerIndex);
 			return channel.getListener(listenerIndex);
 		}
 
@@ -216,8 +244,7 @@ public class Radio {
 
 			if (hasAdjacentBlocks) newPower = 0;
 			updateChannel();
-			getSender();
-			getListener();
+			if (!listen_sate) {getSender();}else{getListener();}
 
 			if (state.get(POWER) != newPower) {
 				world.setBlockState(pos, state.with(POWER, newPower), 2);
