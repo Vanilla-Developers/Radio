@@ -92,11 +92,14 @@ public class Radio {
 
 			if (!listen_sate) {
 				byte[] audio = packet.getOpusEncodedData();
-				OpusEncoder encoder = VanillaDamir00109.get_VCAPI().createEncoder();
-				//ap = VanillaDamir00109.get_VCAPI().createAudioPlayer((AudioChannel) channel, encoder, audio);
-			}/* else {
-				// listen the channel
-			}*/
+
+				RadioSender unit = getSender();
+				unit.send(audio);
+			} else {
+
+				RadioListener unit = getListener();
+
+			}
 		}
 
 		public void flush() {
@@ -119,25 +122,30 @@ public class Radio {
 			assert channel != null;
 			if (!new_listen) {
 				// If Radio mode is "speaking"
-				RadioSender sender;
-				if (senderIndex >= 0) {
-					sender = channel.getSender(senderIndex);
-					if (sender == null)
-						senderIndex = channel.newSender().getIndex();
+				RadioSender sender = getSender();
 
-					// Logic
-				}
+				// Logic
 			} else {
 				// If Radio mode is "listen"
-				RadioListener listener;
-				if (listenerIndex >= 0) {
-					listener = channel.getListener(listenerIndex);
-					if (listener == null)
-						listenerIndex = channel.newListener().getIndex();
+				RadioListener sender = getListener();
 
-					// Logic
-				}
+				// Logic
 			}
+		}
+		private RadioSender getSender() {
+			RadioSender sender;
+			sender = channel.getSender(senderIndex);
+			if (sender == null) sender = channel.newSender();
+			senderIndex = sender.getIndex();
+			return sender;
+		}
+
+		private RadioListener getListener() {
+			RadioListener listener;
+			listener = channel.getListener(listenerIndex);
+			if (listener == null) listener = channel.newListener();
+			listenerIndex = listener.getIndex();
+			return listener;
 		}
 
 		private BlockState getAnyBlockAbove(BlockPos pos, World world, int radius) {
@@ -187,6 +195,7 @@ public class Radio {
 				this.onListenSwitch(newListen, state, world, pos);
 				world.setBlockState(pos, state.with(POWER, newPower).with(LISTEN, newListen), 2);
 				this.power = newPower;
+				this.listen_sate = newListen;
 			}
 		}
 	}

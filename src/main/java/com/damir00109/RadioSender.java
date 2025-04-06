@@ -30,10 +30,7 @@ public class RadioSender implements AudioSender {
 
 	@Override
 	public boolean send(byte[] audio) {
-		for (int i = 0; i < this.channel.getListeners().size(); i++) {
-			RadioListener listener = this.channel.getListeners().get(i);
-			listener.playAudio(audio);
-		}
+		channel.broadcast(audio);
 		return true;
 	}
 
