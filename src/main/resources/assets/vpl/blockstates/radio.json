@@ -1,8 +1,8 @@
 {
   "variants": {
     "facing=north,power=0,listen=true": { "model": "vpl:block/listen_radio_north" },
-    "facing=north,power=1,listen=true": { "model": "vpl:block/listen_north_power1" },
-    "facing=north,power=2,listen=true": { "model": "vpl:block/listen_north_power2" },
+    "facing=north,power=1,listen=true": { "model": "vpl:block/listen_radio_north_power1" },
+    "facing=north,power=2,listen=true": { "model": "vpl:block/listen_radio_north_power2" },
     "facing=north,power=3,listen=true": { "model": "vpl:block/listen_radio_north_power3" },
     "facing=north,power=4,listen=true": { "model": "vpl:block/listen_radio_north_power4" },
     "facing=north,power=5,listen=true": { "model": "vpl:block/listen_radio_north_power5" },
