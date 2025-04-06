@@ -58,4 +58,11 @@ public class RadioChannel {
 	public RadioListener getListener(int index) {
 		return this.listeners.get(index);
 	}
+
+	public void broadcast(byte[] audio) {
+		for (int i = 0; i < this.getListeners().size(); i++) {
+			RadioListener listener = this.getListener(i);
+			listener.playAudio(audio);
+		}
+	}
 }

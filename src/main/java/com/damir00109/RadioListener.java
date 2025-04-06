@@ -9,22 +9,23 @@ import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import java.util.UUID;
 
 public class RadioListener implements AudioListener {
-	private int num;
-	private RadioChannel channel;
-	private LocationalAudioChannel static_channel;
+	private final int num;
+	private final RadioChannel channel;
+	private final LocationalAudioChannel static_channel;
 
 	public RadioListener(int index, RadioChannel channel, VoicechatServerApi api, ServerLevel level, int x, int y, int z) {
 		this.num = index;
 		this.channel = channel;
 		Position position = api.createPosition(x,y,z);
 		this.static_channel = api.createLocationalAudioChannel(UUID.randomUUID(), api.fromServerLevel(level), position);
+		assert this.static_channel != null;
+		this.static_channel.setDistance(15);
 	}
 	public RadioChannel getChannel() {
 		return this.channel;
 	}
 
 	public void playAudio(byte[] audio) {
-		this.static_channel.setDistance(15);
 		this.static_channel.send(audio);
 	}
 
