@@ -1,7 +1,6 @@
 package com.damir00109;
 
 import de.maxhenkel.voicechat.api.ServerLevel;
-import de.maxhenkel.voicechat.api.audiochannel.AudioPlayer;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.block.Block;
@@ -31,6 +30,9 @@ import net.minecraft.item.ItemPlacementContext;
 import org.jetbrains.annotations.Nullable;
 
 public class Radio {
+	private static int lastSenderIndex = -1;
+	private static int lastListenerIndex = -1;
+
 
 	public static final IntProperty POWER = IntProperty.of("power", 0, 15);
 	public static final EnumProperty<Direction> FACING = EnumProperty.of("facing", Direction.class);
@@ -96,7 +98,7 @@ public class Radio {
 			if (!state.get(LISTEN)) {
 				byte[] audio = packet.getOpusEncodedData();
 
-				createSender();
+				createSender(-1);
 				if (sender == null) return;
 				sender.send(audio);
 			}
@@ -136,8 +138,8 @@ public class Radio {
 				BlockPos pos) {
 			updateChannel();
 			if(power < 1 || channel == null) return;
-			createSender();
-			createListener();
+			createSender(-1);
+			createListener(-1);
 
 			if (!new_listen) {
 				// If Radio mode is "speaking"
@@ -147,16 +149,28 @@ public class Radio {
 				sender.setActive(false);
 			}
 		}
-		private void createSender() {
+		private void createSender(int index) {
+			if (index < 0) index = Radio.lastSenderIndex+1;
 			if (channel == null) return;
 			if (sender != null) return;
-			sender = channel.newSender(level, pos.getX(), pos.getY(), pos.getZ());
+			if (channel.getSender(Radio.lastSenderIndex+1) != null) {
+				createSender(index+1);
+			} else {
+				sender = channel.newSenderWith(Radio.lastSenderIndex + 1, level, pos.getX(), pos.getY(), pos.getZ());
+			}
+			if (index-1 == Radio.lastSenderIndex) Radio.lastSenderIndex = sender.getIndex();
 		}
 
-		private void createListener() {
+		private void createListener(int index) {
+			if (index < 0) index = Radio.lastListenerIndex+1;
 			if (channel == null) return;
 			if (listener != null) return;
-			listener = channel.newListener(level, pos.getX(), pos.getY(), pos.getZ());
+			if (channel.getListener(index) != null) {
+				createListener(index+1);
+			} else {
+				listener = channel.newListenerWith(index, level, pos.getX(), pos.getY(), pos.getZ());
+			}
+			if (index-1 == Radio.lastListenerIndex) Radio.lastListenerIndex = listener.getIndex();
 		}
 
 		private BlockState getAnyBlockAbove(BlockPos pos, World world, int radius) {
@@ -212,7 +226,7 @@ public class Radio {
 
 			if (hasAdjacentBlocks) newPower = 0;
 			updateChannel();
-			if (!state.get(LISTEN)) {createSender();}else{createListener();}
+			if (!state.get(LISTEN)) {createSender(-1);}else{createListener(-1);}
 
 			if (state.get(POWER) != newPower) {
 				world.setBlockState(pos, state.with(POWER, newPower), 2);

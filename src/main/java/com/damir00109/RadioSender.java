@@ -35,6 +35,7 @@ public class RadioSender implements AudioSender {
 
 	@Override
 	public boolean send(byte[] audio) {
+		VanillaDamir00109.LOGGER.info("Sender {} active={}", num, active);
 		if (!isActive()) return false;
 		channel.broadcast(audio);
 		return true;

@@ -30,6 +30,7 @@ public class RadioListener implements AudioListener {
 	}
 
 	public void playAudio(byte[] audio) {
+		VanillaDamir00109.LOGGER.info("Listener {} active={}", num, active);
 		if (isActive()) static_channel.send(audio);
 	}
 

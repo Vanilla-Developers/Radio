@@ -9,9 +9,9 @@ public class RadioChannel {
 	private ServerLevel level;
 	private int channelNum;
 	private ArrayList<RadioSender> senders;
-	private int lastSenderIndex = 0;
+	private int lastSenderIndex = -1;
 	private ArrayList<RadioListener> listeners;
-	private int lastListenerIndex = 0;
+	private int lastListenerIndex = -1;
 	private VoicechatServerApi api;
 
 	public RadioChannel(int id, VoicechatServerApi api) {
@@ -28,19 +28,28 @@ public class RadioChannel {
 		return this.listeners;
 	}
 
-	public RadioSender newSender(ServerLevel level, int x, int y, int z) {
-		int index = lastSenderIndex;
+	public RadioSender newSenderWith(int index, ServerLevel level, int x, int y, int z) {
 		RadioSender sender = new RadioSender(index, this, api, level, x, y, z);
-		senders.add(sender);
-		lastSenderIndex += 1;
+		senders.add(index, sender);
+		return sender;
+	}
+	public RadioListener newListenerWith(int index, ServerLevel level, int x, int y, int z) {
+		RadioListener listener = new RadioListener(index, this, api, level, x, y, z);
+		listeners.add(index, listener);
+		return listener;
+	}
+
+	public RadioSender newSender(ServerLevel level, int x, int y, int z) {
+		int index = lastSenderIndex+1;
+		RadioSender sender = newSenderWith(index, level, x, y, z);
+		lastSenderIndex = index;
 		return sender;
 	}
 	public RadioListener newListener(ServerLevel level, int x, int y, int z) {
-		int index = lastListenerIndex;
-		RadioListener listener = new RadioListener(index, this, api, level, x, y, z);
-		listeners.add(listener);
-		lastListenerIndex += 1;
-		return  listener;
+		int index = lastListenerIndex+1;
+		RadioListener listener = newListenerWith(index, level, x, y, z);
+		lastListenerIndex = index;
+		return listener;
 	}
 
 	public int getId() {
@@ -48,9 +57,11 @@ public class RadioChannel {
 	}
 
 	public RadioSender getSender(int index) {
+		if (index >= senders.size()) return null;
 		return this.senders.get(index);
 	}
 	public RadioListener getListener(int index) {
+		if (index >= listeners.size()) return null;
 		return this.listeners.get(index);
 	}
 
