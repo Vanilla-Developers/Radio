@@ -15,7 +15,9 @@ public class RadioChannel {
 	private VoicechatServerApi api;
 
 	public RadioChannel(int id, VoicechatServerApi api) {
-		this.channelNum = id;
+		channelNum = id;
+		senders = new ArrayList<RadioSender>();
+		listeners = new ArrayList<RadioListener>();
 		this.api = api;
 	}
 

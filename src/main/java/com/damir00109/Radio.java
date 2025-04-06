@@ -106,11 +106,11 @@ public class Radio {
 		}
 
 		private void updateChannel() {
-			if (channel == null) {
-				if ((channel = VanillaDamir00109.getChannelBy(power)) != null) {
-					channel = VanillaDamir00109.createChannel(power);
-				}
-			}
+			if (channel != null || power < 1) return;
+			channel = VanillaDamir00109.createChannel(power);
+
+			//VanillaDamir00109.LOGGER.info("Channel {}", channel.toString());
+			VanillaDamir00109.LOGGER.info("Channel num.: {}", (power-1));
 		}
 
 		@Override
@@ -134,38 +134,37 @@ public class Radio {
 				BlockState state,
 				World world,
 				BlockPos pos) {
-			if(power < 1) return;
+			if(power < 1 || channel == null) return;
 			updateChannel();
 
-			assert channel != null;
 			if (!new_listen) {
 				// If Radio mode is "speaking"
 				RadioSender sender = getSender();
-
-				// Logic
 			} else {
 				// If Radio mode is "listen"
 				RadioListener sender = getListener();
-
-				// Logic
 			}
 		}
 		private RadioSender getSender() {
 			if (channel == null) return null;
 			RadioSender sender;
-			sender = channel.getSender(senderIndex);
-			if (sender == null) sender = channel.newSender(level, pos.getX(), pos.getY(), pos.getZ());
-			senderIndex = sender.getIndex();
-			return sender;
+			if (senderIndex < 0) {
+				sender = channel.newSender(level, pos.getX(), pos.getY(), pos.getZ());
+				senderIndex = sender.getIndex();
+				return sender;
+			}
+			return channel.getSender(senderIndex);
 		}
 
 		private RadioListener getListener() {
 			if (channel == null) return null;
 			RadioListener listener;
-			listener = channel.getListener(listenerIndex);
-			if (listener == null) listener = channel.newListener(level, pos.getX(), pos.getY(), pos.getZ());
-			listenerIndex = listener.getIndex();
-			return listener;
+			if (listenerIndex < 0) {
+				listener = channel.newListener(level, pos.getX(), pos.getY(), pos.getZ());
+				listenerIndex = listener.getIndex();
+				return listener;
+			}
+			return channel.getListener(listenerIndex);
 		}
 
 		private BlockState getAnyBlockAbove(BlockPos pos, World world, int radius) {

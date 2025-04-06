@@ -9,6 +9,7 @@ public class RadioSender implements AudioSender {
 	private final RadioChannel channel;
 
 	public RadioSender(int index, RadioChannel channel, VoicechatServerApi api, ServerLevel level, int x, int y, int z) {
+		VanillaDamir00109.LOGGER.info("Created Sender for index {}", index);
 		num = index;
 		this.channel = channel;
 	}
