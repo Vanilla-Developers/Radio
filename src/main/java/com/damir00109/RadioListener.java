@@ -10,7 +10,6 @@ import java.util.UUID;
 
 public class RadioListener implements AudioListener {
 	private final int num;
-	private final RadioChannel channel;
 	private final LocationalAudioChannel static_channel;
 	private final UUID uuid;
 	private boolean active = true;
@@ -19,14 +18,10 @@ public class RadioListener implements AudioListener {
 		VanillaDamir00109.LOGGER.info("Created Listener for index {}", index);
 		uuid = UUID.randomUUID();
 		num = index;
-		this.channel = channel;
 		Position position = api.createPosition(x,y,z);
 		static_channel = api.createLocationalAudioChannel(uuid, level, position);
 		static_channel.setDistance(15);
 		static_channel.setCategory("Radio-"+index);
-	}
-	public RadioChannel getChannel() {
-		return this.channel;
 	}
 
 	public void playAudio(byte[] audio) {

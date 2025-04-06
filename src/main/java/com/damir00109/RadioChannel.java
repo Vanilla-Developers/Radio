@@ -6,7 +6,6 @@ import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 
 public class RadioChannel {
-	private ServerLevel level;
 	private int channelNum;
 	private ArrayList<RadioSender> senders;
 	private int lastSenderIndex = -1;
@@ -16,8 +15,8 @@ public class RadioChannel {
 
 	public RadioChannel(int id, VoicechatServerApi api) {
 		channelNum = id;
-		senders = new ArrayList<RadioSender>();
-		listeners = new ArrayList<RadioListener>();
+		senders = new ArrayList<>();
+		listeners = new ArrayList<>();
 		this.api = api;
 	}
 
@@ -50,10 +49,6 @@ public class RadioChannel {
 		RadioListener listener = newListenerWith(index, level, x, y, z);
 		lastListenerIndex = index;
 		return listener;
-	}
-
-	public int getId() {
-		return this.channelNum;
 	}
 
 	public RadioSender getSender(int index) {

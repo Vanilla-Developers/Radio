@@ -17,10 +17,9 @@ import org.slf4j.LoggerFactory;
 public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public static final String MOD_ID = "vpl";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
 	private static VoicechatServerApi vc_api;
-
-
-	private static RadioChannel[] channels = new RadioChannel[15];
+	private static final RadioChannel[] channels = new RadioChannel[15];
 
 
 	public static VoicechatServerApi get_VCAPI() {
@@ -29,20 +28,19 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 
 	@Override
 	public void onInitialize() {
-		DModItems.registerModItems();   // Регистрация предметов
-		Radio.registerModBlocks(); // Регистрация радио
+		LOGGER.info("Register blocks and items...");
+		DModItems.registerModItems();
+		Radio.registerModBlocks();
 		DModBlocks.registerModBlocks();
 	}
 
 	@Override
-	public String getPluginId() {
-		return MOD_ID;
-	}
+	public String getPluginId() { return MOD_ID; }
 
 	@Override
 	public void initialize(VoicechatApi api) {
 		VoicechatPlugin.super.initialize(api);
-		VanillaDamir00109.LOGGER.info("VoiceChat initialized");
+		LOGGER.info("VoiceChat initialized");
 	}
 
 	@Override
@@ -50,7 +48,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		VoicechatPlugin.super.registerEvents(registration);
 		registration.registerEvent(VoicechatServerStartedEvent.class, this::onServerStarted);
 		registration.registerEvent(MicrophonePacketEvent.class, this::onMicPacket);
-		VanillaDamir00109.LOGGER.info("VoiceChat register events");
+		LOGGER.info("VoiceChat register events");
 	}
 	private void onServerStarted(VoicechatServerStartedEvent event) {
 		VanillaDamir00109.vc_api = event.getVoicechat();
@@ -66,7 +64,6 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		Radio.RadioBlock near_radio = (Radio.RadioBlock) getBlockNearby(player, target, 15);
 		if (!(near_radio instanceof Radio.RadioBlock)) return;
 		near_radio.onMicrophoneNearby(packet);
-		VanillaDamir00109.LOGGER.info("event has cancelled: {}", event.isCancelled());
 	}
 
 	public static Block getBlockNearby(PlayerEntity player, Block target, int radius) {
@@ -92,7 +89,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	}
 	public static RadioChannel getChannelBy(int num) {
 		if (num < 1) return null;
-		return channels[num-1];
+		return getChannels()[num-1];
 	}
 	public static RadioChannel createChannel(int num) {
 		if (num < 1) return null;

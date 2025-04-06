@@ -15,8 +15,6 @@ public class RadioSender implements AudioSender {
 		this.channel = channel;
 	}
 
-	public RadioChannel getChannel() { return channel; }
-
 	@Override
 	public AudioSender whispering(boolean b) { return this; }
 	@Override

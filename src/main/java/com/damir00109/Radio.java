@@ -64,7 +64,6 @@ public class Radio {
 	public static class RadioBlock extends Block {
 		private ServerLevel level;
 		private BlockPos pos;
-		private int power = 0;
 		private RadioChannel channel;
 		private RadioSender sender;
 		private RadioListener listener;
@@ -97,19 +96,16 @@ public class Radio {
 
 			if (!state.get(LISTEN)) {
 				byte[] audio = packet.getOpusEncodedData();
-
 				createSender(-1);
 				if (sender == null) return;
 				sender.send(audio);
 			}
 		}
 
-
 		private void updateChannel() {
-			if (channel != null || power < 1) return;
-			channel = VanillaDamir00109.createChannel(power);
-
-			VanillaDamir00109.LOGGER.info("Channel num.: {}", (power-1));
+			if (channel != null || state.get(POWER) < 1) return;
+			if ((channel = VanillaDamir00109.getChannelBy(state.get(POWER))) != null) return;
+			channel = VanillaDamir00109.createChannel(state.get(POWER));
 		}
 
 		@Override
@@ -137,7 +133,7 @@ public class Radio {
 				World world,
 				BlockPos pos) {
 			updateChannel();
-			if(power < 1 || channel == null) return;
+			if(state.get(POWER) < 1 || channel == null) return;
 			createSender(-1);
 			createListener(-1);
 
@@ -151,25 +147,13 @@ public class Radio {
 		}
 		private void createSender(int index) {
 			if (index < 0) index = Radio.lastSenderIndex+1;
-			if (channel == null) return;
-			if (sender != null) return;
-			if (channel.getSender(Radio.lastSenderIndex+1) != null) {
-				createSender(index+1);
-			} else {
-				sender = channel.newSenderWith(Radio.lastSenderIndex + 1, level, pos.getX(), pos.getY(), pos.getZ());
-			}
+			if (channel.getSender(Radio.lastSenderIndex+1) != null) { createSender(index+1); } else { sender = channel.newSenderWith(Radio.lastSenderIndex + 1, level, pos.getX(), pos.getY(), pos.getZ()); }
 			if (index-1 == Radio.lastSenderIndex) Radio.lastSenderIndex = sender.getIndex();
 		}
 
 		private void createListener(int index) {
 			if (index < 0) index = Radio.lastListenerIndex+1;
-			if (channel == null) return;
-			if (listener != null) return;
-			if (channel.getListener(index) != null) {
-				createListener(index+1);
-			} else {
-				listener = channel.newListenerWith(index, level, pos.getX(), pos.getY(), pos.getZ());
-			}
+			if (channel.getListener(index) != null) { createListener(index+1); } else { listener = channel.newListenerWith(index, level, pos.getX(), pos.getY(), pos.getZ()); }
 			if (index-1 == Radio.lastListenerIndex) Radio.lastListenerIndex = listener.getIndex();
 		}
 
@@ -182,7 +166,6 @@ public class Radio {
 				BlockState blockstate = world.getBlockState(mutablePos);
 				if (blockstate.isOf(Blocks.VOID_AIR) || blockstate.isOf(Blocks.AIR)) continue;
 				return blockstate;
-
 			}
 			return null;
 		}
@@ -221,17 +204,15 @@ public class Radio {
 		public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify) {
 			if (world.isClient) return;
 			boolean hasAdjacentBlocks = getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
-
 			int newPower = world.getReceivedRedstonePower(pos);
 
 			if (hasAdjacentBlocks) newPower = 0;
-			updateChannel();
-			if (!state.get(LISTEN)) {createSender(-1);}else{createListener(-1);}
 
-			if (state.get(POWER) != newPower) {
-				world.setBlockState(pos, state.with(POWER, newPower), 2);
-				this.power = newPower;
-			}
+			updateChannel();
+
+			if (!state.get(LISTEN)){createSender(-1);}else{createListener(-1);}
+
+			if (state.get(POWER) != newPower) world.setBlockState(pos, state.with(POWER, newPower), 2);
 		}
 	}
 }
