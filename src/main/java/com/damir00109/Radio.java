@@ -1,6 +1,5 @@
 package com.damir00109;
 
-import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.block.Block;
@@ -30,13 +29,10 @@ import net.minecraft.item.ItemPlacementContext;
 import org.jetbrains.annotations.Nullable;
 
 public class Radio {
-	private static int lastSenderIndex = -1;
-	private static int lastListenerIndex = -1;
-
-
 	public static final IntProperty POWER = IntProperty.of("power", 0, 15);
 	public static final EnumProperty<Direction> FACING = EnumProperty.of("facing", Direction.class);
 	public static final BooleanProperty LISTEN = BooleanProperty.of("listen");
+	public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
 
 	public static final Block RADIO = registerBlock("radio", new RadioBlock(Block.Settings.create()
 			.mapColor(MapColor.STONE_GRAY)
@@ -69,12 +65,13 @@ public class Radio {
 			this.setDefaultState(this.stateManager.getDefaultState()
 					.with(POWER, 0)
 					.with(FACING, Direction.EAST)
-					.with(LISTEN, true));
+					.with(LISTEN, true)
+					.with(ACTIVE, false));
 		}
 
 		@Override
 		protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-			builder.add(POWER, FACING, LISTEN);
+			builder.add(POWER, FACING, LISTEN, ACTIVE);
 		}
 
 		@Override
@@ -82,7 +79,8 @@ public class Radio {
 			return this.getDefaultState()
 					.with(FACING, ctx.getHorizontalPlayerFacing().getOpposite())
 					.with(POWER, ctx.getWorld().getReceivedRedstonePower(ctx.getBlockPos()))
-					.with(LISTEN, true);
+					.with(LISTEN, true)
+					.with(ACTIVE, false);
 		}
 		public void onMicrophoneNearby(MicrophonePacket packet) {
 			return;
@@ -91,7 +89,6 @@ public class Radio {
 		@Override
 		protected void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
 			if (world.isClient) return;
-			super.onBlockAdded(state, world, pos, oldState, notify);
 			this.pos = pos;
 			world.scheduleBlockTick(pos, this, 1/20);
 		}
@@ -110,11 +107,11 @@ public class Radio {
 				World world,
 				BlockPos pos) {
 
-			if (!new_listen) {
+			/*if (!new_listen) {
 				// If Radio mode is "speaking"
 			} else {
 				// If Radio mode is "listen"
-			}
+			}*/
 		}
 
 		private BlockState getAnyBlockAbove(BlockPos pos, World world, int radius) {
@@ -153,10 +150,17 @@ public class Radio {
 			boolean hasRodAbove = aboveState.isOf(Blocks.LIGHTNING_ROD);
 			boolean hasAdjacentRod = getBlockAbove(pos.add(0, 0, 0), world, Blocks.LIGHTNING_ROD, 1) != null;
 			boolean hasAdjacentBlocks = getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
-			boolean newListen = hasRodAbove && !hasAdjacentRod && !hasAdjacentBlocks;
+			boolean newActive = hasRodAbove && !hasAdjacentBlocks;
+			boolean newListen = !(newActive && hasAdjacentRod);
+			int newPower = world.getReceivedRedstonePower(pos);
 
-			world.setBlockState(pos, state.with(LISTEN, newListen), 2);
-			this.onListenSwitch(newListen, state, world, pos);
+			//VanillaDamir00109.LOGGER.info("Active mod: {}", newActive);
+
+			if (newActive) {
+				world.setBlockState(pos, state.with(LISTEN, newListen).with(POWER, newPower).with(ACTIVE, true), 3);
+			} else {
+				world.setBlockState(pos, state.with(LISTEN, true).with(POWER, 0).with(ACTIVE, false), 3);
+			}
 		}
 
 		@Override
