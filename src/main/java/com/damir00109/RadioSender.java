@@ -4,7 +4,7 @@ import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.audiosender.AudioSender;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 
-public class RadioSender implements AudioSender {
+public class RadioSender implements AudioSender, Runnable {
 	private final int num;
 	private final RadioChannel channel;
 	private boolean active = true;
@@ -38,4 +38,7 @@ public class RadioSender implements AudioSender {
 		channel.broadcast(audio);
 		return true;
 	}
+
+	@Override
+	public void run() {}
 }

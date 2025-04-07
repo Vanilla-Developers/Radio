@@ -8,7 +8,7 @@ import de.maxhenkel.voicechat.api.VoicechatServerApi;
 
 import java.util.UUID;
 
-public class RadioListener implements AudioListener {
+public class RadioListener implements AudioListener, Runnable {
 	private final int num;
 	private final LocationalAudioChannel static_channel;
 	private final UUID uuid;
@@ -40,4 +40,7 @@ public class RadioListener implements AudioListener {
 	public UUID getListenerId() {
 		return uuid;
 	}
+
+	@Override
+	public void run() {}
 }

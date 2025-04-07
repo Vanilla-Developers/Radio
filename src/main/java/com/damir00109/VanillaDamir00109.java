@@ -1,14 +1,17 @@
 package com.damir00109;
 
+import com.mojang.authlib.minecraft.client.MinecraftClient;
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.events.EventRegistration;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import de.maxhenkel.voicechat.api.events.VoicechatServerStartedEvent;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.fabricmc.api.ModInitializer;
+import net.minecraft.MinecraftVersion;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.slf4j.Logger;
@@ -17,14 +20,6 @@ import org.slf4j.LoggerFactory;
 public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public static final String MOD_ID = "vpl";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-
-	private static VoicechatServerApi vc_api;
-	private static final RadioChannel[] channels = new RadioChannel[15];
-
-
-	public static VoicechatServerApi get_VCAPI() {
-		return vc_api;
-	}
 
 	@Override
 	public void onInitialize() {
@@ -50,11 +45,12 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		registration.registerEvent(MicrophonePacketEvent.class, this::onMicPacket);
 		LOGGER.info("VoiceChat register events");
 	}
-	private void onServerStarted(VoicechatServerStartedEvent event) {
-		VanillaDamir00109.vc_api = event.getVoicechat();
-	}
+	private void onServerStarted(VoicechatServerStartedEvent event) {}
+
+	private boolean vc_on() {return false;}
 	
 	private void onMicPacket(MicrophonePacketEvent event) {
+		if (vc_on()) return;
 		VoicechatConnection sender = event.getSenderConnection();
 		MicrophonePacket packet = event.getPacket();
 		assert sender != null;
@@ -82,19 +78,5 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 			}
 		}
 		return null;
-	}
-
-	public static RadioChannel[] getChannels() {
-		return channels;
-	}
-	public static RadioChannel getChannelBy(int num) {
-		if (num < 1) return null;
-		return getChannels()[num-1];
-	}
-	public static RadioChannel createChannel(int num) {
-		if (num < 1) return null;
-		RadioChannel channel = new RadioChannel(num-1, vc_api);
-		channels[num-1] = channel;
-		return channel;
 	}
 }

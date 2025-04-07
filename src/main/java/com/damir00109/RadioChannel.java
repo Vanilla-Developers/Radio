@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 
-public class RadioChannel {
+public class RadioChannel implements Runnable{
 	private int channelNum;
 	private ArrayList<RadioSender> senders;
 	private int lastSenderIndex = -1;
@@ -65,5 +65,10 @@ public class RadioChannel {
 		for (int i = 0; i < this.getListeners().size(); i++) {
 			this.getListener(i).playAudio(audio);
 		}
+	}
+
+	@Override
+	public void run() {
+
 	}
 }

@@ -62,12 +62,7 @@ public class Radio {
 	}
 
 	public static class RadioBlock extends Block {
-		private ServerLevel level;
 		private BlockPos pos;
-		private RadioChannel channel;
-		private RadioSender sender;
-		private RadioListener listener;
-		private BlockState state;
 
 		public RadioBlock(Settings settings) {
 			super(settings);
@@ -90,40 +85,22 @@ public class Radio {
 					.with(LISTEN, true);
 		}
 		public void onMicrophoneNearby(MicrophonePacket packet) {
-			updateChannel();
-			if (channel == null) return;
-			VanillaDamir00109.LOGGER.info("LISTEN={}", state.get(LISTEN));
-
-			if (!state.get(LISTEN)) {
-				byte[] audio = packet.getOpusEncodedData();
-				createSender(-1);
-				if (sender == null) return;
-				sender.send(audio);
-			}
-		}
-
-		private void updateChannel() {
-			if (channel != null || state.get(POWER) < 1) return;
-			if ((channel = VanillaDamir00109.getChannelBy(state.get(POWER))) != null) return;
-			channel = VanillaDamir00109.createChannel(state.get(POWER));
+			return;
 		}
 
 		@Override
 		protected void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
 			if (world.isClient) return;
 			super.onBlockAdded(state, world, pos, oldState, notify);
-			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
 			this.pos = pos;
 			world.scheduleBlockTick(pos, this, 1/20);
 		}
 
 		@Override
 		protected void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
-			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
 			this.pos = pos;
 
 			update(state, world);
-			updateChannel();
 			world.scheduleBlockTick(pos, this, 1/20);
 		}
 
@@ -132,29 +109,12 @@ public class Radio {
 				BlockState state,
 				World world,
 				BlockPos pos) {
-			updateChannel();
-			if(state.get(POWER) < 1 || channel == null) return;
-			createSender(-1);
-			createListener(-1);
 
 			if (!new_listen) {
 				// If Radio mode is "speaking"
-				listener.setActive(false);
 			} else {
 				// If Radio mode is "listen"
-				sender.setActive(false);
 			}
-		}
-		private void createSender(int index) {
-			if (index < 0) index = Radio.lastSenderIndex+1;
-			if (channel.getSender(Radio.lastSenderIndex+1) != null) { createSender(index+1); } else { sender = channel.newSenderWith(Radio.lastSenderIndex + 1, level, pos.getX(), pos.getY(), pos.getZ()); }
-			if (index-1 == Radio.lastSenderIndex) Radio.lastSenderIndex = sender.getIndex();
-		}
-
-		private void createListener(int index) {
-			if (index < 0) index = Radio.lastListenerIndex+1;
-			if (channel.getListener(index) != null) { createListener(index+1); } else { listener = channel.newListenerWith(index, level, pos.getX(), pos.getY(), pos.getZ()); }
-			if (index-1 == Radio.lastListenerIndex) Radio.lastListenerIndex = listener.getIndex();
 		}
 
 		private BlockState getAnyBlockAbove(BlockPos pos, World world, int radius) {
@@ -197,7 +157,6 @@ public class Radio {
 
 			world.setBlockState(pos, state.with(LISTEN, newListen), 2);
 			this.onListenSwitch(newListen, state, world, pos);
-			this.state = state;
 		}
 
 		@Override
@@ -207,10 +166,6 @@ public class Radio {
 			int newPower = world.getReceivedRedstonePower(pos);
 
 			if (hasAdjacentBlocks) newPower = 0;
-
-			updateChannel();
-
-			if (!state.get(LISTEN)){createSender(-1);}else{createListener(-1);}
 
 			if (state.get(POWER) != newPower) world.setBlockState(pos, state.with(POWER, newPower), 2);
 		}
