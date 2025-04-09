@@ -1,8 +1,8 @@
 package com.damir00109;
 
-import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.audiosender.AudioSender;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
+import de.maxhenkel.voicechat.api.ServerLevel;
 
 public class RadioSender implements AudioSender, Runnable {
 	private final int num;
@@ -26,8 +26,6 @@ public class RadioSender implements AudioSender, Runnable {
 
 	public void setActive(boolean bool) { active = bool; }
 	public boolean isActive() { return active; }
-
-	public int getIndex() { return num; }
 
 	@Override
 	public boolean send(byte[] audio) {

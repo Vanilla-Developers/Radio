@@ -1,10 +1,10 @@
 package com.damir00109;
 
-import de.maxhenkel.voicechat.api.Position;
-import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;
 import de.maxhenkel.voicechat.api.audiolistener.AudioListener;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
+import de.maxhenkel.voicechat.api.ServerLevel;
+import de.maxhenkel.voicechat.api.Position;
 
 import java.util.UUID;
 
@@ -31,10 +31,6 @@ public class RadioListener implements AudioListener, Runnable {
 
 	public void setActive(boolean bool) { active = bool; }
 	public boolean isActive() { return active; }
-
-	public int getIndex() {
-		return num;
-	}
 
 	@Override
 	public UUID getListenerId() {
