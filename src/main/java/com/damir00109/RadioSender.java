@@ -6,13 +6,11 @@ import de.maxhenkel.voicechat.api.VoicechatServerApi;
 
 public class RadioSender implements AudioSender, Runnable {
 	private final int num;
-	private final RadioChannel channel;
 	private boolean active = true;
 
-	public RadioSender(int index, RadioChannel channel, VoicechatServerApi api, ServerLevel level, int x, int y, int z) {
-		VanillaDamir00109.LOGGER.info("Created Sender for index {}", index);
+	public RadioSender(int index, VoicechatServerApi api, ServerLevel level, int x, int y, int z) {
+		VanillaDamir00109.LOGGER.debug("Created Sender for index {}", index);
 		num = index;
-		this.channel = channel;
 	}
 
 	@Override
@@ -33,9 +31,9 @@ public class RadioSender implements AudioSender, Runnable {
 
 	@Override
 	public boolean send(byte[] audio) {
-		VanillaDamir00109.LOGGER.info("Sender {} active={}", num, active);
+		VanillaDamir00109.LOGGER.debug("Sender {} active={}", num, active);
 		if (!isActive()) return false;
-		channel.broadcast(audio);
+		//channel.broadcast(audio);
 		return true;
 	}
 

@@ -14,8 +14,8 @@ public class RadioListener implements AudioListener, Runnable {
 	private final UUID uuid;
 	private boolean active = true;
 
-	public RadioListener(int index, RadioChannel channel, VoicechatServerApi api, ServerLevel level, int x, int y, int z) {
-		VanillaDamir00109.LOGGER.info("Created Listener for index {}", index);
+	public RadioListener(int index, VoicechatServerApi api, ServerLevel level, int x, int y, int z) {
+		VanillaDamir00109.LOGGER.debug("Created Listener for index {}", index);
 		uuid = UUID.randomUUID();
 		num = index;
 		Position position = api.createPosition(x,y,z);
@@ -25,7 +25,7 @@ public class RadioListener implements AudioListener, Runnable {
 	}
 
 	public void playAudio(byte[] audio) {
-		VanillaDamir00109.LOGGER.info("Listener {} active={}", num, active);
+		VanillaDamir00109.LOGGER.debug("Listener {} active={}", num, active);
 		if (isActive()) static_channel.send(audio);
 	}
 

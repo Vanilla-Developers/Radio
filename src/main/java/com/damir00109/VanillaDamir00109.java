@@ -10,6 +10,7 @@ import net.fabricmc.api.ModInitializer;
 import net.minecraft.MinecraftVersion;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
@@ -76,6 +77,18 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 					}
 				}
 			}
+		}
+		return null;
+	}
+	public static BlockState getAnyBlockAbove(BlockPos pos, World world, int radius) {
+		BlockPos.Mutable mutablePos = new BlockPos.Mutable();
+
+		for (int yOffset = 1; yOffset <= radius; yOffset++) {
+			mutablePos.set(pos.getX(), pos.getY()+yOffset, pos.getZ());
+
+			BlockState blockstate = world.getBlockState(mutablePos);
+			if (blockstate.isOf(Blocks.VOID_AIR) || blockstate.isOf(Blocks.AIR)) continue;
+			return blockstate;
 		}
 		return null;
 	}

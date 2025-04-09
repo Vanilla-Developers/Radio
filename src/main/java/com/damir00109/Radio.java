@@ -101,39 +101,13 @@ public class Radio {
 			world.scheduleBlockTick(pos, this, 1/20);
 		}
 
-		protected void onListenSwitch(
-				boolean new_listen,
-				BlockState state,
-				World world,
-				BlockPos pos) {
-
-			/*if (!new_listen) {
-				// If Radio mode is "speaking"
-			} else {
-				// If Radio mode is "listen"
-			}*/
-		}
-
-		private BlockState getAnyBlockAbove(BlockPos pos, World world, int radius) {
-			BlockPos.Mutable mutablePos = new BlockPos.Mutable();
-
-			for (int yOffset = 1; yOffset <= radius; yOffset++) {
-				mutablePos.set(pos.getX(), pos.getY()+yOffset, pos.getZ());
-
-				BlockState blockstate = world.getBlockState(mutablePos);
-				if (blockstate.isOf(Blocks.VOID_AIR) || blockstate.isOf(Blocks.AIR)) continue;
-				return blockstate;
-			}
-			return null;
-		}
-
 		private BlockState getBlockAbove(BlockPos pos, World world, Block target, int radius) {
 			BlockPos.Mutable mutablePos = new BlockPos.Mutable();
 
 			for (int yOffset = 1; yOffset <= radius; yOffset++) {
 				mutablePos.set(pos.getX(), pos.getY() + yOffset, pos.getZ());
 
-				BlockState blockstate = getAnyBlockAbove(mutablePos, world, radius);
+				BlockState blockstate = VanillaDamir00109.getAnyBlockAbove(mutablePos, world, radius);
 				if (blockstate != null && blockstate.isOf(target)) {
 					return blockstate;
 				}
@@ -149,12 +123,11 @@ public class Radio {
 
 			boolean hasRodAbove = aboveState.isOf(Blocks.LIGHTNING_ROD);
 			boolean hasAdjacentRod = getBlockAbove(pos.add(0, 0, 0), world, Blocks.LIGHTNING_ROD, 1) != null;
-			boolean hasAdjacentBlocks = getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
+			boolean hasAdjacentBlocks = VanillaDamir00109.getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
 			boolean newActive = hasRodAbove && !hasAdjacentBlocks;
 			boolean newListen = !(newActive && hasAdjacentRod);
 			int newPower = world.getReceivedRedstonePower(pos);
-
-			//VanillaDamir00109.LOGGER.info("Active mod: {}", newActive);
+			VanillaDamir00109.LOGGER.debug("Radio has updated");
 
 			if (newActive) {
 				world.setBlockState(pos, state.with(LISTEN, newListen).with(POWER, newPower).with(ACTIVE, true), 3);
@@ -166,7 +139,7 @@ public class Radio {
 		@Override
 		public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify) {
 			if (world.isClient) return;
-			boolean hasAdjacentBlocks = getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
+			boolean hasAdjacentBlocks = VanillaDamir00109.getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
 			int newPower = world.getReceivedRedstonePower(pos);
 
 			if (hasAdjacentBlocks) newPower = 0;
