@@ -1,18 +1,13 @@
 package com.damir00109;
 
-import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.world.block.WireOrientation;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.random.Random;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.*;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
 import net.minecraft.world.World;
-import net.minecraft.registry.*;
 import net.minecraft.block.*;
 import net.minecraft.item.*;
 
@@ -21,29 +16,6 @@ public class Radio {
 	public static final EnumProperty<Direction> FACING = EnumProperty.of("facing", Direction.class);
 	public static final BooleanProperty LISTEN = BooleanProperty.of("listen");
 	public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
-
-	public static final Block RADIO = registerBlock("radio", new RadioBlock(Block.Settings.create()
-			.mapColor(MapColor.STONE_GRAY)
-			.strength(1.5f)
-			.pistonBehavior(PistonBehavior.BLOCK)
-			.registryKey(RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(VanillaDamir00109.MOD_ID, "radio")))
-	));
-
-	private static Block registerBlock(String name, Block block) {
-		Identifier id = Identifier.of(VanillaDamir00109.MOD_ID, name);
-		Registry.register(Registries.BLOCK, id, block);
-		Registry.register(Registries.ITEM, id, new BlockItem(block, new Item.Settings()
-				.registryKey(RegistryKey.of(RegistryKeys.ITEM, id))
-		));
-		return block;
-	}
-
-	public static void registerModBlocks() {
-		VanillaDamir00109.LOGGER.info("Registering Mod Blocks for " + VanillaDamir00109.MOD_ID);
-		ItemGroupEvents.modifyEntriesEvent(ItemGroups.REDSTONE).register(entries -> {
-			entries.add(RADIO);
-		});
-	}
 
 	public static class RadioBlock extends Block {
 		private BlockPos pos;
@@ -69,9 +41,6 @@ public class Radio {
 					.with(POWER, ctx.getWorld().getReceivedRedstonePower(ctx.getBlockPos()))
 					.with(LISTEN, true)
 					.with(ACTIVE, false);
-		}
-		public void onMicrophoneNearby(MicrophonePacket packet) {
-			return;
 		}
 
 		@Override

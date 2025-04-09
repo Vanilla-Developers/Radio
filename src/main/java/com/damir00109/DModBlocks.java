@@ -11,13 +11,26 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.state.StateManager;
+import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.EnumProperty;
+import net.minecraft.state.property.IntProperty;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Direction;
 import net.minecraft.item.ItemPlacementContext;
 
 public class DModBlocks {
     public static final EnumProperty<Direction> FACING = EnumProperty.of("facing", Direction.class);
+    public static final IntProperty POWER = IntProperty.of("power", 0, 15);
+    public static final BooleanProperty LISTEN = BooleanProperty.of("listen");
+    public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
+
+
+    public static final Block RADIO = registerBlock("radio", new Radio.RadioBlock(Block.Settings.create()
+            .mapColor(MapColor.STONE_GRAY)
+            .strength(1.5f)
+            .pistonBehavior(PistonBehavior.BLOCK)
+            .registryKey(RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(VanillaDamir00109.MOD_ID, "radio")))
+    ));
 
     public static final Block BURNT_RADIO = registerBlock(
             "burnt_radio",
@@ -43,6 +56,7 @@ public class DModBlocks {
         VanillaDamir00109.LOGGER.info("Registering Mod Blocks for " + VanillaDamir00109.MOD_ID);
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.REDSTONE).register(entries -> {
             entries.add(BURNT_RADIO);
+            entries.add(RADIO);
         });
     }
 

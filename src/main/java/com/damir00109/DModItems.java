@@ -4,18 +4,15 @@ import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.predicate.entity.EntityPredicates;
 import net.minecraft.entity.projectile.ProjectileUtil;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.item.consume.UseAction;
-import net.minecraft.block.*;
-import net.minecraft.block.entity.*;
+//import net.minecraft.block.*;
 import net.minecraft.entity.*;
 import net.minecraft.item.*;
-import net.minecraft.particle.*;
+//import net.minecraft.particle.*;
 import net.minecraft.registry.*;
-import net.minecraft.sound.*;
 import net.minecraft.util.*;
 import net.minecraft.util.hit.*;
-import net.minecraft.util.math.*;
+//import net.minecraft.util.math.*;
 import net.minecraft.world.World;
 
 public class DModItems {
@@ -36,8 +33,6 @@ public class DModItems {
 		});
 	}
 	private static class Brush extends Item {
-		public static final int ANIMATION_DURATION = 10;
-		private static final int MAX_BRUSH_TIME = 200;
 
 		public Brush(Item.Settings settings) {
 			super(settings);
@@ -61,56 +56,14 @@ public class DModItems {
 		}
 
 		public void usageTick(World world, LivingEntity user, ItemStack stack, int remainingUseTicks) {
-			if (remainingUseTicks >= 0 && user instanceof PlayerEntity playerEntity) {
-				HitResult hitResult = this.getHitResult(playerEntity);
-				if (hitResult instanceof BlockHitResult blockHitResult) {
-					if (hitResult.getType() == HitResult.Type.BLOCK) {
-						int i = this.getMaxUseTime(stack, user) - remainingUseTicks + 1;
-						boolean bl = i % 10 == 5;
-						if (bl) {
-							BlockPos blockPos = blockHitResult.getBlockPos();
-							BlockState blockState = world.getBlockState(blockPos);
-							Arm arm = user.getActiveHand() == Hand.MAIN_HAND ? playerEntity.getMainArm() : playerEntity.getMainArm().getOpposite();
-							if (blockState.hasBlockBreakParticles() && blockState.getRenderType() != BlockRenderType.INVISIBLE) {
-								this.addDustParticles(world, blockHitResult, blockState, user.getRotationVec(0.0F), arm);
-							}
-
-							Block var15 = blockState.getBlock();
-							SoundEvent soundEvent;
-							if (var15 instanceof BrushableBlock brushableBlock) {
-								soundEvent = brushableBlock.getBrushingSound();
-							} else {
-								soundEvent = SoundEvents.ITEM_BRUSH_BRUSHING_GENERIC;
-							}
-
-							world.playSound(playerEntity, blockPos, soundEvent, SoundCategory.BLOCKS);
-							if (world instanceof ServerWorld serverWorld) {
-								BlockEntity var16 = world.getBlockEntity(blockPos);
-								if (var16 instanceof BrushableBlockEntity brushableBlockEntity) {
-									boolean bl2 = brushableBlockEntity.brush(world.getTime(), serverWorld, playerEntity, blockHitResult.getSide(), stack);
-									if (bl2) {
-										EquipmentSlot equipmentSlot = stack.equals(playerEntity.getEquippedStack(EquipmentSlot.OFFHAND)) ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND;
-										stack.damage(1, playerEntity, equipmentSlot);
-									}
-								}
-							}
-						}
-
-						return;
-					}
-				}
-
-				user.stopUsingItem();
-			} else {
-				user.stopUsingItem();
-			}
+			user.stopUsingItem();
 		}
 
 		private HitResult getHitResult(PlayerEntity user) {
 			return ProjectileUtil.getCollision(user, EntityPredicates.CAN_HIT, user.getBlockInteractionRange());
 		}
 
-		private void addDustParticles(World world, BlockHitResult hitResult, BlockState state, Vec3d userRotation, Arm arm) {
+		/*private void addDustParticles(World world, BlockHitResult hitResult, BlockState state, Vec3d userRotation, Arm arm) {
 			double d = 3.0;
 			int i = arm == Arm.RIGHT ? 1 : -1;
 			int j = world.getRandom().nextBetweenExclusive(7, 12);
@@ -159,6 +112,6 @@ public class DModItems {
 			public double zd() {
 				return this.zd;
 			}
-		}
+		}*/
 	}
 }

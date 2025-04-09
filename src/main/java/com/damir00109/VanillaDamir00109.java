@@ -18,7 +18,6 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public void onInitialize() {
 		LOGGER.info("Register blocks and items...");
 		DModItems.registerModItems();
-		Radio.registerModBlocks();
 		DModBlocks.registerModBlocks();
 	}
 
@@ -48,11 +47,11 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		MicrophonePacket packet = event.getPacket();
 		assert sender != null;
 		PlayerEntity player = (PlayerEntity) sender.getPlayer().getPlayer();
-		Block target = Radio.RADIO;
+		Block target = DModBlocks.RADIO;
 
 		Radio.RadioBlock near_radio = (Radio.RadioBlock) getBlockNearby(player, target, 15);
 		if (!(near_radio instanceof Radio.RadioBlock)) return;
-		near_radio.onMicrophoneNearby(packet);
+		//near_radio.onMicrophoneNearby(packet);
 	}
 
 	public static Block getBlockNearby(PlayerEntity player, Block target, int radius) {
