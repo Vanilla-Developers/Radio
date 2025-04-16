@@ -1,85 +1,43 @@
 package com.damir00109;
 
-import de.maxhenkel.voicechat.api.ServerLevel;
-import de.maxhenkel.voicechat.api.audiochannel.AudioPlayer;
+import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.MapColor;
-import net.minecraft.block.piston.PistonBehavior;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroups;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.BooleanProperty;
-import net.minecraft.state.property.EnumProperty;
-import net.minecraft.state.property.IntProperty;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.World;
 import net.minecraft.world.block.WireOrientation;
-import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.random.Random;
 import org.jetbrains.annotations.Nullable;
+import net.minecraft.state.StateManager;
+import net.minecraft.state.property.*;
+import net.minecraft.util.math.*;
+import net.minecraft.world.World;
+import net.minecraft.block.*;
+import net.minecraft.item.*;
 
 public class Radio {
-
 	public static final IntProperty POWER = IntProperty.of("power", 0, 15);
 	public static final EnumProperty<Direction> FACING = EnumProperty.of("facing", Direction.class);
 	public static final BooleanProperty LISTEN = BooleanProperty.of("listen");
-
-	public static final Block RADIO = registerBlock("radio", new RadioBlock(Block.Settings.create()
-			.mapColor(MapColor.STONE_GRAY)
-			.strength(1.5f)
-			.pistonBehavior(PistonBehavior.BLOCK)
-			.registryKey(RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(VanillaDamir00109.MOD_ID, "radio")))
-	));
-
-	private static Block registerBlock(String name, Block block) {
-		Identifier id = Identifier.of(VanillaDamir00109.MOD_ID, name);
-		Registry.register(Registries.BLOCK, id, block);
-		Registry.register(Registries.ITEM, id, new BlockItem(block, new Item.Settings()
-				.registryKey(RegistryKey.of(RegistryKeys.ITEM, id))
-		));
-		return block;
-	}
-
-	public static void registerModBlocks() {
-		VanillaDamir00109.LOGGER.info("Registering Mod Blocks for " + VanillaDamir00109.MOD_ID);
-		ItemGroupEvents.modifyEntriesEvent(ItemGroups.REDSTONE).register(entries -> {
-			entries.add(RADIO);
-		});
-	}
+	public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
+	public static final IntProperty LISTENER_ID = IntProperty.of("listener", 0, 99999999);
+	public static final IntProperty SENDER_ID = IntProperty.of("sender", 0, 99999999);
 
 	public static class RadioBlock extends Block {
-		private ServerLevel level;
 		private BlockPos pos;
-		private boolean listen_sate = true;
-		private int power = 0;
-		private RadioChannel channel;
-		private int senderIndex = -1;
-		private int listenerIndex = -1;
-		private AudioPlayer ap;
 
 		public RadioBlock(Settings settings) {
 			super(settings);
 			this.setDefaultState(this.stateManager.getDefaultState()
 					.with(POWER, 0)
 					.with(FACING, Direction.EAST)
-					.with(LISTEN, true));
+					.with(LISTEN, true)
+					.with(ACTIVE, false)
+					.with(LISTENER_ID, 0)
+					.with(SENDER_ID, 0));
 		}
 
 		@Override
 		protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-			builder.add(POWER, FACING, LISTEN);
+			builder.add(POWER, FACING, LISTEN, ACTIVE, LISTENER_ID, SENDER_ID);
 		}
 
 		@Override
@@ -87,97 +45,25 @@ public class Radio {
 			return this.getDefaultState()
 					.with(FACING, ctx.getHorizontalPlayerFacing().getOpposite())
 					.with(POWER, ctx.getWorld().getReceivedRedstonePower(ctx.getBlockPos()))
-					.with(LISTEN, true);
-		}
-		public void onMicrophoneNearby(MicrophonePacket packet) {
-			updateChannel();
-			if (channel == null) return;
-
-			if (!listen_sate) {
-				byte[] audio = packet.getOpusEncodedData();
-
-				RadioSender unit = getSender();
-				unit.send(audio);
-			}
-		}
-
-		private void updateChannel() {
-			if (channel != null || power < 1) return;
-			channel = VanillaDamir00109.createChannel(power);
-
-			//VanillaDamir00109.LOGGER.info("Channel {}", channel.toString());
-			VanillaDamir00109.LOGGER.info("Channel num.: {}", (power-1));
+					.with(LISTEN, true)
+					.with(ACTIVE, false)
+					.with(LISTENER_ID, 0)
+					.with(SENDER_ID, 0);
 		}
 
 		@Override
 		protected void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
 			if (world.isClient) return;
-			super.onBlockAdded(state, world, pos, oldState, notify);
-			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
 			this.pos = pos;
+			world.scheduleBlockTick(pos, this, 1/20);
 		}
 
 		@Override
-		protected void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
-			if (world.isClient) return;
-			level = VanillaDamir00109.get_VCAPI().fromServerLevel(world);
+		protected void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
 			this.pos = pos;
 
 			update(state, world);
-			updateChannel();
-		}
-
-		protected void onListenSwitch(
-				boolean new_listen,
-				BlockState state,
-				World world,
-				BlockPos pos) {
-			if(power < 1 || channel == null) return;
-			updateChannel();
-
-			if (!new_listen) {
-				// If Radio mode is "speaking"
-				RadioSender sender = getSender();
-			} else {
-				// If Radio mode is "listen"
-				RadioListener sender = getListener();
-			}
-		}
-		private RadioSender getSender() {
-			if (channel == null) return null;
-			RadioSender sender;
-			if (senderIndex < 0) {
-				sender = channel.newSender(level, pos.getX(), pos.getY(), pos.getZ());
-				senderIndex = sender.getIndex();
-				return sender;
-			}
-			return channel.getSender(senderIndex);
-		}
-
-		private RadioListener getListener() {
-			if (channel == null) return null;
-			RadioListener listener;
-			if (listenerIndex < 0) {
-				listener = channel.newListener(level, pos.getX(), pos.getY(), pos.getZ());
-				listenerIndex = listener.getIndex();
-				return listener;
-			}
-			return channel.getListener(listenerIndex);
-		}
-
-		private BlockState getAnyBlockAbove(BlockPos pos, World world, int radius) {
-			BlockPos.Mutable mutablePos = new BlockPos.Mutable();
-
-			for (int yOffset = 1; yOffset <= radius; yOffset++) {
-				mutablePos.set(pos.getX(), pos.getY()+yOffset, pos.getZ());
-
-				BlockState blockstate = world.getBlockState(mutablePos);
-				if (blockstate.isOf(Blocks.VOID_AIR) || blockstate.isOf(Blocks.AIR)) continue;
-				//VanillaDamir00109.LOGGER.info("Block up: {}", blockstate);
-				return blockstate;
-
-			}
-			return null;
+			world.scheduleBlockTick(pos, this, 1/20);
 		}
 
 		private BlockState getBlockAbove(BlockPos pos, World world, Block target, int radius) {
@@ -186,7 +72,7 @@ public class Radio {
 			for (int yOffset = 1; yOffset <= radius; yOffset++) {
 				mutablePos.set(pos.getX(), pos.getY() + yOffset, pos.getZ());
 
-				BlockState blockstate = getAnyBlockAbove(mutablePos, world, radius);
+				BlockState blockstate = VanillaDamir00109.getAnyBlockAbove(mutablePos, world, radius);
 				if (blockstate != null && blockstate.isOf(target)) {
 					return blockstate;
 				}
@@ -196,33 +82,56 @@ public class Radio {
 
 		public void update(BlockState state, World world) {
 			if (world.isClient) return;
+
 			BlockPos abovePos = pos.up();
 			BlockState aboveState = world.getBlockState(abovePos);
+
 			boolean hasRodAbove = aboveState.isOf(Blocks.LIGHTNING_ROD);
 			boolean hasAdjacentRod = getBlockAbove(pos.add(0, 0, 0), world, Blocks.LIGHTNING_ROD, 1) != null;
-			boolean hasAdjacentBlocks = getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
-			boolean newListen = hasRodAbove && !hasAdjacentRod && !hasAdjacentBlocks;
-			world.setBlockState(pos, state.with(LISTEN, newListen), 2);
-			this.onListenSwitch(newListen, state, world, pos);
-			this.listen_sate = newListen;
+			boolean hasAdjacentBlocks = VanillaDamir00109.getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
+			boolean newActive = hasRodAbove && !hasAdjacentBlocks;
+			boolean newListen = !(newActive && hasAdjacentRod);
+			int newPower = world.getReceivedRedstonePower(pos);
+			VanillaDamir00109.LOGGER.debug("Radio has updated");
+
+			Channel channel = VanillaDamir00109.getOrCreate(newPower);
+			VoicechatServerApi api = VanillaDamir00109.getAPI();
+			int listener_index = channel.getOrCreateListener(api.fromServerLevel(world), pos).getNum();
+			int sender_index = channel.getOrCreateSender(api.fromServerLevel(world), pos).getNum();
+
+			if (newActive) {
+				world.setBlockState(pos,
+						state.with(LISTEN, newListen)
+								.with(POWER, newPower)
+								.with(ACTIVE, true)
+								.with(LISTENER_ID, listener_index)
+								.with(SENDER_ID, sender_index),
+						3);
+			} else {
+				world.setBlockState(pos, state.with(LISTEN, true).with(POWER, 0).with(ACTIVE, false), 3);
+			}
 		}
 
 		@Override
 		public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify) {
 			if (world.isClient) return;
-			boolean hasAdjacentBlocks = getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
-
+			boolean hasAdjacentBlocks = VanillaDamir00109.getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
 			int newPower = world.getReceivedRedstonePower(pos);
 
 			if (hasAdjacentBlocks) newPower = 0;
-			updateChannel();
-			getSender();
-			getListener();
 
-			if (state.get(POWER) != newPower) {
-				world.setBlockState(pos, state.with(POWER, newPower), 2);
-				this.power = newPower;
-			}
+			if (state.get(POWER) != newPower) world.setBlockState(pos, state.with(POWER, newPower), 2);
+		}
+
+		public Sender getSender(BlockState state) {
+			Channel channel = VanillaDamir00109.getOrCreate(state.get(POWER));
+			VoicechatServerApi api = VanillaDamir00109.getAPI();
+			return channel.getOrCreateSender(state.get(SENDER_ID));
+		}
+
+		public void onMicrophoneNearby(BlockState state, MicrophonePacket packet) {
+			Sender sender = getSender(state);
+			sender.send(packet);
 		}
 	}
 }
