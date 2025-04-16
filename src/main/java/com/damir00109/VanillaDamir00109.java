@@ -13,6 +13,27 @@ import org.slf4j.*;
 public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public static final String MOD_ID = "vpl";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+	public static final Channel[] channels = new Channel[15];
+	public static VoicechatServerApi api;
+
+	public static Channel getChannel(int index) {
+		return channels[index];
+	}
+
+	public static Channel createChannel(int index) {
+		Channel channel = new Channel(index, api);
+		channels[index] = channel;
+		return channel;
+	}
+	public static Channel getOrCreate(int index) {
+		Channel channel = getChannel(index);
+		if (channel == null) channel = createChannel(index);
+		return channel;
+	}
+
+	public static VoicechatServerApi getAPI() {
+		return api;
+	}
 
 	@Override
 	public void onInitialize() {
@@ -26,8 +47,8 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 
 	@Override
 	public void initialize(VoicechatApi api) {
-		VoicechatPlugin.super.initialize(api);
 		LOGGER.info("VoiceChat initialized");
+		this.api = (VoicechatServerApi) api;
 	}
 
 	@Override
@@ -49,12 +70,13 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		PlayerEntity player = (PlayerEntity) sender.getPlayer().getPlayer();
 		Block target = DModBlocks.RADIO;
 
-		Radio.RadioBlock near_radio = (Radio.RadioBlock) getBlockNearby(player, target, 15);
-		if (!(near_radio instanceof Radio.RadioBlock)) return;
-		//near_radio.onMicrophoneNearby(packet);
+		BlockState near_radio = getBlockNearby(player, target, 15);
+		assert near_radio != null;
+		if (!(near_radio.isOf(target))) return;
+		((Radio.RadioBlock) near_radio.getBlock()).onMicrophoneNearby(near_radio, packet);
 	}
 
-	public static Block getBlockNearby(PlayerEntity player, Block target, int radius) {
+	public static BlockState getBlockNearby(PlayerEntity player, Block target, int radius) {
 		World world = player.getWorld();
 		BlockPos playerPos = player.getBlockPos();
 
@@ -64,7 +86,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 					BlockPos checkPos = playerPos.add(x, y, z);
 					BlockState check_block = world.getBlockState(checkPos);
 					if(check_block.isOf(target)) {
-						return check_block.getBlock();
+						return check_block;
 					}
 				}
 			}
