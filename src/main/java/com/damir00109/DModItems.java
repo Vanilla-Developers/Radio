@@ -1,117 +1,100 @@
 package com.damir00109;
 
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.minecraft.predicate.entity.EntityPredicates;
-import net.minecraft.entity.projectile.ProjectileUtil;
+import net.minecraft.block.entity.BrushableBlockEntity;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.consume.UseAction;
-//import net.minecraft.block.*;
-import net.minecraft.entity.*;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.item.*;
-//import net.minecraft.particle.*;
-import net.minecraft.registry.*;
-import net.minecraft.util.*;
-import net.minecraft.util.hit.*;
-//import net.minecraft.util.math.*;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.world.World;
+import net.minecraft.server.world.ServerWorld;
+
 
 public class DModItems {
-	public static final Item BRUSH = registerItem("brush", new Brush(new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(VanillaDamir00109.MOD_ID, "brush")))));
-	public static final Item RAW_PINK_GARNET = registerItem("raw_pink_garnet", new Item(new Item.Settings().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(VanillaDamir00109.MOD_ID, "raw_pink_garnet")))));
+	public static final Item GLOWING_BRUSH = registerItem("glowing_brush",
+			new BrushItem(new Item.Settings().maxDamage(64).registryKey(
+					RegistryKey.of(RegistryKeys.ITEM, Identifier.of(VanillaDamir00109.MOD_ID, "glowing_brush"))
+			)));
 
 	private static Item registerItem(String name, Item item) {
-		Identifier id = Identifier.of(VanillaDamir00109.MOD_ID, name);
-		return Registry.register(Registries.ITEM, id, item);
+		return Registry.register(Registries.ITEM, Identifier.of(VanillaDamir00109.MOD_ID, name), item);
 	}
 
 	public static void registerModItems() {
-		VanillaDamir00109.LOGGER.info("Registering Mod Items for " + VanillaDamir00109.MOD_ID);
-
-		ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS).register(entries -> {
-			entries.add(BRUSH);
-			entries.add(RAW_PINK_GARNET);
+		ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS).register(entries -> {
+			entries.addAfter(Items.BRUSH, GLOWING_BRUSH);
 		});
 	}
-	private static class Brush extends Item {
 
-		public Brush(Item.Settings settings) {
+	public static class BrushItem extends Item {
+		public BrushItem(Settings settings) {
 			super(settings);
 		}
 
+		@Override
 		public ActionResult useOnBlock(ItemUsageContext context) {
-			PlayerEntity playerEntity = context.getPlayer();
-			if (playerEntity != null && this.getHitResult(playerEntity).getType() == HitResult.Type.BLOCK) {
-				playerEntity.setCurrentHand(context.getHand());
+			PlayerEntity player = context.getPlayer();
+			World world = context.getWorld();
+			BlockHitResult hitResult = new BlockHitResult(
+					context.getHitPos(),
+					context.getSide(),
+					context.getBlockPos(),
+					context.hitsInsideBlock()
+			);
+
+			if (player != null && world.getBlockEntity(hitResult.getBlockPos()) instanceof BrushableBlockEntity) {
+				player.setCurrentHand(context.getHand());
+				return ActionResult.CONSUME;
 			}
-
-			return ActionResult.CONSUME;
+			return ActionResult.PASS;
 		}
 
-		public UseAction getUseAction(ItemStack stack) {
-			return UseAction.BRUSH;
-		}
-
-		public int getMaxUseTime(ItemStack stack, LivingEntity user) {
-			return 200;
-		}
-
+		@Override
 		public void usageTick(World world, LivingEntity user, ItemStack stack, int remainingUseTicks) {
-			user.stopUsingItem();
+			if (!(world instanceof ServerWorld serverWorld) || !(user instanceof PlayerEntity)) return;
+
+			HitResult hitResult = user.raycast(10.0, 0.0f, false);
+			if (hitResult.getType() != HitResult.Type.BLOCK) return;
+
+			BlockHitResult blockHit = (BlockHitResult) hitResult;
+			if (serverWorld.getBlockEntity(blockHit.getBlockPos()) instanceof BrushableBlockEntity brushable) {
+				if (remainingUseTicks == this.getMaxUseTime(stack, user) - 1) {
+					user.playSound(SoundEvents.ITEM_BRUSH_BRUSHING_SAND, 1.0f, 1.0f);
+				}
+
+				if (brushable.brush(serverWorld.getTime(), serverWorld, user, blockHit.getSide(), stack)) {
+					EquipmentSlot slot = user.getActiveHand() == Hand.MAIN_HAND
+							? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND;
+
+					stack.damage(1, user, slot);
+				}
+			}
 		}
 
-		private HitResult getHitResult(PlayerEntity user) {
-			return ProjectileUtil.getCollision(user, EntityPredicates.CAN_HIT, user.getBlockInteractionRange());
+		@Override
+		public int getMaxUseTime(ItemStack stack, LivingEntity user) {
+			return 225; // Время использования как у ванильной кисти
 		}
 
-		/*private void addDustParticles(World world, BlockHitResult hitResult, BlockState state, Vec3d userRotation, Arm arm) {
-			double d = 3.0;
-			int i = arm == Arm.RIGHT ? 1 : -1;
-			int j = world.getRandom().nextBetweenExclusive(7, 12);
-			BlockStateParticleEffect blockStateParticleEffect = new BlockStateParticleEffect(ParticleTypes.BLOCK, state);
-			Direction direction = hitResult.getSide();
-			DustParticlesOffset dustParticlesOffset = DustParticlesOffset.fromSide(userRotation, direction);
-			Vec3d vec3d = hitResult.getPos();
-
-			for(int k = 0; k < j; ++k) {
-				world.addParticleClient(blockStateParticleEffect, vec3d.x - (double)(direction == Direction.WEST ? 1.0E-6F : 0.0F), vec3d.y, vec3d.z - (double)(direction == Direction.NORTH ? 1.0E-6F : 0.0F), dustParticlesOffset.xd() * (double)i * 3.0 * world.getRandom().nextDouble(), 0.0, dustParticlesOffset.zd() * (double)i * 3.0 * world.getRandom().nextDouble());
+		@Override
+		public boolean onStoppedUsing(ItemStack stack, World world, LivingEntity user, int remainingUseTicks) {
+			if (user instanceof PlayerEntity player) {
+				player.getItemCooldownManager().set(stack, 10);
 			}
-
+			return false;
 		}
-
-		private record DustParticlesOffset(double xd, double yd, double zd) {
-			private static final double field_42685 = 1.0;
-			private static final double field_42686 = 0.1;
-
-			private DustParticlesOffset(double xd, double yd, double zd) {
-				this.xd = xd;
-				this.yd = yd;
-				this.zd = zd;
-			}
-
-			public static DustParticlesOffset fromSide(Vec3d userRotation, Direction side) {
-				double d = 0.0;
-
-				return switch (side) {
-					case DOWN, UP -> new DustParticlesOffset(userRotation.getZ(), 0.0, -userRotation.getX());
-					case NORTH -> new DustParticlesOffset(1.0, 0.0, -0.1);
-					case SOUTH -> new DustParticlesOffset(-1.0, 0.0, 0.1);
-					case WEST -> new DustParticlesOffset(-0.1, 0.0, -1.0);
-					case EAST -> new DustParticlesOffset(0.1, 0.0, 1.0);
-					default -> throw new MatchException((String) null, (Throwable) null);
-				};
-			}
-
-			public double xd() {
-				return this.xd;
-			}
-
-			public double yd() {
-				return this.yd;
-			}
-
-			public double zd() {
-				return this.zd;
-			}
-		}*/
 	}
+
+
 }

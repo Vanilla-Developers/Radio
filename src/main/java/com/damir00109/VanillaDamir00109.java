@@ -39,11 +39,13 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public void onInitialize() {
 		LOGGER.info("Register blocks and items...");
 		DModItems.registerModItems();
-		DModBlocks.registerModBlocks();
+		//DModBlocks.registerModBlocks();
 	}
 
 	@Override
-	public String getPluginId() { return MOD_ID; }
+	public String getPluginId() {
+		return MOD_ID;
+	}
 
 	@Override
 	public void initialize(VoicechatApi api) {
@@ -60,7 +62,10 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	}
 	private void onServerStarted(VoicechatServerStartedEvent event) {}
 
-	private boolean vc_on() {return false;}
+	private boolean vc_on() {
+		return false;
+
+	}
 	
 	private void onMicPacket(MicrophonePacketEvent event) {
 		if (vc_on()) return;

@@ -25,6 +25,7 @@ public class Sender {
 	}
 
 	public int getNum() {
+
 		return num;
 	}
 }
