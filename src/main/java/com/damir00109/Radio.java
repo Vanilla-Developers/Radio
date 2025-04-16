@@ -18,8 +18,8 @@ public class Radio {
 	public static final EnumProperty<Direction> FACING = EnumProperty.of("facing", Direction.class);
 	public static final BooleanProperty LISTEN = BooleanProperty.of("listen");
 	public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
-	public static final IntProperty LISTENER_ID = IntProperty.of("listener", 0, 999999);
-	public static final IntProperty SENDER_ID = IntProperty.of("sender", 0, 999999);
+	public static final IntProperty LISTENER_ID = IntProperty.of("listener", 0, 99999);
+	public static final IntProperty SENDER_ID = IntProperty.of("sender", 0, 99999);
 
 	public static class RadioBlock extends Block {
 		private BlockPos pos;
