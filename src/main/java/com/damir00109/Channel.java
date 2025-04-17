@@ -5,14 +5,16 @@ import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Channel {
 	private final VoicechatServerApi api;
 	private final int num;
-	private ArrayList<Listener> listeners;
-	private ArrayList<Sender> senders;
-	private int lastListenerIndex;
-	private int lastSenderIndex;
+	public static final HashMap<BlockPos, Listener> listeners = new HashMap<>();
+	public static final HashMap<BlockPos, Sender> senders = new HashMap<>();
 
 	public Channel(int index, VoicechatServerApi api) {
 		this.api = api;
@@ -20,64 +22,47 @@ public class Channel {
 	}
 
 	public Listener getOrCreateListener(ServerLevel level, BlockPos pos) {
-		return getOrCreateListener(-1, level, pos);
-	}
-	public Listener getOrCreateListener(int index) {
-		return getOrCreateListener(index, null, null);
-	}
-
-	public Listener getOrCreateListener(int index, ServerLevel level, BlockPos pos) {
-		Listener listener;
-		if (index == -1) {
+		Listener listener = listeners.get(pos);
+		if (listener == null) {
 			listener = newListener(level, pos);
-		} else {
-			listener = getListener(index);
 		}
 		return listener;
 	}
 
-	private Sender getSender(int index) {
-		return senders.get(index);
+	public Sender getSender(BlockPos pos) {
+		return senders.get(pos);
 	}
 
 	private Sender newSender(ServerLevel level, BlockPos pos) {
-		Sender sender = new Sender(lastSenderIndex+1, this, api, level, pos);
-		senders.add(sender);
-		lastSenderIndex += 1;
+		Sender sender = new Sender(senders.size(), this, api, level, pos);
+		senders.put(pos, sender);
 		return sender;
 	}
-	public Sender getOrCreateSender(ServerLevel level, BlockPos pos) {
-		return getOrCreateSender(-1, level, pos);
-	}
-	public Sender getOrCreateSender(int index) {
-		return getOrCreateSender(index, null, null);
-	}
 
-	public Sender getOrCreateSender(int index, ServerLevel level, BlockPos pos) {
-		Sender sender;
-		if (index == -1) {
+	public Sender getOrCreateSender(ServerLevel level, BlockPos pos) {
+		Sender sender = senders.get(pos);
+		if (sender == null) {
 			sender = newSender(level, pos);
-		} else {
-			sender = getSender(index);
 		}
 		return sender;
 	}
-
-	private Listener getListener(int index) {
-		return listeners.get(index);
+	public Listener getListener(BlockPos pos) {
+		return listeners.get(pos);
 	}
 
 	private Listener newListener(ServerLevel level, BlockPos pos) {
-		Listener listener = new Listener(lastListenerIndex+1, this, api, level, pos);
-		listeners.add(listener);
-		lastListenerIndex += 1;
+		Listener listener = new Listener(listeners.size(), this, api, level, pos);
+		listeners.put(pos, listener);
 		return listener;
 	}
 
 	public void broadcast(MicrophonePacket packet) {
-		for (Listener listener : listeners) {
-			listener.sendAudio(packet);
-		}
+		ExecutorService executor = Executors.newFixedThreadPool(5);
+		listeners.forEach((pos, listener) -> {
+			executor.submit(() -> {
+				listener.sendAudio(packet);
+			});
+		}); //executor.shutdown();
 	}
 
 	public int getIndex() {

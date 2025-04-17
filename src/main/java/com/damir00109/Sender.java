@@ -18,14 +18,12 @@ public class Sender {
 		this.channel = channel;
 		num = index;
 	}
-	public boolean send(MicrophonePacket packet) {
+	public void send(MicrophonePacket packet) {
 		//VanillaDamir00109.LOGGER.info("Sender {} active={}", num, active);
 		channel.broadcast(packet);
-		return true;
 	}
 
 	public int getNum() {
-
 		return num;
 	}
 }

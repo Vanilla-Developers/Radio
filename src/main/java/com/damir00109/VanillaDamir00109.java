@@ -10,6 +10,9 @@ import net.minecraft.world.World;
 import net.minecraft.block.*;
 import org.slf4j.*;
 
+import java.util.HashMap;
+import java.util.Objects;
+
 public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public static final String MOD_ID = "vpl";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
@@ -17,12 +20,14 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public static VoicechatServerApi api;
 
 	public static Channel getChannel(int index) {
-		return channels[index];
+		if (index <= 0) return getChannel(index+1);
+		return channels[index-1];
 	}
 
 	public static Channel createChannel(int index) {
-		Channel channel = new Channel(index, api);
-		channels[index] = channel;
+		if (index <= 0) return createChannel(index+1);
+		Channel channel = new Channel(index-1, api);
+		channels[index-1] = channel;
 		return channel;
 	}
 	public static Channel getOrCreate(int index) {
@@ -39,7 +44,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public void onInitialize() {
 		LOGGER.info("Register blocks and items...");
 		DModItems.registerModItems();
-		//DModBlocks.registerModBlocks();
+		DModBlocks.registerModBlocks();
 	}
 
 	@Override
@@ -49,8 +54,8 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 
 	@Override
 	public void initialize(VoicechatApi api) {
+		VanillaDamir00109.api = (VoicechatServerApi) api;
 		LOGGER.info("VoiceChat initialized");
-		this.api = (VoicechatServerApi) api;
 	}
 
 	@Override
@@ -64,24 +69,26 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 
 	private boolean vc_on() {
 		return false;
-
 	}
+
+	private record BlockData(BlockState state, BlockPos pos) {}
 	
 	private void onMicPacket(MicrophonePacketEvent event) {
 		if (vc_on()) return;
 		VoicechatConnection sender = event.getSenderConnection();
 		MicrophonePacket packet = event.getPacket();
+		ServerLevel level = Objects.requireNonNull(event.getSenderConnection()).getPlayer().getServerLevel();
 		assert sender != null;
 		PlayerEntity player = (PlayerEntity) sender.getPlayer().getPlayer();
 		Block target = DModBlocks.RADIO;
 
-		BlockState near_radio = getBlockNearby(player, target, 15);
+		BlockData near_radio = getBlockNearby(player, target, 15);
 		assert near_radio != null;
-		if (!(near_radio.isOf(target))) return;
-		((Radio.RadioBlock) near_radio.getBlock()).onMicrophoneNearby(near_radio, packet);
+		if (!(near_radio.state().isOf(target))) return;
+		((Radio.RadioBlock) near_radio.state().getBlock()).onMicrophoneNearby(near_radio.state(), near_radio.pos(), level, packet);
 	}
 
-	public static BlockState getBlockNearby(PlayerEntity player, Block target, int radius) {
+	public static BlockData getBlockNearby(PlayerEntity player, Block target, int radius) {
 		World world = player.getWorld();
 		BlockPos playerPos = player.getBlockPos();
 
@@ -91,7 +98,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 					BlockPos checkPos = playerPos.add(x, y, z);
 					BlockState check_block = world.getBlockState(checkPos);
 					if(check_block.isOf(target)) {
-						return check_block;
+						return new BlockData(check_block, checkPos);
 					}
 				}
 			}

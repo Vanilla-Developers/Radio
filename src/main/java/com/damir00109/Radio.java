@@ -1,5 +1,6 @@
 package com.damir00109;
 
+import de.maxhenkel.voicechat.api.ServerLevel;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.minecraft.world.block.WireOrientation;
@@ -18,8 +19,6 @@ public class Radio {
 	public static final EnumProperty<Direction> FACING = EnumProperty.of("facing", Direction.class);
 	public static final BooleanProperty LISTEN = BooleanProperty.of("listen");
 	public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
-	public static final IntProperty LISTENER_ID = IntProperty.of("listener", 0, 99999);
-	public static final IntProperty SENDER_ID = IntProperty.of("sender", 0, 99999);
 
 	public static class RadioBlock extends Block {
 		private BlockPos pos;
@@ -30,14 +29,12 @@ public class Radio {
 					.with(POWER, 0)
 					.with(FACING, Direction.EAST)
 					.with(LISTEN, true)
-					.with(ACTIVE, false)
-					.with(LISTENER_ID, 0)
-					.with(SENDER_ID, 0));
+					.with(ACTIVE, false));
 		}
 
 		@Override
 		protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-			builder.add(POWER, FACING, LISTEN, ACTIVE, LISTENER_ID, SENDER_ID);
+			builder.add(POWER, FACING, LISTEN, ACTIVE);
 		}
 
 		@Override
@@ -46,9 +43,7 @@ public class Radio {
 					.with(FACING, ctx.getHorizontalPlayerFacing().getOpposite())
 					.with(POWER, ctx.getWorld().getReceivedRedstonePower(ctx.getBlockPos()))
 					.with(LISTEN, true)
-					.with(ACTIVE, false)
-					.with(LISTENER_ID, 0)
-					.with(SENDER_ID, 0);
+					.with(ACTIVE, false);
 		}
 
 		@Override
@@ -96,16 +91,14 @@ public class Radio {
 
 			Channel channel = VanillaDamir00109.getOrCreate(newPower);
 			VoicechatServerApi api = VanillaDamir00109.getAPI();
-			int listener_index = channel.getOrCreateListener(api.fromServerLevel(world), pos).getNum();
+			getListener(state, pos, api.fromServerLevel(world));
 			int sender_index = channel.getOrCreateSender(api.fromServerLevel(world), pos).getNum();
 
 			if (newActive) {
 				world.setBlockState(pos,
 						state.with(LISTEN, newListen)
 								.with(POWER, newPower)
-								.with(ACTIVE, true)
-								.with(LISTENER_ID, listener_index)
-								.with(SENDER_ID, sender_index),
+								.with(ACTIVE, true),
 						3);
 			} else {
 				world.setBlockState(pos, state.with(LISTEN, true).with(POWER, 0).with(ACTIVE, false), 3);
@@ -123,14 +116,19 @@ public class Radio {
 			if (state.get(POWER) != newPower) world.setBlockState(pos, state.with(POWER, newPower), 2);
 		}
 
-		public Sender getSender(BlockState state) {
+		public Sender getSender(BlockState state, BlockPos pos, ServerLevel level) {
 			Channel channel = VanillaDamir00109.getOrCreate(state.get(POWER));
 			VoicechatServerApi api = VanillaDamir00109.getAPI();
-			return channel.getOrCreateSender(state.get(SENDER_ID));
+			return channel.getOrCreateSender(level, pos);
+		}
+		public Listener getListener(BlockState state, BlockPos pos, ServerLevel level) {
+			Channel channel = VanillaDamir00109.getOrCreate(state.get(POWER));
+			VoicechatServerApi api = VanillaDamir00109.getAPI();
+			return channel.getOrCreateListener(level, pos);
 		}
 
-		public void onMicrophoneNearby(BlockState state, MicrophonePacket packet) {
-			Sender sender = getSender(state);
+		public void onMicrophoneNearby(BlockState state, BlockPos pos, ServerLevel level, MicrophonePacket packet) {
+			Sender sender = getSender(state, pos, level);
 			sender.send(packet);
 		}
 	}

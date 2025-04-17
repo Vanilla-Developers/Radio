@@ -41,7 +41,7 @@ public class Listener {
 		this.channel = channel;
 		this.decoder = api.createDecoder();
 		Position position = api.createPosition(pos.getX(), pos.getY(), pos.getZ());
-		static_channel = api.createLocationalAudioChannel(UUID.randomUUID(), api.fromServerLevel(level), position);
+		static_channel = api.createLocationalAudioChannel(UUID.randomUUID(), level, position);
 		assert static_channel != null;
 		static_channel.setDistance(15);
 		static_channel.setCategory("speakers");

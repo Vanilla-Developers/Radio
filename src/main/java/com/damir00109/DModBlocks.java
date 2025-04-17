@@ -20,9 +20,6 @@ import net.minecraft.item.ItemPlacementContext;
 
 public class DModBlocks {
     public static final EnumProperty<Direction> FACING = EnumProperty.of("facing", Direction.class);
-    public static final IntProperty POWER = IntProperty.of("power", 0, 15);
-    public static final BooleanProperty LISTEN = BooleanProperty.of("listen");
-    public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
 
 
     public static final Block RADIO = registerBlock("radio", new Radio.RadioBlock(Block.Settings.create()
