@@ -18,7 +18,9 @@ public class Sender {
 		this.channel = channel;
 		num = index;
 	}
+
 	public void send(MicrophonePacket packet) {
+		if (packet.isWhispering()) return;
 		//VanillaDamir00109.LOGGER.info("Sender {} active={}", num, active);
 		channel.broadcast(packet);
 	}

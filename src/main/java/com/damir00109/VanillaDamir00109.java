@@ -10,7 +10,9 @@ import net.minecraft.world.World;
 import net.minecraft.block.*;
 import org.slf4j.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 
 public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
@@ -79,6 +81,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		MicrophonePacket packet = event.getPacket();
 		ServerLevel level = Objects.requireNonNull(event.getSenderConnection()).getPlayer().getServerLevel();
 		assert sender != null;
+
 		PlayerEntity player = (PlayerEntity) sender.getPlayer().getPlayer();
 		Block target = DModBlocks.RADIO;
 

@@ -8,10 +8,7 @@ import de.maxhenkel.voicechat.api.opus.OpusDecoder;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.minecraft.util.math.BlockPos;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class Listener {
 	private final int num;
@@ -70,55 +67,42 @@ public class Listener {
 
 	private short[] getAudio() {
 		short[] audio = getCombinedAudio();
-		int volume;
 		if (audio == null) {
-			volume = 0;
 			audioPlayer.stopPlaying();
 			audioPlayer = null;
 			return null;
 		}
-		volume = getVolume(audio);
 		return audio;
 	}
 
-	private short getVolume(short[] audio) {
-		short max = 0;
-		for (short num : audio) {
-			if (num > max) {
-				max = num; // Mise à jour du maximum
-			}
-		}
-		return max;
-	}
-
 	public short[] getCombinedAudio() {
+		short[] result = new short[960];
+
 		if (packetBuffer.isEmpty()) {
-			return null;
+			return result;
 		}
 
-		short[] result = new short[960];
 		int sample;
+		int[] sums = new int[result.length];
+		List<short[]> uniquePackets = new ArrayList<>(new HashSet<>(packetBuffer));
+		for (short[] audio : uniquePackets) {
+			for (int i = 0; i < sums.length; i++) {
+				sums[i] += audio[i];
+			}
+		}
 		for (int i = 0; i < result.length; i++) {
-			sample = 0;
-			for (short[] audio : new HashSet<>(packetBuffer)) {
-				sample += audio[i];
-			}
-			if (sample > Short.MAX_VALUE) {
-				result[i] = Short.MAX_VALUE;
-			} else if (sample < Short.MIN_VALUE) {
-				result[i] = Short.MIN_VALUE;
-			} else {
-				result[i] = (short) sample;
-			}
+			sample = sums[i];
+			result[i] = (short) Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, sample));
 		}
 		packetBuffer.clear();
+		//VanillaDamir00109.LOGGER.info(Arrays.toString(result));
 		return result;
 	}
 
 	public void sendAudio(MicrophonePacket packet) {
 		byte[] data = packet.getOpusEncodedData();
 		short[] decoded = decoder.decode(data);
-		if (packetBuffer.size() > 10000) packetBuffer.clear();
+		if (packetBuffer.size() > 960) packetBuffer.clear();
 		packetBuffer.add(decoded);
 
 		if (getAudioPlayer() != null)
