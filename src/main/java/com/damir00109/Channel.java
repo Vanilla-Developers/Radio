@@ -57,7 +57,7 @@ public class Channel {
 	}
 
 	public void broadcast(MicrophonePacket packet) {
-		ExecutorService executor = Executors.newFixedThreadPool(5);
+		ExecutorService executor = Executors.newFixedThreadPool(listeners.size());
 		listeners.forEach((pos, listener) -> {
 			executor.submit(() -> {
 				listener.sendAudio(packet);

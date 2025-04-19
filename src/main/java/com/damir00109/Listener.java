@@ -92,7 +92,7 @@ public class Listener {
 		}
 		for (int i = 0; i < result.length; i++) {
 			sample = sums[i];
-			result[i] = (short) Math.max(Short.MIN_VALUE, Math.min(Short.MAX_VALUE, sample));
+			result[i] = (short) sample;
 		}
 		packetBuffer.clear();
 		//VanillaDamir00109.LOGGER.info(Arrays.toString(result));

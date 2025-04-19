@@ -76,7 +76,13 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	private record BlockData(BlockState state, BlockPos pos) {}
 	
 	private void onMicPacket(MicrophonePacketEvent event) {
-		if (vc_on()) return;
+		new Thread(() -> {
+			this.microThread(event);
+		}).start();
+	}
+
+	private void microThread(MicrophonePacketEvent event) {
+		//if (vc_on()) return;
 		VoicechatConnection sender = event.getSenderConnection();
 		MicrophonePacket packet = event.getPacket();
 		ServerLevel level = Objects.requireNonNull(event.getSenderConnection()).getPlayer().getServerLevel();
@@ -95,13 +101,27 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		World world = player.getWorld();
 		BlockPos playerPos = player.getBlockPos();
 
-		for(int x = -radius; x <= radius; x++) {
-			for(int y = -radius; y <= radius; y++) {
-				for(int z = -radius; z <= radius; z++) {
-					BlockPos checkPos = playerPos.add(x, y, z);
-					BlockState check_block = world.getBlockState(checkPos);
-					if(check_block.isOf(target)) {
-						return new BlockData(check_block, checkPos);
+		// Проверяем сначала блок под ногами и на уровне глаз
+		BlockPos immediateCheck = playerPos.add(0, -1, 0);
+		BlockState state = world.getBlockState(immediateCheck);
+		if(state.isOf(target)) return new BlockData(state, immediateCheck);
+
+		immediateCheck = playerPos.add(0, 1, 0);
+		state = world.getBlockState(immediateCheck);
+		if(state.isOf(target)) return new BlockData(state, immediateCheck);
+
+		// Ищем по концентрическим сферам от ближних к дальним
+		for(int r = 0; r <= radius; r++) {
+			for(int x = -r; x <= r; x++) {
+				for(int z = -r; z <= r; z++) {
+					for(int y = -r; y <= r; y++) {
+						if(Math.abs(x) != r && Math.abs(y) != r && Math.abs(z) != r) continue;
+
+						BlockPos checkPos = playerPos.add(x, y, z);
+						state = world.getBlockState(checkPos);
+						if(state.isOf(target)) {
+							return new BlockData(state, checkPos);
+						}
 					}
 				}
 			}
