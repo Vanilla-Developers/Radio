@@ -26,6 +26,7 @@ repositories {
 			includeGroup "maven.modrinth"
 		}
 	}
+
 }
 
 loom {
@@ -52,6 +53,8 @@ dependencies {
 	modRuntimeOnly "maven.modrinth:modmenu:${project.modmenu_version}"
 	modRuntimeOnly "maven.modrinth:lithium:${project.lithium_version}"
 	modRuntimeOnly "maven.modrinth:sodium:${project.sodium_version}"
+	modImplementation "maven.modrinth:fabric-language-kotlin:${project.fabric_language_kotlin_version}"
+	modImplementation "maven.modrinth:ledger:${project.ledger_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	
 }
