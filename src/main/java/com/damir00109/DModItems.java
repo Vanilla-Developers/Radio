@@ -53,6 +53,10 @@ public final class DModItems {
 		registerComponent();
 		registerItem();
 		registerEvents();
+		ItemGroupEvents.modifyEntriesEvent(ItemGroups.REDSTONE)
+				.register(entries -> {
+					entries.add(GLOWING_BRUSH);
+				});
 	}
 
 	private static void registerComponent() {
@@ -77,6 +81,7 @@ public final class DModItems {
 								)
 				),
 				new Item.Settings().maxDamage(64)
+
 		);
 	}
 

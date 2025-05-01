@@ -16,7 +16,7 @@ import net.minecraft.item.*;
 
 public class Radio {
 	public static final IntProperty POWER = IntProperty.of("power", 0, 15);
-	public static final EnumProperty<Direction> FACING = EnumProperty.of("facing", Direction.class);
+	public static final EnumProperty<Direction> FACING = Properties.HORIZONTAL_FACING;
 	public static final BooleanProperty LISTEN = BooleanProperty.of("listen");
 	public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
 
