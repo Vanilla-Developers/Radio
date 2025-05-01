@@ -7,11 +7,20 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 
+import net.minecraft.block.Block;
 import net.minecraft.component.ComponentType;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ProjectileUtil;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroups;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.item.consume.UseAction;
+import net.minecraft.item.tooltip.TooltipData;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
@@ -29,14 +38,8 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroups;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.item.consume.UseAction;
-import net.minecraft.item.tooltip.TooltipType;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -48,14 +51,12 @@ public final class DModItems {
 	public static Item GLOWING_BRUSH;
 	public static ComponentType<GlowingBrushData> GLOWING_BRUSH_DATA;
 
-	/** Фасадный метод, вызываемый из MainMod */
 	public static void registerModItems() {
 		registerComponent();
 		registerItem();
 		registerEvents();
 	}
 
-	// 1) Регистрируем Data Component вместо NBT
 	private static void registerComponent() {
 		GLOWING_BRUSH_DATA = Registry.register(
 				Registries.DATA_COMPONENT_TYPE,
@@ -66,25 +67,26 @@ public final class DModItems {
 		);
 	}
 
-	// 2) Регистрируем сам предмет с дефолтным значением компонента
 	private static void registerItem() {
 		GLOWING_BRUSH = register(
 				"glowing_brush",
 				settings -> new BrushItem(
-						settings.component(GLOWING_BRUSH_DATA,
-								new GlowingBrushData("","",0,0,0))
+						settings
+								.component(GLOWING_BRUSH_DATA, new GlowingBrushData("", "", 0, 0, 0))
+								.component(
+										DataComponentTypes.TOOLTIP_DISPLAY,
+										TooltipDisplayComponent.DEFAULT.with(GLOWING_BRUSH_DATA, true)
+								)
 				),
 				new Item.Settings().maxDamage(64)
 		);
 	}
 
-	// 3) Добавляем в креативную вкладку
 	private static void registerEvents() {
 		ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS)
 				.register(e -> e.addAfter(Items.BRUSH, GLOWING_BRUSH));
 	}
 
-	// Утилитарный метод для регистрации в Registry.ITEM
 	private static <T extends Item> T register(
 			String path,
 			Function<Item.Settings, T> factory,
@@ -98,9 +100,6 @@ public final class DModItems {
 		return item;
 	}
 
-	/**
-	 * Record для хранения данных кисти (последний блок, сущность и координаты)
-	 */
 	public static record GlowingBrushData(
 			String lastBlock,
 			String lastType,
@@ -117,11 +116,13 @@ public final class DModItems {
 		);
 	}
 
-	/**
-	 * Класс кисти: логика использования, тайминги, запись и отображение данных
-	 */
+	/** Клиентская обёртка данных, возвращаемая через getTooltipData */
+	public static record BlockIconTooltipData(Block block) implements TooltipData { }
+
 	public static class BrushItem extends Item {
-		public BrushItem(Settings settings) { super(settings); }
+		public BrushItem(Settings settings) {
+			super(settings);
+		}
 
 		@Override
 		public ActionResult use(World world, PlayerEntity user, Hand hand) {
@@ -145,14 +146,13 @@ public final class DModItems {
 			if (getMaxUseTime(stack, user) - rem != 20) return;
 
 			Vec3d start = user.getCameraPosVec(0);
-			Vec3d dir   = user.getRotationVec(0);
-			Vec3d end   = start.add(dir.multiply(10));
-			Box box     = user.getBoundingBox().expand(dir.x*10, dir.y*10, dir.z*10).expand(1);
+			Vec3d dir = user.getRotationVec(0);
+			Vec3d end = start.add(dir.multiply(10));
+			Box box = user.getBoundingBox().expand(dir.x * 10, dir.y * 10, dir.z * 10).expand(1);
 
-			// Читаем старые данные и обновляем их
 			GlowingBrushData data = stack.getOrDefault(
 					GLOWING_BRUSH_DATA,
-					new GlowingBrushData("","",0,0,0)
+					new GlowingBrushData("", "", 0, 0, 0)
 			);
 
 			EntityHitResult eHit = ProjectileUtil.raycast(
@@ -161,16 +161,10 @@ public final class DModItems {
 					10
 			);
 			if (eHit != null) {
-				var tgt = (LivingEntity)eHit.getEntity();
+				var tgt = (LivingEntity) eHit.getEntity();
 				String type = Registries.ENTITY_TYPE.getId(tgt.getType()).toString();
 				player.sendMessage(Text.literal("Entity: " + type), false);
-				data = new GlowingBrushData(
-						"",
-						type,
-						tgt.getBlockPos().getX(),
-						tgt.getBlockPos().getY(),
-						tgt.getBlockPos().getZ()
-				);
+				data = new GlowingBrushData("", type, tgt.getBlockPos().getX(), tgt.getBlockPos().getY(), tgt.getBlockPos().getZ());
 			} else {
 				BlockHitResult bHit = srv.raycast(new RaycastContext(
 						start, end,
@@ -180,54 +174,27 @@ public final class DModItems {
 				));
 				if (bHit.getType() == HitResult.Type.BLOCK) {
 					var pos = bHit.getBlockPos();
-					String bId = Registries.BLOCK.getId(
-							srv.getBlockState(pos).getBlock()
-					).toString();
+					String bId = Registries.BLOCK.getId(srv.getBlockState(pos).getBlock()).toString();
 					player.sendMessage(Text.literal("Block: " + bId), false);
-					data = new GlowingBrushData(
-							bId,
-							"",
-							pos.getX(),
-							pos.getY(),
-							pos.getZ()
-					);
+					data = new GlowingBrushData(bId, "", pos.getX(), pos.getY(), pos.getZ());
 				}
 			}
 
-			// Сохраняем обновлённые данные в компонент
 			stack.set(GLOWING_BRUSH_DATA, data);
-
-			// Наносим урон
-			stack.damage(1, user, (EquipmentSlot)null);
-		}
-
-		@Override
-		public boolean onStoppedUsing(ItemStack stack, World world, LivingEntity user, int rem) {
-			if (user instanceof PlayerEntity p) {
-				p.getItemCooldownManager().set(stack, 10);
-			}
-			return super.onStoppedUsing(stack, world, user, rem);
+			stack.damage(1, user, (EquipmentSlot) null);
 		}
 
 		@Override
 		@Environment(EnvType.CLIENT)
-		public void appendTooltip(
-				ItemStack stack,
-				Item.TooltipContext context,
-				net.minecraft.component.type.TooltipDisplayComponent dc,
-				Consumer<Text> consumer,
-				TooltipType type
-		) {
-			if (stack.contains(GLOWING_BRUSH_DATA)) {
-				var d = stack.get(GLOWING_BRUSH_DATA);
-				if (!d.lastBlock().isEmpty()) {
-					consumer.accept(Text.literal("Last block: " + d.lastBlock()));
-				}
-				if (!d.lastType().isEmpty()) {
-					consumer.accept(Text.literal("Last entity: " + d.lastType()));
+		public Optional<TooltipData> getTooltipData(ItemStack stack) {
+			var data = stack.getOrDefault(GLOWING_BRUSH_DATA, null);
+			if (data != null && !data.lastBlock().isEmpty()) {
+				Identifier id = Identifier.tryParse(data.lastBlock());
+				if (id != null && Registries.BLOCK.containsId(id)) {
+					return Optional.of(new BlockIconTooltipData(Registries.BLOCK.get(id)));
 				}
 			}
-			super.appendTooltip(stack, context, dc, consumer, type);
+			return Optional.empty();
 		}
 	}
 }
