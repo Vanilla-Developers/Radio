@@ -1,12 +1,11 @@
+// src/main/java/com/damir00109/DModItems.java
 package com.damir00109;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-
 import net.minecraft.block.Block;
 import net.minecraft.component.ComponentType;
 import net.minecraft.component.DataComponentTypes;
@@ -40,7 +39,6 @@ import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.damir00109.VanillaDamir00109.MOD_ID;
@@ -116,8 +114,8 @@ public final class DModItems {
 		);
 	}
 
-	/** Клиентская обёртка данных, возвращаемая через getTooltipData */
-	public static record BlockIconTooltipData(Block block) implements TooltipData { }
+	/** Клиентская обёртка данных: блок + координаты */
+	public static record BlockCoordTooltipData(Block block, int x, int y, int z) implements TooltipData { }
 
 	public static class BrushItem extends Item {
 		public BrushItem(Settings settings) {
@@ -191,7 +189,10 @@ public final class DModItems {
 			if (data != null && !data.lastBlock().isEmpty()) {
 				Identifier id = Identifier.tryParse(data.lastBlock());
 				if (id != null && Registries.BLOCK.containsId(id)) {
-					return Optional.of(new BlockIconTooltipData(Registries.BLOCK.get(id)));
+					Block block = Registries.BLOCK.get(id);
+					return Optional.of(new BlockCoordTooltipData(
+							block, data.x(), data.y(), data.z()
+					));
 				}
 			}
 			return Optional.empty();
