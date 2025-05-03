@@ -22,6 +22,7 @@ public class Listener {
 	private final UUID uuid;
 	private AudioPlayer audioPlayer;
 	private LocationalAudioChannel audioChannel;
+	private boolean active;
 
 	public Listener(
 			int index,
@@ -43,6 +44,8 @@ public class Listener {
 		static_channel.setDistance(15);
 		static_channel.setCategory("speakers");
 	}
+	public void setActive(boolean active1) {active = active1;}
+	public boolean getActive() {return active;}
 
 	private AudioPlayer getAudioPlayer() {
 		if (audioPlayer == null) {
@@ -100,6 +103,7 @@ public class Listener {
 	}
 
 	public void sendAudio(MicrophonePacket packet) {
+		if (!active) return;
 		byte[] data = packet.getOpusEncodedData();
 		short[] decoded = decoder.decode(data);
 		if (packetBuffer.size() > 960) packetBuffer.clear();

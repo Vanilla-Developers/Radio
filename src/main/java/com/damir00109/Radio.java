@@ -1,8 +1,14 @@
 package com.damir00109;
 
 import de.maxhenkel.voicechat.api.ServerLevel;
+import de.maxhenkel.voicechat.api.VoicechatApi;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.world.WorldAccess;
 import net.minecraft.world.block.WireOrientation;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.random.Random;
@@ -54,6 +60,17 @@ public class Radio {
 		}
 
 		@Override
+		public void onBroken(WorldAccess world, BlockPos pos, BlockState state) {
+			super.onBroken(world, pos, state);
+		}
+
+		@Override
+		protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
+			//player.sendMessage();
+			return ActionResult.FAIL;
+		}
+
+		@Override
 		protected void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
 			this.pos = pos;
 
@@ -75,8 +92,23 @@ public class Radio {
 			return null;
 		}
 
+		@Override
+		public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
+			if (world.isClient) return;
+			VanillaDamir00109.radios.put(pos, state);
+		}
+
+		@Override
+		public BlockState onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+			if (world.isClient) return state;
+			VanillaDamir00109.radios.remove(pos);
+			return state;
+		}
+
+
 		public void update(BlockState state, World world) {
 			if (world.isClient) return;
+			VanillaDamir00109.radios.put(pos, state);
 
 			BlockPos abovePos = pos.up();
 			BlockState aboveState = world.getBlockState(abovePos);
@@ -87,12 +119,14 @@ public class Radio {
 			boolean newActive = hasRodAbove && !hasAdjacentBlocks;
 			boolean newListen = !(newActive && hasAdjacentRod);
 			int newPower = world.getReceivedRedstonePower(pos);
-			VanillaDamir00109.LOGGER.debug("Radio has updated");
 
 			Channel channel = VanillaDamir00109.getOrCreate(newPower);
 			VoicechatServerApi api = VanillaDamir00109.getAPI();
-			getListener(state, pos, api.fromServerLevel(world));
-			int sender_index = channel.getOrCreateSender(api.fromServerLevel(world), pos).getNum();
+			Listener listener = getListener(state, pos, api.fromServerLevel(world));
+			Sender sender = getSender(state, pos, api.fromServerLevel(world));
+
+			sender.setActive(!state.get(LISTEN));
+			listener.setActive(state.get(LISTEN));
 
 			if (newActive) {
 				world.setBlockState(pos,
