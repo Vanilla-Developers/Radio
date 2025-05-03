@@ -1,0 +1,13 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "ingredients": [
+        "minecraft:glow_ink_sac",
+        "minecraft:glow_ink_sac",
+        "minecraft:brush",
+        "minecraft:glow_ink_sac"
+    ],
+    "result": {
+        "id": "vpl:glowing_brush",
+        "count": 1
+    }
+}
