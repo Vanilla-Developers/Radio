@@ -1,5 +1,6 @@
-package com.damir00109;
+package com.damir00109.blocks;
 
+import com.damir00109.VanillaDamir00109;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.block.Block;
 import net.minecraft.block.MapColor;

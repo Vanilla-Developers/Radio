@@ -1,14 +1,14 @@
-package com.damir00109;
+package com.damir00109.blocks;
 
+import com.damir00109.VanillaDamir00109;
+import com.damir00109.audio.Channel;
+import com.damir00109.audio.Listener;
+import com.damir00109.audio.Sender;
 import de.maxhenkel.voicechat.api.ServerLevel;
-import de.maxhenkel.voicechat.api.VoicechatApi;
 import de.maxhenkel.voicechat.api.VoicechatServerApi;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.world.WorldAccess;
 import net.minecraft.world.block.WireOrientation;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.random.Random;
@@ -19,6 +19,8 @@ import net.minecraft.util.math.*;
 import net.minecraft.world.World;
 import net.minecraft.block.*;
 import net.minecraft.item.*;
+
+import java.util.ArrayList;
 
 public class Radio {
 	public static final IntProperty POWER = IntProperty.of("power", 0, 15);
@@ -57,17 +59,6 @@ public class Radio {
 			if (world.isClient) return;
 			this.pos = pos;
 			world.scheduleBlockTick(pos, this, 1/20);
-		}
-
-		@Override
-		public void onBroken(WorldAccess world, BlockPos pos, BlockState state) {
-			super.onBroken(world, pos, state);
-		}
-
-		@Override
-		protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-			//player.sendMessage();
-			return ActionResult.FAIL;
 		}
 
 		@Override
@@ -115,7 +106,11 @@ public class Radio {
 
 			boolean hasRodAbove = aboveState.isOf(Blocks.LIGHTNING_ROD);
 			boolean hasAdjacentRod = getBlockAbove(pos.add(0, 0, 0), world, Blocks.LIGHTNING_ROD, 1) != null;
-			boolean hasAdjacentBlocks = VanillaDamir00109.getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
+			ArrayList<BlockState> exceptions = new ArrayList<>();
+			//exceptions.add(state);
+			exceptions.add(Blocks.LIGHTNING_ROD.getDefaultState());
+			BlockState AdjacentBlocks = VanillaDamir00109.getAnyBlockAbove(pos.add(0,1,0), world, 500, exceptions);
+			boolean hasAdjacentBlocks = AdjacentBlocks != null;
 			boolean newActive = hasRodAbove && !hasAdjacentBlocks;
 			boolean newListen = !(newActive && hasAdjacentRod);
 			int newPower = world.getReceivedRedstonePower(pos);

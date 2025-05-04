@@ -1,5 +1,5 @@
 // src/main/java/com/damir00109/DModItems.java
-package com.damir00109;
+package com.damir00109.items;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

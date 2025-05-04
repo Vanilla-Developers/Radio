@@ -1,4 +1,4 @@
-package com.damir00109;
+package com.damir00109.audio;
 
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;

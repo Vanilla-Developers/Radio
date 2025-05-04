@@ -1,6 +1,5 @@
-package com.damir00109;
+package com.damir00109.audio;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.audiochannel.AudioPlayer;
 import de.maxhenkel.voicechat.api.audiochannel.LocationalAudioChannel;

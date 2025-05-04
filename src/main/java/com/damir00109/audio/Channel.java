@@ -1,12 +1,10 @@
-package com.damir00109;
+package com.damir00109.audio;
 
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.minecraft.util.math.BlockPos;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 

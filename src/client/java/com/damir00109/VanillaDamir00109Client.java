@@ -1,5 +1,6 @@
 package com.damir00109;
 
+import com.damir00109.items.DModItems;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
@@ -9,7 +10,7 @@ import net.minecraft.client.gui.tooltip.TooltipComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import com.damir00109.DModItems.BlockCoordTooltipData;
+import com.damir00109.items.DModItems.BlockCoordTooltipData;
 
 	public class VanillaDamir00109Client implements ClientModInitializer {
 		@Override

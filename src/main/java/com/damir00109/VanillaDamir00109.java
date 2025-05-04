@@ -1,5 +1,9 @@
 package com.damir00109;
 
+import com.damir00109.audio.Channel;
+import com.damir00109.blocks.DModBlocks;
+import com.damir00109.blocks.Radio;
+import com.damir00109.items.DModItems;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.minecraft.entity.player.PlayerEntity;
 import de.maxhenkel.voicechat.api.events.*;
@@ -8,7 +12,6 @@ import net.fabricmc.api.ModInitializer;
 import de.maxhenkel.voicechat.api.*;
 import net.minecraft.world.World;
 import net.minecraft.block.*;
-import net.minecraft.world.chunk.WorldChunk;
 import org.slf4j.*;
 
 import java.util.*;
@@ -46,6 +49,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		LOGGER.info("Register blocks and items...");
 		DModItems.registerModItems();
 		DModBlocks.registerModBlocks();
+		//RadioTab.initialize();
 	}
 
 	@Override
@@ -112,7 +116,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		return null;
 	}
 
-	public static BlockState getAnyBlockAbove(BlockPos pos, World world, int radius) {
+	public static BlockState getAnyBlockAbove(BlockPos pos, World world, int radius, List<BlockState> exception) {
 		BlockPos.Mutable mutablePos = new BlockPos.Mutable();
 
 		for (int yOffset = 1; yOffset <= radius; yOffset++) {
@@ -120,8 +124,12 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 
 			BlockState blockstate = world.getBlockState(mutablePos);
 			if (blockstate.isOf(Blocks.VOID_AIR) || blockstate.isOf(Blocks.AIR)) continue;
+			if (exception.contains(blockstate)) continue;
 			return blockstate;
 		}
 		return null;
+	}
+	public static BlockState getAnyBlockAbove(BlockPos pos, World world, int radius) {
+		return getAnyBlockAbove(pos, world, radius, new ArrayList<>());
 	}
 }
