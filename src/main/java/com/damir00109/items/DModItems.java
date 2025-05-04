@@ -3,40 +3,25 @@ package com.damir00109.items;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+import net.fabricmc.api.*;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.block.Block;
-import net.minecraft.component.ComponentType;
-import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.*;
 import net.minecraft.component.type.TooltipDisplayComponent;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.ProjectileUtil;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroups;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.item.*;
 import net.minecraft.item.consume.UseAction;
 import net.minecraft.item.tooltip.TooltipData;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.*;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RaycastContext;
-import net.minecraft.world.World;
+import net.minecraft.util.*;
+import net.minecraft.util.hit.*;
+import net.minecraft.util.math.*;
+import net.minecraft.world.*;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -71,7 +56,6 @@ public final class DModItems {
 
 	private static void registerItem() {
 		GLOWING_BRUSH = register(
-				"glowing_brush",
 				settings -> new BrushItem(
 						settings
 								.component(GLOWING_BRUSH_DATA, new GlowingBrushData("", "", 0, 0, 0))
@@ -91,11 +75,10 @@ public final class DModItems {
 	}
 
 	private static <T extends Item> T register(
-			String path,
 			Function<Item.Settings, T> factory,
 			Item.Settings settings
 	) {
-		Identifier id = Identifier.of(MOD_ID, path);
+		Identifier id = Identifier.of(MOD_ID, "glowing_brush");
 		RegistryKey<Item> key = RegistryKey.of(RegistryKeys.ITEM, id);
 		settings.registryKey(key);
 		T item = factory.apply(settings);
