@@ -8,5 +8,6 @@ public class VanillaDamir00109Client implements ClientModInitializer {
 	public void onInitializeClient() {
 		BlockCoordTooltipComponent.register(); // Регистрация тултипа с координатами
 		BlockCoordTooltipComponent.registerBrushTooltip(); // Регистрация тултипа кисти
+		CompassRender.start();
 	}
 }
