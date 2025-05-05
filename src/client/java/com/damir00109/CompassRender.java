@@ -45,7 +45,7 @@ public class CompassRender {
             int x = client.player.getBlockPos().getX();
             int y = client.player.getBlockPos().getY();
             int z = client.player.getBlockPos().getZ();
-            Text coordText = Text.literal("X: " + x + " Y: " + y + " Z: " + z);
+            Text coordText = Text.literal(x + " | " + y + " | " + z);
             client.inGameHud.setOverlayMessage(coordText, false);
         }
     }
