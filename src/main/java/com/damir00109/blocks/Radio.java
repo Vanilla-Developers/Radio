@@ -101,7 +101,6 @@ public class Radio {
 			boolean hasAdjacentRod1 = getBlockAbove(pos.add(0, 1, 0), world, Blocks.LIGHTNING_ROD, 1) != null;
 			boolean hasMoreAdjacentRod = getBlockAbove(pos.add(0, 1, 0), world, Blocks.LIGHTNING_ROD, 1) != null;
 			boolean canSwitch = hasAdjacentRod0 && hasAdjacentRod1 && hasMoreAdjacentRod;
-			VanillaDamir00109.LOGGER.info("has pod: {}, has adj. rod: {}, has third rod: {}", hasAdjacentRod0, hasAdjacentRod1, hasMoreAdjacentRod);
 			if (!canSwitch) return ActionResult.FAIL;
 			world.setBlockState(pos,
 					state.with(LISTEN, !state.get(LISTEN)));
@@ -116,9 +115,7 @@ public class Radio {
 			BlockState aboveState = world.getBlockState(abovePos);
 
 			boolean hasRodAbove = aboveState.isOf(Blocks.LIGHTNING_ROD);
-			boolean hasAdjacentRod = getBlockAbove(pos.add(0, 0, 0), world, Blocks.LIGHTNING_ROD, 1) != null;
 			ArrayList<BlockState> exceptions = new ArrayList<>();
-			//exceptions.add(state);
 			exceptions.add(Blocks.LIGHTNING_ROD.getDefaultState());
 			BlockState AdjacentBlocks = VanillaDamir00109.getAnyBlockAbove(pos.add(0, 1, 0), world, 500, exceptions);
 			boolean hasAdjacentBlocks = AdjacentBlocks != null;
@@ -157,7 +154,7 @@ public class Radio {
 
 			if (hasAdjacentBlocks) newPower = 0;
 
-			if (state.get(POWER) != newPower) world.setBlockState(pos, state.with(POWER, newPower), 2);
+			if (state.get(POWER) != newPower) onChange(state, world, state.get(ACTIVE), state.get(LISTEN), newPower);
 		}
 
 		public Sender getSender(BlockState state, BlockPos pos, ServerLevel level) {
