@@ -24,7 +24,8 @@ public class CompassRender {
     private static void onEndClientTick(MinecraftClient client) {
         if (client.player == null) return;
 
-        boolean holdingCompass = client.player.getMainHandStack().getItem() == Items.COMPASS;
+        boolean holdingCompass =
+                client.player.getMainHandStack().getItem() == Items.COMPASS || client.player.getOffHandStack().getItem() == Items.COMPASS;
         GameOptions opts = client.options;
 
         // Включаем или отключаем Reduced Debug Info
