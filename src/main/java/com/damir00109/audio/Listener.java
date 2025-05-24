@@ -1,5 +1,6 @@
 package com.damir00109.audio;
 
+import com.damir00109.VanillaDamir00109;
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.audiochannel.*;
 import de.maxhenkel.voicechat.api.opus.OpusDecoder;
@@ -7,6 +8,7 @@ import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Listener {
 	private final int num;
@@ -20,7 +22,7 @@ public class Listener {
 	private final UUID uuid;
 	private AudioPlayer audioPlayer;
 	private LocationalAudioChannel audioChannel;
-	private boolean active;
+	private final AtomicBoolean active = new AtomicBoolean(false);
 
 	public Listener(
 			int index,
@@ -33,44 +35,50 @@ public class Listener {
 		this.api = api;
 		this.level = level;
 		this.pos = pos;
-		uuid = UUID.randomUUID();
+		this.uuid = UUID.randomUUID();
 		this.channel = channel;
 		this.decoder = api.createDecoder();
 		Position position = api.createPosition(pos.getX(), pos.getY(), pos.getZ());
-		static_channel = api.createLocationalAudioChannel(UUID.randomUUID(), level, position);
-		assert static_channel != null;
-		static_channel.setDistance(15);
-		static_channel.setCategory("speakers");
+		this.audioChannel = api.createLocationalAudioChannel(this.uuid, level, position);
+		if (this.audioChannel != null) {
+			this.audioChannel.setDistance(64F);
+			this.audioChannel.setCategory(VanillaDamir00109.RADIO_VOLUME_CATEGORY_ID);
+		} else {
+			VanillaDamir00109.LOGGER.error("Failed to create LocationalAudioChannel for Listener at {}", pos);
+		}
+		this.static_channel = null;
 	}
-	public void setActive(boolean active1) {active = active1;}
-	public boolean getActive() {return active;}
+
+	public void setActive(boolean active1) {
+		active.set(active1);
+		if (!active1 && audioPlayer != null) {
+			audioPlayer.stopPlaying();
+		}
+	}
+
+	public boolean getActive() {
+		return active.get();
+	}
 
 	private AudioPlayer getAudioPlayer() {
-		if (audioPlayer == null) {
-			VoicechatConnection connection = api.getConnectionOf(uuid);
-			if (connection == null) { // Speaker
-				LocationalAudioChannel locationalAudioChannel = api.createLocationalAudioChannel(uuid,
-						level,
-						api.createPosition(pos.getX(), pos.getY(), pos.getZ()));
-				assert locationalAudioChannel != null;
-				locationalAudioChannel.setDistance(15);
-				audioChannel = locationalAudioChannel;
-				audioChannel.setCategory("speakers");
-			} else { // Player
-				audioChannel = (LocationalAudioChannel) api.createEntityAudioChannel(uuid, connection.getPlayer());
-			}
-
+		if (audioPlayer == null && audioChannel != null) {
 			audioPlayer = api.createAudioPlayer(audioChannel, api.createEncoder(), this::getAudio);
+			if (audioPlayer == null) {
+				VanillaDamir00109.LOGGER.error("Failed to create AudioPlayer for Listener at {}", pos);
+			}
 		}
-
 		return audioPlayer;
 	}
 
 	private short[] getAudio() {
+		if (!active.get() && packetBuffer.isEmpty()) {
+			if (audioPlayer != null) {
+				audioPlayer.stopPlaying();
+			}
+			return null;
+		}
 		short[] audio = getCombinedAudio();
 		if (audio == null) {
-			audioPlayer.stopPlaying();
-			audioPlayer = null;
 			return null;
 		}
 		return audio;
@@ -80,35 +88,43 @@ public class Listener {
 		short[] result = new short[960];
 
 		if (packetBuffer.isEmpty()) {
+			if (!active.get()) return null;
 			return result;
 		}
 
 		int sample;
 		int[] sums = new int[result.length];
-		List<short[]> uniquePackets = new ArrayList<>(new HashSet<>(packetBuffer));
-		for (short[] audio : uniquePackets) {
-			for (int i = 0; i < sums.length; i++) {
-				sums[i] += audio[i];
+		List<short[]> currentPackets = new ArrayList<>(packetBuffer);
+		packetBuffer.clear();
+
+		for (short[] audioChunk : currentPackets) {
+			for (int i = 0; i < sums.length && i < audioChunk.length; i++) {
+				sums[i] += audioChunk[i];
 			}
 		}
 		for (int i = 0; i < result.length; i++) {
 			sample = sums[i];
+			if (sample > Short.MAX_VALUE) sample = Short.MAX_VALUE;
+			if (sample < Short.MIN_VALUE) sample = Short.MIN_VALUE;
 			result[i] = (short) sample;
 		}
-		packetBuffer.clear();
-		//VanillaDamir00109.LOGGER.info(Arrays.toString(result));
 		return result;
 	}
 
 	public void sendAudio(MicrophonePacket packet) {
-		if (!active) return;
+		if (!active.get()) return;
+		
 		byte[] data = packet.getOpusEncodedData();
+		if (data == null || data.length == 0) return;
+
 		short[] decoded = decoder.decode(data);
-		if (packetBuffer.size() > 960) packetBuffer.clear();
+		if (decoded == null || decoded.length == 0) return;
+
 		packetBuffer.add(decoded);
 
-		if (getAudioPlayer() != null)
+		if (getAudioPlayer() != null && !audioPlayer.isPlaying() && !packetBuffer.isEmpty()) {
 			audioPlayer.startPlaying();
+		}
 	}
 
 	public int getNum() {
@@ -117,5 +133,20 @@ public class Listener {
 
 	public Channel getChannel() {
 		return channel;
+	}
+
+	public void destroy() {
+		active.set(false);
+		if (audioPlayer != null) {
+			audioPlayer.stopPlaying();
+			audioPlayer = null;
+		}
+		if (audioChannel != null) {
+			audioChannel = null;
+		}
+		if (decoder != null) {
+			decoder.close();
+		}
+		packetBuffer.clear();
 	}
 }

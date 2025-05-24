@@ -19,6 +19,7 @@ import net.minecraft.world.World;
 import net.minecraft.block.*;
 import net.minecraft.item.*;
 import net.minecraft.sound.BlockSoundGroup;
+import net.minecraft.entity.LightningEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -168,6 +169,26 @@ public class Radio {
 		public void onMicrophoneNearby(BlockState state, BlockPos pos, ServerLevel level, MicrophonePacket packet) {
 			Sender sender = getSender(state, pos, level);
 			sender.send(packet);
+		}
+
+		public void onStruckByLightning(World world, BlockPos pos) {
+			if (!world.isClient()) {
+				BlockState currentState = world.getBlockState(pos);
+				int power = currentState.get(POWER);
+
+				// Превращаем в сгоревшее радио
+				world.setBlockState(pos, DModBlocks.BURNT_RADIO.getDefaultState(), 3);
+
+				// Удаляем радио из активных
+				if (VanillaDamir00109.radios.containsKey(pos)) {
+					Channel channel = VanillaDamir00109.getChannel(power);
+					if (channel != null) {
+						channel.removeRadio(pos);
+					}
+					VanillaDamir00109.radios.remove(pos);
+				}
+				// Тут можно добавить дополнительные эффекты, например, дым или звук
+			}
 		}
 	}
 }

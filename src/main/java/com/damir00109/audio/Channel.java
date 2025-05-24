@@ -3,8 +3,10 @@ package com.damir00109.audio;
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.minecraft.util.math.BlockPos;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.*;
 
 public class Channel {
@@ -13,6 +15,7 @@ public class Channel {
 	public static final HashMap<BlockPos, Listener> listeners = new HashMap<>();
 	public static final HashMap<BlockPos, Sender> senders = new HashMap<>();
 	private static final ExecutorService executor = Executors.newCachedThreadPool();
+	private final List<BlockPos> radios = new CopyOnWriteArrayList<>();
 
 	public Channel(int index, VoicechatServerApi api) {
 		this.api = api;
@@ -64,5 +67,17 @@ public class Channel {
 
 	public int getIndex() {
 		return num;
+	}
+
+	public List<BlockPos> getRadios() {
+		return radios;
+	}
+
+	public void removeRadio(BlockPos pos) {
+		radios.remove(pos);
+	}
+
+	public void broadcast(MicrophonePacket packet, @Nullable VoicechatConnection fromConnection, @Nullable BlockPos radioPos) {
+		// ... existing code ...
 	}
 }
