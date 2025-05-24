@@ -7,10 +7,10 @@ import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.world.block.WireOrientation;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.random.Random;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.*;
@@ -18,8 +18,10 @@ import net.minecraft.util.math.*;
 import net.minecraft.world.World;
 import net.minecraft.block.*;
 import net.minecraft.item.*;
+import net.minecraft.sound.BlockSoundGroup;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Radio {
 	public static final IntProperty POWER = IntProperty.of("power", 0, 15);
@@ -28,10 +30,8 @@ public class Radio {
 	public static final BooleanProperty ACTIVE = BooleanProperty.of("active");
 
 	public static class RadioBlock extends Block {
-		private BlockPos pos;
-
 		public RadioBlock(Settings settings) {
-			super(settings);
+			super(settings.sounds(BlockSoundGroup.WOOD));
 			this.setDefaultState(this.stateManager.getDefaultState()
 					.with(POWER, 0)
 					.with(FACING, Direction.EAST)
@@ -56,16 +56,7 @@ public class Radio {
 		@Override
 		protected void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
 			if (world.isClient) return;
-			this.pos = pos;
-			world.scheduleBlockTick(pos, this, 1/20);
-		}
-
-		@Override
-		protected void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
-			this.pos = pos;
-
-			update(state, world);
-			world.scheduleBlockTick(pos, this, 1/20);
+			update(world.getBlockState(pos), world, pos);
 		}
 
 		private BlockState getBlockAbove(BlockPos pos, World world, Block target, int radius) {
@@ -85,7 +76,8 @@ public class Radio {
 		@Override
 		public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
 			if (world.isClient) return;
-			VanillaDamir00109.radios.put(pos, state);
+			VanillaDamir00109.radios.put(pos, world.getBlockState(pos));
+			update(world.getBlockState(pos), world, pos);
 		}
 
 		@Override
@@ -97,64 +89,69 @@ public class Radio {
 
 		@Override
 		protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-			boolean hasAdjacentRod0 = getBlockAbove(pos.add(0, 0, 0), world, Blocks.LIGHTNING_ROD, 1) != null;
-			boolean hasAdjacentRod1 = getBlockAbove(pos.add(0, 1, 0), world, Blocks.LIGHTNING_ROD, 1) != null;
-			boolean hasMoreAdjacentRod = getBlockAbove(pos.add(0, 1, 0), world, Blocks.LIGHTNING_ROD, 1) != null;
-			boolean canSwitch = hasAdjacentRod0 && hasAdjacentRod1 && hasMoreAdjacentRod;
-			if (!canSwitch) return ActionResult.FAIL;
-			world.setBlockState(pos,
-					state.with(LISTEN, !state.get(LISTEN)));
-			return ActionResult.SUCCESS;
-		}
+			if (world.isClient) return ActionResult.PASS;
 
-		public void update(BlockState state, World world) {
-			if (world.isClient) return;
-			VanillaDamir00109.radios.put(pos, state);
+			boolean hasFirstRod = world.getBlockState(pos.up()).isOf(Blocks.LIGHTNING_ROD);
+			boolean hasSecondRod = world.getBlockState(pos.up(2)).isOf(Blocks.LIGHTNING_ROD);
 
-			BlockPos abovePos = pos.up();
-			BlockState aboveState = world.getBlockState(abovePos);
+			if (hasFirstRod && hasSecondRod) {
+				List<BlockState> rodException = List.of(Blocks.LIGHTNING_ROD.getDefaultState());
+				BlockState obstructingBlockOverSecondRod = VanillaDamir00109.getAnyBlockAbove(pos.up(2), world, world.getHeight() - pos.getY() - 3, rodException);
 
-			boolean hasRodAbove = aboveState.isOf(Blocks.LIGHTNING_ROD);
-			ArrayList<BlockState> exceptions = new ArrayList<>();
-			exceptions.add(Blocks.LIGHTNING_ROD.getDefaultState());
-			BlockState AdjacentBlocks = VanillaDamir00109.getAnyBlockAbove(pos.add(0, 1, 0), world, 500, exceptions);
-			boolean hasAdjacentBlocks = AdjacentBlocks != null;
-			boolean newActive = hasRodAbove && !hasAdjacentBlocks;
-			int newPower = world.getReceivedRedstonePower(pos);
+				if (obstructingBlockOverSecondRod != null) {
+					return ActionResult.FAIL;
+				}
 
-			Channel channel = VanillaDamir00109.getOrCreate(newPower);
-			VoicechatServerApi api = VanillaDamir00109.getAPI();
-			Listener listener = getListener(state, pos, api.fromServerLevel(world));
-			Sender sender = getSender(state, pos, api.fromServerLevel(world));
-
-			sender.setActive(!state.get(LISTEN));
-			listener.setActive(state.get(LISTEN));
-
-			if (state.get(ACTIVE) != newActive ||
-				state.get(POWER) != newPower) onChange(state, world, newActive, state.get(LISTEN), newPower);
-		}
-
-		public void onChange(BlockState state, World world, boolean newActive, boolean newListen, int newPower) {
-			if (newActive) {
-				world.setBlockState(pos,
-						state.with(LISTEN, newListen)
-								.with(POWER, newPower)
-								.with(ACTIVE, true),
-						3);
-			} else {
-				world.setBlockState(pos, state.with(LISTEN, true).with(POWER, 0).with(ACTIVE, false), 3);
+				BlockState newState = state.with(LISTEN, !state.get(LISTEN));
+				world.setBlockState(pos, newState, 3);
+				update(newState, world, pos);
+				player.swingHand(Hand.MAIN_HAND);
+				return ActionResult.SUCCESS;
 			}
+
+			return ActionResult.PASS;
+		}
+
+		public void update(BlockState state, World world, BlockPos currentPos) {
+			if (world.isClient) return;
+
+			boolean hasFirstRod = world.getBlockState(currentPos.up()).isOf(Blocks.LIGHTNING_ROD);
+			boolean isObstructed = false;
+
+			if (hasFirstRod) {
+				List<BlockState> rodException = List.of(Blocks.LIGHTNING_ROD.getDefaultState());
+				BlockState obstructingBlock = VanillaDamir00109.getAnyBlockAbove(currentPos.up(), world, world.getHeight() - currentPos.getY() - 2, rodException);
+				isObstructed = obstructingBlock != null;
+			}
+
+			boolean newActive = hasFirstRod && !isObstructed;
+			int rawRedstonePower = world.getReceivedRedstonePower(currentPos);
+			int finalPowerForState = newActive ? rawRedstonePower : 0;
+			boolean currentListen = state.get(LISTEN);
+
+			BlockState potentiallyNewState = state;
+
+			if (state.get(ACTIVE) != newActive || state.get(POWER) != finalPowerForState) {
+				potentiallyNewState = state.with(ACTIVE, newActive).with(POWER, finalPowerForState);
+				world.setBlockState(currentPos, potentiallyNewState, 3);
+			}
+			
+			VanillaDamir00109.radios.put(currentPos, world.getBlockState(currentPos));
+
+			Channel channel = VanillaDamir00109.getOrCreate(rawRedstonePower);
+			VoicechatServerApi api = VanillaDamir00109.getAPI();
+			
+			Listener listener = getListener(potentiallyNewState, currentPos, api.fromServerLevel(world));
+			Sender sender = getSender(potentiallyNewState, currentPos, api.fromServerLevel(world));
+
+			listener.setActive(newActive && currentListen);
+			sender.setActive(newActive && !currentListen);
 		}
 
 		@Override
 		public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify) {
 			if (world.isClient) return;
-			boolean hasAdjacentBlocks = VanillaDamir00109.getAnyBlockAbove(pos.add(0,2,0), world, 500) != null;
-			int newPower = world.getReceivedRedstonePower(pos);
-
-			if (hasAdjacentBlocks) newPower = 0;
-
-			if (state.get(POWER) != newPower) onChange(state, world, state.get(ACTIVE), state.get(LISTEN), newPower);
+			update(world.getBlockState(pos), world, pos);
 		}
 
 		public Sender getSender(BlockState state, BlockPos pos, ServerLevel level) {

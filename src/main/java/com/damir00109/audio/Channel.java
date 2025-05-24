@@ -12,6 +12,7 @@ public class Channel {
 	private final int num;
 	public static final HashMap<BlockPos, Listener> listeners = new HashMap<>();
 	public static final HashMap<BlockPos, Sender> senders = new HashMap<>();
+	private static final ExecutorService executor = Executors.newCachedThreadPool();
 
 	public Channel(int index, VoicechatServerApi api) {
 		this.api = api;
@@ -54,12 +55,11 @@ public class Channel {
 	}
 
 	public void broadcast(MicrophonePacket packet) {
-		ExecutorService executor = Executors.newFixedThreadPool(listeners.size());
 		listeners.forEach((pos, listener) -> {
 			executor.submit(() -> {
 				listener.sendAudio(packet);
 			});
-		}); //executor.shutdown();
+		});
 	}
 
 	public int getIndex() {
