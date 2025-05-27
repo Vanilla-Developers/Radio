@@ -137,7 +137,9 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		Block target = DModBlocks.RADIO;
 
 		BlockData near_radio = getBlockNearby(player, target, 5);
-		assert near_radio != null;
+		if (near_radio == null) {
+			return;
+		}
 		((Radio.RadioBlock) near_radio.state().getBlock()).onMicrophoneNearby(near_radio.state(), near_radio.pos(), level, packet);
 	}
 

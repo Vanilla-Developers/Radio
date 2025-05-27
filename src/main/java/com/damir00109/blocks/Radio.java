@@ -20,6 +20,7 @@ import net.minecraft.block.*;
 import net.minecraft.item.*;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.entity.LightningEntity;
+import net.minecraft.util.math.Direction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ public class Radio {
 			super(settings.sounds(BlockSoundGroup.WOOD));
 			this.setDefaultState(this.stateManager.getDefaultState()
 					.with(POWER, 0)
-					.with(FACING, Direction.EAST)
+					.with(FACING, Direction.NORTH)
 					.with(LISTEN, true)
 					.with(ACTIVE, false));
 		}
@@ -49,7 +50,7 @@ public class Radio {
 		public BlockState getPlacementState(ItemPlacementContext ctx) {
 			return this.getDefaultState()
 					.with(FACING, ctx.getHorizontalPlayerFacing().getOpposite())
-					.with(POWER, ctx.getWorld().getReceivedRedstonePower(ctx.getBlockPos()))
+					.with(POWER, 0)
 					.with(LISTEN, true)
 					.with(ACTIVE, false);
 		}
@@ -57,21 +58,9 @@ public class Radio {
 		@Override
 		protected void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
 			if (world.isClient) return;
-			update(world.getBlockState(pos), world, pos);
-		}
-
-		private BlockState getBlockAbove(BlockPos pos, World world, Block target, int radius) {
-			BlockPos.Mutable mutablePos = new BlockPos.Mutable();
-
-			for (int yOffset = 1; yOffset <= radius; yOffset++) {
-				mutablePos.set(pos.getX(), pos.getY() + yOffset, pos.getZ());
-
-				BlockState blockstate = VanillaDamir00109.getAnyBlockAbove(mutablePos, world, radius);
-				if (blockstate != null && blockstate.isOf(target)) {
-					return blockstate;
-				}
+			if (state.getBlock() != oldState.getBlock()) {
+				update(world.getBlockState(pos), world, pos);
 			}
-			return null;
 		}
 
 		@Override
@@ -85,68 +74,115 @@ public class Radio {
 		public BlockState onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
 			if (world.isClient) return state;
 			VanillaDamir00109.radios.remove(pos);
+			VoicechatServerApi api = VanillaDamir00109.getAPI();
+			if (api != null) {
+				ServerLevel serverLevel = api.fromServerLevel(world);
+				if (serverLevel != null) {
+					Channel channel = VanillaDamir00109.getChannel(state.get(POWER));
+					if (channel != null) {
+						channel.removeRadio(pos);
+					}
+				}
+			}
 			return state;
 		}
 
 		@Override
 		protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-			if (world.isClient) return ActionResult.PASS;
+			if (world.isClient) return ActionResult.SUCCESS;
+
+			if (!state.get(ACTIVE)) {
+				return ActionResult.PASS;
+			}
 
 			boolean hasFirstRod = world.getBlockState(pos.up()).isOf(Blocks.LIGHTNING_ROD);
 			boolean hasSecondRod = world.getBlockState(pos.up(2)).isOf(Blocks.LIGHTNING_ROD);
 
 			if (hasFirstRod && hasSecondRod) {
-				List<BlockState> rodException = List.of(Blocks.LIGHTNING_ROD.getDefaultState());
-				BlockState obstructingBlockOverSecondRod = VanillaDamir00109.getAnyBlockAbove(pos.up(2), world, world.getHeight() - pos.getY() - 3, rodException);
+				boolean twoRodStackIsClear = false;
+				BlockPos.Mutable mutableRodPos = new BlockPos.Mutable(pos.getX(), pos.getY() + 2, pos.getZ());
 
-				if (obstructingBlockOverSecondRod != null) {
-					return ActionResult.FAIL;
+				while(world.getBlockState(mutableRodPos).isOf(Blocks.LIGHTNING_ROD)) {
+					if (mutableRodPos.getY() >= world.getHeight() - 1) {
+						twoRodStackIsClear = true;
+						break;
+					}
+					mutableRodPos.move(Direction.UP);
 				}
 
-				BlockState newState = state.with(LISTEN, !state.get(LISTEN));
-				world.setBlockState(pos, newState, 3);
-				update(newState, world, pos);
-				player.swingHand(Hand.MAIN_HAND);
-				return ActionResult.SUCCESS;
-			}
+				if (!twoRodStackIsClear) {
+					BlockState stateAboveStack = world.getBlockState(mutableRodPos);
+					if (stateAboveStack.isAir() || stateAboveStack.isOf(Blocks.LIGHTNING_ROD)) {
+						twoRodStackIsClear = true;
+					}
+				}
 
-			return ActionResult.PASS;
+				if (twoRodStackIsClear) {
+					BlockState newState = state.with(LISTEN, !state.get(LISTEN));
+					world.setBlockState(pos, newState, 3);
+					player.swingHand(Hand.MAIN_HAND);
+					return ActionResult.SUCCESS;
+				} else {
+					return ActionResult.FAIL;
+				}
+			} else {
+				return ActionResult.PASS;
+			}
 		}
 
 		public void update(BlockState state, World world, BlockPos currentPos) {
 			if (world.isClient) return;
 
-			boolean hasFirstRod = world.getBlockState(currentPos.up()).isOf(Blocks.LIGHTNING_ROD);
-			boolean isObstructed = false;
+			boolean hasAtLeastOneRod = world.getBlockState(currentPos.up()).isOf(Blocks.LIGHTNING_ROD);
+			boolean isAntennaSetupClear = false;
 
-			if (hasFirstRod) {
-				List<BlockState> rodException = List.of(Blocks.LIGHTNING_ROD.getDefaultState());
-				BlockState obstructingBlock = VanillaDamir00109.getAnyBlockAbove(currentPos.up(), world, world.getHeight() - currentPos.getY() - 2, rodException);
-				isObstructed = obstructingBlock != null;
+			if (hasAtLeastOneRod) {
+				BlockPos.Mutable mutableRodPos = new BlockPos.Mutable(currentPos.getX(), currentPos.getY() + 1, currentPos.getZ());
+				while(world.getBlockState(mutableRodPos).isOf(Blocks.LIGHTNING_ROD)) {
+					if (mutableRodPos.getY() >= world.getHeight() - 1) {
+						isAntennaSetupClear = true;
+						break;
+					}
+					mutableRodPos.move(Direction.UP);
+				}
+
+				if (!isAntennaSetupClear) {
+					BlockState stateAboveStack = world.getBlockState(mutableRodPos);
+					if (stateAboveStack.isAir() || stateAboveStack.isOf(Blocks.LIGHTNING_ROD)) {
+						isAntennaSetupClear = true;
+					}
+				}
 			}
 
-			boolean newActive = hasFirstRod && !isObstructed;
+			boolean newActiveState = hasAtLeastOneRod && isAntennaSetupClear;
+			
 			int rawRedstonePower = world.getReceivedRedstonePower(currentPos);
-			int finalPowerForState = newActive ? rawRedstonePower : 0;
-			boolean currentListen = state.get(LISTEN);
+			int finalPowerForState = newActiveState ? rawRedstonePower : 0;
 
 			BlockState potentiallyNewState = state;
 
-			if (state.get(ACTIVE) != newActive || state.get(POWER) != finalPowerForState) {
-				potentiallyNewState = state.with(ACTIVE, newActive).with(POWER, finalPowerForState);
+			if (state.get(ACTIVE) != newActiveState || state.get(POWER) != finalPowerForState) {
+				potentiallyNewState = state.with(ACTIVE, newActiveState).with(POWER, finalPowerForState);
 				world.setBlockState(currentPos, potentiallyNewState, 3);
 			}
 			
-			VanillaDamir00109.radios.put(currentPos, world.getBlockState(currentPos));
+			BlockState stateInWorldAfterUpdate = world.getBlockState(currentPos);
+			VanillaDamir00109.radios.put(currentPos, stateInWorldAfterUpdate);
 
-			Channel channel = VanillaDamir00109.getOrCreate(rawRedstonePower);
 			VoicechatServerApi api = VanillaDamir00109.getAPI();
-			
-			Listener listener = getListener(potentiallyNewState, currentPos, api.fromServerLevel(world));
-			Sender sender = getSender(potentiallyNewState, currentPos, api.fromServerLevel(world));
+			if (api != null) {
+				ServerLevel serverLevel = api.fromServerLevel(world);
+				if (serverLevel != null) {
+					Listener listener = getListener(stateInWorldAfterUpdate, currentPos, serverLevel);
+					Sender sender = getSender(stateInWorldAfterUpdate, currentPos, serverLevel);
+					
+					boolean currentActive = stateInWorldAfterUpdate.get(ACTIVE);
+					boolean currentListen = stateInWorldAfterUpdate.get(LISTEN);
 
-			listener.setActive(newActive && currentListen);
-			sender.setActive(newActive && !currentListen);
+					listener.setActive(currentActive && currentListen);
+					sender.setActive(currentActive && !currentListen);
+				}
+			}
 		}
 
 		@Override
@@ -176,10 +212,8 @@ public class Radio {
 				BlockState currentState = world.getBlockState(pos);
 				int power = currentState.get(POWER);
 
-				// Превращаем в сгоревшее радио
 				world.setBlockState(pos, DModBlocks.BURNT_RADIO.getDefaultState(), 3);
 
-				// Удаляем радио из активных
 				if (VanillaDamir00109.radios.containsKey(pos)) {
 					Channel channel = VanillaDamir00109.getChannel(power);
 					if (channel != null) {
@@ -187,7 +221,6 @@ public class Radio {
 					}
 					VanillaDamir00109.radios.remove(pos);
 				}
-				// Тут можно добавить дополнительные эффекты, например, дым или звук
 			}
 		}
 	}
