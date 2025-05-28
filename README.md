@@ -28,7 +28,7 @@ Vanilla+ Radio — это мод, который добавляет новые �
 ## Зависимости:
 
 Fabric API<br>
-Simple Voice Chat
+Simple Voice Chat<br>
 Ledger
 
 # English version
@@ -61,5 +61,5 @@ What users can expect in the future:
 ## Dependencies:
 
 Fabric API<br>
-Simple Voice Chat
+Simple Voice Chat<br>
 Ledger
