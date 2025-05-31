@@ -1,5 +1,8 @@
 {
     "item.vpl.radio": "Radio",
 	"item.vpl.burnt_radio": "Burnt Radio",
-    "item.vpl.glowing_brush": "Glowing Brush"
+    "item.vpl.glowing_brush": "Glowing Brush",
+	"death.attack.mysterious": "%1$s died of unknown cause",
+    "text.vpl.bed.no_sleep_custom": "You are too troubled to sleep...",
+    "item.vpl.chamomile_soup": "Chamomile Soup"
 }

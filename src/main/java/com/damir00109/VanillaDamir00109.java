@@ -28,6 +28,16 @@ import net.minecraft.server.world.ServerWorld;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
 import net.minecraft.block.Blocks;
 
+// Imports from SVSP_ISLAND
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.minecraft.server.MinecraftServer;
+import com.damir00109.zona.CustomBorderManager;
+import com.damir00109.item.ModItems; // Assuming ModItems from SVSP_ISLAND is different or will be merged/renamed
+// End of imports from SVSP_ISLAND
+
 public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public static final String MOD_ID = "vpl";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
@@ -37,6 +47,12 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 
 	public static final String RADIO_VOLUME_CATEGORY_ID = "vpl_radio_vol";
 	private static final String RADIO_ICON_PATH = "assets/vpl/textures/gui/radio_icon.png";
+
+	// From SVSP_ISLAND
+	public static final String SVSP_MOD_ID = "svsp_island"; // Renamed to avoid conflict
+	public static final Logger SVSP_LOGGER = LoggerFactory.getLogger(SVSP_MOD_ID); // Renamed
+	public static ModConfig CONFIG;
+	// End of SVSP_ISLAND fields
 
 	public static Channel getChannel(int index) {
 		if (index <= 0) return getChannel(index+1);
@@ -65,6 +81,34 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		DModItems.registerModItems();
 		DModBlocks.registerModBlocks();
 		//RadioTab.initialize();
+
+		// Initialization from SVSP_ISLAND
+		SVSP_LOGGER.info("Initializing {} Mod", SVSP_MOD_ID);
+
+		CONFIG = ModConfig.load(); // Загружаем конфигурацию
+
+		// Регистрация наших предметов (из SVSP_ISLAND)
+		// Assuming ModItems from SVSP_ISLAND are distinct and needed.
+		// If they are the same or overlap with DModItems, this needs to be handled.
+		ModItems.registerModItems(); // This might conflict if ModItems class is also in DModItems' package or has same name.
+
+		// Регистрация команд (из SVSP_ISLAND)
+		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
+			SVSP_LOGGER.info("CommandRegistrationCallback triggered for CustomBorderManager.registerCommands.");
+			CustomBorderManager.registerCommands(dispatcher, registryAccess, environment);
+		});
+		SVSP_LOGGER.info("CommandRegistrationCallback.EVENT.register call for CustomBorderManager's commands.");
+
+		// Инициализация менеджера границ теперь статическая и с конфигом (из SVSP_ISLAND)
+		CustomBorderManager.initialize(CONFIG);
+
+		ServerLifecycleEvents.SERVER_STARTED.register(this::onSvspServerStarted); // Renamed to avoid conflict
+		ServerLifecycleEvents.SERVER_STOPPED.register(this::onSvspServerStopped); // Renamed to avoid conflict
+		ServerTickEvents.END_SERVER_TICK.register(this::onSvspServerTick);       // Renamed to avoid conflict
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> CustomBorderManager.onPlayerJoin(handler.player));
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> CustomBorderManager.onPlayerDisconnect(handler.player));
+		SVSP_LOGGER.info("{} Mod Initialized within VanillaDamir00109.", SVSP_MOD_ID);
+		// End of initialization from SVSP_ISLAND
 	}
 
 	@Override
@@ -145,7 +189,6 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 
 
 	public static BlockData getBlockNearby(PlayerEntity player, Block target, int radius) {
-		//World world = player.getWorld();
 		BlockPos playerPos = player.getBlockPos();
 
 		for (int x = -radius; x <= radius; x++) {
@@ -180,7 +223,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 
 	// HELPER METHOD TO TRANSFORM RADIO
 	private void transformRadio(ServerWorld world, BlockPos radioPos, BlockState radioState) {
-		if (!radioState.isOf(DModBlocks.RADIO)) return; // Should not happen if logic is correct
+		if (!radioState.isOf(DModBlocks.RADIO)) return;
 
 		LOGGER.info("Lightning struck antenna of radio at {}. Transforming to burnt radio.", radioPos);
 		int power = radioState.get(Radio.POWER);
@@ -275,4 +318,22 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 			}
 		}
 	}
+
+	// Methods from SVSP_ISLAND, potentially renamed to avoid conflicts
+	private void onSvspServerStarted(MinecraftServer server) {
+		CustomBorderManager.setServer(server);
+		SVSP_LOGGER.info("SVSP_ISLAND part: Server started, border manager server set.");
+	}
+
+	private void onSvspServerStopped(MinecraftServer server) {
+		CustomBorderManager.clearPlayerStates();
+		SVSP_LOGGER.info("SVSP_ISLAND part: Server stopped, player states cleared.");
+	}
+
+	private void onSvspServerTick(MinecraftServer server) {
+		if (CONFIG != null && CONFIG.enableBorderSystem) {
+			CustomBorderManager.onServerTick(server);
+		}
+	}
+	// End of methods from SVSP_ISLAND
 }

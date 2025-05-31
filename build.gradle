@@ -59,6 +59,7 @@ dependencies {
 	modImplementation(include("com.github.quiltservertools:Ledger:${project.ledger_version}"))
 	//modImplementation "maven.modrinth:ledger:${project.ledger_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	implementation 'com.googlecode.json-simple:json-simple:1.1.1'
 	
 }
 

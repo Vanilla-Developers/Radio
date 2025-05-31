@@ -1,5 +1,8 @@
 {
     "item.vpl.radio": "Радио",
 	"item.vpl.burnt_radio": "Сгоревшее Радио",
-    "item.vpl.glowing_brush": "Светящаяся кисть"
+    "item.vpl.glowing_brush": "Светящаяся кисть",
+	"death.attack.mysterious_death": "%1$s умер по неизвестной причине",
+    "text.vpl.bed.no_sleep_custom": "Вы слишком обеспокоены, чтобы спать...",
+    "item.vpl.chamomile_soup": "Ромашковый суп"
 }
