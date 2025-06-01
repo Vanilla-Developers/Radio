@@ -35,10 +35,10 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.MinecraftServer;
 import com.damir00109.zona.CustomBorderManager;
-import com.damir00109.item.ModItems; // Assuming ModItems from SVSP_ISLAND is different or will be merged/renamed
+import com.damir00109.items.ChamomileSoup;
 // End of imports from SVSP_ISLAND
 
-public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
+public class vpl implements ModInitializer, VoicechatPlugin {
 	public static final String MOD_ID = "vpl";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 	public static final Channel[] channels = new Channel[15];
@@ -48,11 +48,8 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	public static final String RADIO_VOLUME_CATEGORY_ID = "vpl_radio_vol";
 	private static final String RADIO_ICON_PATH = "assets/vpl/textures/gui/radio_icon.png";
 
-	// From SVSP_ISLAND
-	public static final String SVSP_MOD_ID = "svsp_island"; // Renamed to avoid conflict
-	public static final Logger SVSP_LOGGER = LoggerFactory.getLogger(SVSP_MOD_ID); // Renamed
+	// Интегрируем компоненты SVSP_ISLAND под основной MOD_ID
 	public static ModConfig CONFIG;
-	// End of SVSP_ISLAND fields
 
 	public static Channel getChannel(int index) {
 		if (index <= 0) return getChannel(index+1);
@@ -77,37 +74,39 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 
 	@Override
 	public void onInitialize() {
-		LOGGER.info("Register blocks and items...");
+		LOGGER.info("Register blocks and items for {}", MOD_ID);
 		DModItems.registerModItems();
 		DModBlocks.registerModBlocks();
 		//RadioTab.initialize();
 
-		// Initialization from SVSP_ISLAND
-		SVSP_LOGGER.info("Initializing {} Mod", SVSP_MOD_ID);
+		// Initialization for integrated svsp_island components
+		LOGGER.info("Initializing integrated svsp_island components...");
 
 		CONFIG = ModConfig.load(); // Загружаем конфигурацию
 
 		// Регистрация наших предметов (из SVSP_ISLAND)
 		// Assuming ModItems from SVSP_ISLAND are distinct and needed.
 		// If they are the same or overlap with DModItems, this needs to be handled.
-		ModItems.registerModItems(); // This might conflict if ModItems class is also in DModItems' package or has same name.
+		// ModItems.registerModItems(); // Удаляем вызов старого метода регистрации
+		ChamomileSoup.CHAMOMILE_SOUP_ITEM.toString(); // Инициализируем и регистрируем новый предмет
+		ChamomileSoup.addChamomileSoupToItemGroup(); // Добавляем предмет в группу предметов
 
 		// Регистрация команд (из SVSP_ISLAND)
 		CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
-			SVSP_LOGGER.info("CommandRegistrationCallback triggered for CustomBorderManager.registerCommands.");
+			LOGGER.info("CommandRegistrationCallback triggered for CustomBorderManager.registerCommands (integrated svsp_island).");
 			CustomBorderManager.registerCommands(dispatcher, registryAccess, environment);
 		});
-		SVSP_LOGGER.info("CommandRegistrationCallback.EVENT.register call for CustomBorderManager's commands.");
+		LOGGER.info("CommandRegistrationCallback.EVENT.register call for CustomBorderManager's commands (integrated svsp_island).");
 
 		// Инициализация менеджера границ теперь статическая и с конфигом (из SVSP_ISLAND)
 		CustomBorderManager.initialize(CONFIG);
 
-		ServerLifecycleEvents.SERVER_STARTED.register(this::onSvspServerStarted); // Renamed to avoid conflict
-		ServerLifecycleEvents.SERVER_STOPPED.register(this::onSvspServerStopped); // Renamed to avoid conflict
-		ServerTickEvents.END_SERVER_TICK.register(this::onSvspServerTick);       // Renamed to avoid conflict
+		ServerLifecycleEvents.SERVER_STARTED.register(this::onSvspServerStarted);
+		ServerLifecycleEvents.SERVER_STOPPED.register(this::onSvspServerStopped);
+		ServerTickEvents.END_SERVER_TICK.register(this::onSvspServerTick);
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> CustomBorderManager.onPlayerJoin(handler.player));
 		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> CustomBorderManager.onPlayerDisconnect(handler.player));
-		SVSP_LOGGER.info("{} Mod Initialized within VanillaDamir00109.", SVSP_MOD_ID);
+		LOGGER.info("Integrated svsp_island components initialized.");
 		// End of initialization from SVSP_ISLAND
 	}
 
@@ -118,7 +117,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 
 	@Override
 	public void initialize(VoicechatApi api) {
-		VanillaDamir00109.api = (VoicechatServerApi) api;
+		vpl.api = (VoicechatServerApi) api;
 		LOGGER.info("VoiceChat initialized");
 	}
 
@@ -238,7 +237,7 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 	}
 
 	private int[][] getIconData(String path) {
-		try (InputStream stream = VanillaDamir00109.class.getClassLoader().getResourceAsStream(path)) {
+		try (InputStream stream = vpl.class.getClassLoader().getResourceAsStream(path)) {
 			if (stream == null) {
 				LOGGER.warn("Failed to find icon resource: {}", path);
 				return null;
@@ -319,15 +318,15 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 		}
 	}
 
-	// Methods from SVSP_ISLAND, potentially renamed to avoid conflicts
+	// Methods from SVSP_ISLAND, now fully integrated
 	private void onSvspServerStarted(MinecraftServer server) {
 		CustomBorderManager.setServer(server);
-		SVSP_LOGGER.info("SVSP_ISLAND part: Server started, border manager server set.");
+		LOGGER.info("Integrated svsp_island part: Server started, border manager server set.");
 	}
 
 	private void onSvspServerStopped(MinecraftServer server) {
 		CustomBorderManager.clearPlayerStates();
-		SVSP_LOGGER.info("SVSP_ISLAND part: Server stopped, player states cleared.");
+		LOGGER.info("Integrated svsp_island part: Server stopped, player states cleared.");
 	}
 
 	private void onSvspServerTick(MinecraftServer server) {
@@ -335,5 +334,4 @@ public class VanillaDamir00109 implements ModInitializer, VoicechatPlugin {
 			CustomBorderManager.onServerTick(server);
 		}
 	}
-	// End of methods from SVSP_ISLAND
 }

@@ -1,6 +1,6 @@
 package com.damir00109.blocks;
 
-import com.damir00109.VanillaDamir00109;
+import com.damir00109.vpl;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.block.*;
 import net.minecraft.block.piston.PistonBehavior;
@@ -41,7 +41,7 @@ public class DModBlocks {
             java.util.function.Function<Block.Settings, Block> factory,
             Block.Settings baseSettings
     ) {
-        Identifier id = Identifier.of(VanillaDamir00109.MOD_ID, name);
+        Identifier id = Identifier.of(vpl.MOD_ID, name);
         // Регистрируем блок со своим registryKey
         RegistryKey<Block> blockKey = RegistryKey.of(RegistryKeys.BLOCK, id);
         baseSettings = baseSettings.registryKey(blockKey);
@@ -61,7 +61,7 @@ public class DModBlocks {
     }
 
     public static void registerModBlocks() {
-        VanillaDamir00109.LOGGER.info("Registering Mod Blocks for " + VanillaDamir00109.MOD_ID);
+        vpl.LOGGER.info("Registering Mod Blocks for " + vpl.MOD_ID);
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.REDSTONE)
                 .register(entries -> {
                     entries.add(BURNT_RADIO);

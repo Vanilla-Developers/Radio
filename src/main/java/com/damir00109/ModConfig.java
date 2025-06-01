@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ModConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(VanillaDamir00109.MOD_ID + " Config");
+    private static final Logger LOGGER = LoggerFactory.getLogger(vpl.MOD_ID + " Config");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final File CONFIG_FILE = new File(FabricLoader.getInstance().getConfigDir().toFile(), VanillaDamir00109.MOD_ID + ".json");
+    private static final File CONFIG_FILE = new File(FabricLoader.getInstance().getConfigDir().toFile(), vpl.MOD_ID + ".json");
 
     public List<String> allowedDimensions = new ArrayList<>(List.of("minecraft:overworld"));
     public boolean enableBorderSystem = false; // Default value changed to false
@@ -56,7 +56,7 @@ public class ModConfig {
                 save(config); 
             }
         } catch (IOException e) {
-            LOGGER.error("Could not load or create config file for " + VanillaDamir00109.MOD_ID, e);
+            LOGGER.error("Could not load or create config file for " + vpl.MOD_ID, e);
             // Fallback to default config if loading fails catastrophically
             config = new ModConfig();
         }
@@ -70,7 +70,7 @@ public class ModConfig {
         try (FileWriter writer = new FileWriter(CONFIG_FILE)) {
             GSON.toJson(config, writer);
         } catch (IOException e) {
-            LOGGER.error("Could not save config file for " + VanillaDamir00109.MOD_ID, e);
+            LOGGER.error("Could not save config file for " + vpl.MOD_ID, e);
         }
     }
 } 

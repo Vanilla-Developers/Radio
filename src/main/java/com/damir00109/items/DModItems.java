@@ -26,7 +26,7 @@ import net.minecraft.world.*;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static com.damir00109.VanillaDamir00109.MOD_ID;
+import static com.damir00109.vpl.MOD_ID;
 
 public final class DModItems {
 	private DModItems() {}

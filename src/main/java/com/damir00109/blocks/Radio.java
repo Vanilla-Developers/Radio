@@ -1,6 +1,6 @@
 package com.damir00109.blocks;
 
-import com.damir00109.VanillaDamir00109;
+import com.damir00109.vpl;
 import com.damir00109.audio.*;
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
@@ -66,19 +66,19 @@ public class Radio {
 		@Override
 		public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
 			if (world.isClient) return;
-			VanillaDamir00109.radios.put(pos, world.getBlockState(pos));
+			vpl.radios.put(pos, world.getBlockState(pos));
 			update(world.getBlockState(pos), world, pos);
 		}
 
 		@Override
 		public BlockState onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
 			if (world.isClient) return state;
-			VanillaDamir00109.radios.remove(pos);
-			VoicechatServerApi api = VanillaDamir00109.getAPI();
+			vpl.radios.remove(pos);
+			VoicechatServerApi api = vpl.getAPI();
 			if (api != null) {
 				ServerLevel serverLevel = api.fromServerLevel(world);
 				if (serverLevel != null) {
-					Channel channel = VanillaDamir00109.getChannel(state.get(POWER));
+					Channel channel = vpl.getChannel(state.get(POWER));
 					if (channel != null) {
 						channel.removeRadio(pos);
 					}
@@ -167,9 +167,9 @@ public class Radio {
 			}
 			
 			BlockState stateInWorldAfterUpdate = world.getBlockState(currentPos);
-			VanillaDamir00109.radios.put(currentPos, stateInWorldAfterUpdate);
+			vpl.radios.put(currentPos, stateInWorldAfterUpdate);
 
-			VoicechatServerApi api = VanillaDamir00109.getAPI();
+			VoicechatServerApi api = vpl.getAPI();
 			if (api != null) {
 				ServerLevel serverLevel = api.fromServerLevel(world);
 				if (serverLevel != null) {
@@ -192,13 +192,13 @@ public class Radio {
 		}
 
 		public Sender getSender(BlockState state, BlockPos pos, ServerLevel level) {
-			Channel channel = VanillaDamir00109.getOrCreate(state.get(POWER));
-			VoicechatServerApi api = VanillaDamir00109.getAPI();
+			Channel channel = vpl.getOrCreate(state.get(POWER));
+			VoicechatServerApi api = vpl.getAPI();
 			return channel.getOrCreateSender(level, pos);
 		}
 		public Listener getListener(BlockState state, BlockPos pos, ServerLevel level) {
-			Channel channel = VanillaDamir00109.getOrCreate(state.get(POWER));
-			VoicechatServerApi api = VanillaDamir00109.getAPI();
+			Channel channel = vpl.getOrCreate(state.get(POWER));
+			VoicechatServerApi api = vpl.getAPI();
 			return channel.getOrCreateListener(level, pos);
 		}
 
@@ -214,12 +214,12 @@ public class Radio {
 
 				world.setBlockState(pos, DModBlocks.BURNT_RADIO.getDefaultState(), 3);
 
-				if (VanillaDamir00109.radios.containsKey(pos)) {
-					Channel channel = VanillaDamir00109.getChannel(power);
+				if (vpl.radios.containsKey(pos)) {
+					Channel channel = vpl.getChannel(power);
 					if (channel != null) {
 						channel.removeRadio(pos);
 					}
-					VanillaDamir00109.radios.remove(pos);
+					vpl.radios.remove(pos);
 				}
 			}
 		}

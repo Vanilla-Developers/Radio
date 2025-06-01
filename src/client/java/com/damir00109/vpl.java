@@ -3,7 +3,7 @@ package com.damir00109;
 
 import net.fabricmc.api.ClientModInitializer;
 
-public class VanillaDamir00109Client implements ClientModInitializer {
+public class vpl implements ClientModInitializer {
 	@Override
 	public void onInitializeClient() {
 		BlockCoordTooltipComponent.register(); // Регистрация тултипа с координатами

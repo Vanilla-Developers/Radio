@@ -17,13 +17,13 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.damir00109.VanillaDamir00109"
+			"com.damir00109.vpl"
 		],
 		"client": [
-			"com.damir00109.VanillaDamir00109Client"
+			"com.damir00109.client.vpl"
 		],
 		"voicechat": [
-			"com.damir00109.VanillaDamir00109"
+			"com.damir00109.vpl"
 		]
 	},
 	"mixins": [
@@ -35,7 +35,7 @@
 	],
 	"depends": {
 		"fabricloader": ">=0.16.9",
-		"minecraft": "~1.21.4",
+		"minecraft": "1.21.5",
 		"java": ">=21",
 		"voicechat": "*",
 		"fabric-api": "*"

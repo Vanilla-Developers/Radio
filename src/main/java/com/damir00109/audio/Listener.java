@@ -1,6 +1,6 @@
 package com.damir00109.audio;
 
-import com.damir00109.VanillaDamir00109;
+import com.damir00109.vpl;
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.audiochannel.*;
 import de.maxhenkel.voicechat.api.opus.OpusDecoder;
@@ -42,9 +42,9 @@ public class Listener {
 		this.audioChannel = api.createLocationalAudioChannel(this.uuid, level, position);
 		if (this.audioChannel != null) {
 			this.audioChannel.setDistance(64F);
-			this.audioChannel.setCategory(VanillaDamir00109.RADIO_VOLUME_CATEGORY_ID);
+			this.audioChannel.setCategory(vpl.RADIO_VOLUME_CATEGORY_ID);
 		} else {
-			VanillaDamir00109.LOGGER.error("Failed to create LocationalAudioChannel for Listener at {}", pos);
+			vpl.LOGGER.error("Failed to create LocationalAudioChannel for Listener at {}", pos);
 		}
 		this.static_channel = null;
 	}
@@ -64,7 +64,7 @@ public class Listener {
 		if (audioPlayer == null && audioChannel != null) {
 			audioPlayer = api.createAudioPlayer(audioChannel, api.createEncoder(), this::getAudio);
 			if (audioPlayer == null) {
-				VanillaDamir00109.LOGGER.error("Failed to create AudioPlayer for Listener at {}", pos);
+				vpl.LOGGER.error("Failed to create AudioPlayer for Listener at {}", pos);
 			}
 		}
 		return audioPlayer;

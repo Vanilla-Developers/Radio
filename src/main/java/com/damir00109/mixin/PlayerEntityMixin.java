@@ -1,6 +1,6 @@
 package com.damir00109.mixin;
 
-import com.damir00109.VanillaDamir00109;
+import com.damir00109.vpl;
 import com.damir00109.zona.CustomBorderManager;
 import com.damir00109.zona.PlayerState;
 import net.minecraft.entity.EntityType;
@@ -34,18 +34,18 @@ public abstract class PlayerEntityMixin extends LivingEntity {
 
             if (state != null && state.hasEatenChamomileSoupRecently()) {
                 long timeSinceSoupEaten = player.getWorld().getTime() - state.getTimeWhenSoupWasEaten();
-                VanillaDamir00109.SVSP_LOGGER.info("Player {} woke up. Time since soup eaten: {} ticks. DURATION_UNTIL_SOUP_EFFECT_EXPIRES_TICKS: {}",
+                vpl.LOGGER.info("Player {} woke up. Time since soup eaten: {} ticks. DURATION_UNTIL_SOUP_EFFECT_EXPIRES_TICKS: {}",
                                         player.getName().getString(), timeSinceSoupEaten, CustomBorderManager.DURATION_UNTIL_SOUP_EFFECT_EXPIRES_TICKS);
 
                 if (timeSinceSoupEaten < CustomBorderManager.DURATION_UNTIL_SOUP_EFFECT_EXPIRES_TICKS) {
                     state.setAteChamomileSoupRecently(false);
                     state.setTimeWhenSoupWasEaten(0); // Сбрасываем время
-                    VanillaDamir00109.SVSP_LOGGER.info("Player {} slept before soup effect expired. Debuff avoided.", player.getName().getString());
+                    vpl.LOGGER.info("Player {} slept before soup effect expired. Debuff avoided.", player.getName().getString());
                     if (player.getServer() != null) {
                         CustomBorderManager.saveConsciousnessData(player.getServer(), CustomBorderManager.getAllPlayerStates());
                     }
                 } else {
-                    VanillaDamir00109.SVSP_LOGGER.info("Player {} slept AFTER soup effect should have expired (or DURATION is wrong). TimeSince: {}, DurationConst: {}",
+                    vpl.LOGGER.info("Player {} slept AFTER soup effect should have expired (or DURATION is wrong). TimeSince: {}, DurationConst: {}",
                                             player.getName().getString(), timeSinceSoupEaten, CustomBorderManager.DURATION_UNTIL_SOUP_EFFECT_EXPIRES_TICKS);
                 }
             }

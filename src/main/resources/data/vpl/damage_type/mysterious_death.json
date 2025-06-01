@@ -1,0 +1,7 @@
+{
+  "message_id": "vpl.mysterious_death",
+  "exhaustion": 0.1,
+  "scaling": "never",
+  "effects": "hurt",
+  "death_message_type": "default"
+} 

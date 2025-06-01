@@ -1,6 +1,6 @@
 package com.damir00109.zona;
 
-import com.damir00109.VanillaDamir00109;
+import com.damir00109.vpl;
 import com.damir00109.ModConfig;
 import com.damir00109.zona.MentalHealthZone;
 import com.mojang.brigadier.CommandDispatcher;
@@ -66,7 +66,7 @@ import java.lang.reflect.Type;
 
 public class CustomBorderManager {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(VanillaDamir00109.MOD_ID + " CustomBorder");
+    public static final Logger LOGGER = LoggerFactory.getLogger(vpl.MOD_ID + " CustomBorder");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create(); // Gson для сохранения/загрузки зон
 
     private static MinecraftServer server;
@@ -85,7 +85,7 @@ public class CustomBorderManager {
     private static final int SOUP_DEBUFF_DURATION_TICKS = 10 * 20; // 10 секунд
 
     public static final RegistryKey<DamageType> MYSTERIOUS_DAMAGE_TYPE_KEY =
-            RegistryKey.of(RegistryKeys.DAMAGE_TYPE, Identifier.of(VanillaDamir00109.MOD_ID, "mysterious_death"));
+            RegistryKey.of(RegistryKeys.DAMAGE_TYPE, Identifier.of(vpl.MOD_ID, "mysterious_death"));
 
     public static void initialize(ModConfig config) {
         currentConfig = config;
@@ -117,6 +117,7 @@ public class CustomBorderManager {
             borderNormal.setVertices(new ArrayList<>());
             borderReduced.setVertices(new ArrayList<>());
             emergencyBorder.setVertices(new ArrayList<>());
+            mentalHealthZones.clear(); // Также очищаем зоны, если система выключена
             bordersConfigured = false;
             return;
         }
@@ -149,19 +150,21 @@ public class CustomBorderManager {
         emergencyBorder.setVertices(emergencyVertices);
 
         bordersConfigured = true;
-        LOGGER.info("Borders configured from ModConfig: Normal MinX: {}, MaxX: {}, MinZ: {}, MaxZ: {}. System Enabled: {}.", 
-            currentConfig.borderMinX, currentConfig.borderMaxX, currentConfig.borderMinZ, currentConfig.borderMaxZ, currentConfig.enableBorderSystem);
-        LOGGER.info("Reduced Border set to: MinX: {}, MaxX: {}, MinZ: {}, MaxZ: {}", currentConfig.borderMinX + 50, currentConfig.borderMaxX - 50, currentConfig.borderMinZ + 50, currentConfig.borderMaxZ - 50);
-        LOGGER.info("Emergency Border set to: MinX: {}, MaxX: {}, MinZ: {}, MaxZ: {}", currentConfig.borderMinX - 100, currentConfig.borderMaxX + 100, currentConfig.borderMinZ - 100, currentConfig.borderMaxZ + 100);
+        LOGGER.info("Borders configured from ModConfig. System Enabled: {}.", currentConfig.enableBorderSystem);
     }
 
     private static Path getMentalHealthZonesFilePath(MinecraftServer currentSrv) {
         if (currentSrv == null) return null;
         String levelName = currentSrv.getSaveProperties().getLevelName();
-        return currentSrv.getRunDirectory().resolve("saves").resolve(levelName).resolve("svsp_island_mental_health_zones.json");
+        return currentSrv.getRunDirectory().resolve("saves").resolve(levelName).resolve(vpl.MOD_ID + "_mental_health_zones.json");
     }
 
     private static void loadMentalHealthZonesForCurrentWorld(MinecraftServer currentSrv) {
+        if (currentConfig == null || !currentConfig.enableBorderSystem) {
+            mentalHealthZones.clear();
+            LOGGER.info("Border system disabled, not loading mental health zones.");
+            return;
+        }
         mentalHealthZones.clear(); // Очищаем старые зоны перед загрузкой новых
         Path filePath = getMentalHealthZonesFilePath(currentSrv);
         if (filePath == null) {
@@ -187,6 +190,10 @@ public class CustomBorderManager {
     }
 
     private static void saveMentalHealthZonesToWorldFile(MinecraftServer currentSrv) {
+        if (currentConfig == null || !currentConfig.enableBorderSystem) {
+            LOGGER.info("Border system disabled, not saving mental health zones.");
+            return;
+        }
         Path filePath = getMentalHealthZonesFilePath(currentSrv);
         if (filePath == null) {
             LOGGER.error("Cannot save mental health zones: server instance is null for path generation.");
@@ -210,26 +217,33 @@ public class CustomBorderManager {
     public static void setServer(MinecraftServer s) {
         server = s;
         if (server != null) {
-            LOGGER.info("Server instance set. Loading consciousness data from file...");
-            Map<UUID, Integer> consciousnessDataFromFile = loadConsciousnessData(server); // Существующий метод
-            for (Map.Entry<UUID, Integer> entry : consciousnessDataFromFile.entrySet()) {
-                UUID playerUuid = entry.getKey();
-                int consciousnessFromFile = entry.getValue();
-                PlayerState state = playerStates.computeIfAbsent(playerUuid, uuid -> {
-                    LOGGER.info("Pre-loading state for UUID {} from file (consciousness file).", playerUuid);
-                    return new PlayerState(false);
-                });
-                state.setConsciousness(consciousnessFromFile);
-                LOGGER.info("Set consciousness for UUID {} to {} from consciousness file.", playerUuid, consciousnessFromFile);
+            if (currentConfig != null && currentConfig.enableBorderSystem) {
+                LOGGER.info("Server instance set. Border system ENABLED. Loading consciousness data and mental health zones...");
+                Map<UUID, Integer> consciousnessDataFromFile = loadConsciousnessData(server);
+                for (Map.Entry<UUID, Integer> entry : consciousnessDataFromFile.entrySet()) {
+                    UUID playerUuid = entry.getKey();
+                    int consciousnessFromFile = entry.getValue();
+                    PlayerState state = playerStates.computeIfAbsent(playerUuid, uuid -> {
+                        LOGGER.info("Pre-loading state for UUID {} from file (consciousness file).", playerUuid);
+                        return new PlayerState(false);
+                    });
+                    state.setConsciousness(consciousnessFromFile);
+                    LOGGER.info("Set consciousness for UUID {} to {} from consciousness file.", playerUuid, consciousnessFromFile);
+                }
+                LOGGER.info("Finished loading {} entries from consciousness file into playerStates.", consciousnessDataFromFile.size());
+                loadMentalHealthZonesForCurrentWorld(server);
+            } else {
+                LOGGER.info("Server instance set. Border system DISABLED. Skipping data load for zones and consciousness.");
+                playerStates.clear();
+                mentalHealthZones.clear();
             }
-            LOGGER.info("Finished loading {} entries from consciousness file into playerStates.", consciousnessDataFromFile.size());
-            
-            // Загружаем зоны ментального здоровья для текущего мира
-            loadMentalHealthZonesForCurrentWorld(server);
         }
     }
 
     public static void onPlayerJoin(ServerPlayerEntity player) {
+        if (currentConfig == null || !currentConfig.enableBorderSystem) {
+            return;
+        }
         UUID playerUuid = player.getUuid();
         PlayerState state = playerStates.get(playerUuid);
 
@@ -252,15 +266,25 @@ public class CustomBorderManager {
     }
 
     public static void onPlayerDisconnect(ServerPlayerEntity player) {
+        UUID playerUuid = player.getUuid();
+        if (currentConfig == null || !currentConfig.enableBorderSystem) {
+            playerStates.remove(playerUuid);
+            return;
+        }
         LOGGER.info("Player {} disconnected.", player.getName().getString());
-        if (server != null && playerStates.containsKey(player.getUuid())) {
+        if (server != null && playerStates.containsKey(playerUuid)) {
             saveConsciousnessData(server, playerStates);
         }
     }
 
     public static void clearPlayerStates() {
+        LOGGER.info("Clearing all player states from memory.");
         playerStates.clear();
-        LOGGER.info("All player states cleared.");
+        if (currentConfig != null && currentConfig.enableBorderSystem) {
+             LOGGER.info("Border system was enabled, states cleared.");
+        } else {
+            LOGGER.info("Border system is disabled, states cleared from memory.");
+        }
     }
 
     private static DamageSource getMysteriousDamageSource(ServerWorld world) {
@@ -272,6 +296,9 @@ public class CustomBorderManager {
     }
 
     public static void onServerTick(MinecraftServer currentServer) {
+        if (currentConfig == null || !currentConfig.enableBorderSystem || !bordersConfigured) {
+            return;
+        }
         if (server == null && currentServer != null) {
             server = currentServer;
         } else if (currentServer == null && server == null) {
@@ -553,80 +580,114 @@ public class CustomBorderManager {
     }
     
     public static void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
-        dispatcher.register(CommandManager.literal(VanillaDamir00109.MOD_ID)
+        dispatcher.register(CommandManager.literal("customborder")
             .requires(source -> source.hasPermissionLevel(2))
             .then(CommandManager.literal("setConsciousness")
-                .then(CommandManager.argument("playerName", StringArgumentType.word())
-                    .suggests((ctx, builder) -> CommandSource.suggestMatching(ctx.getSource().getServer().getPlayerNames(), builder))
-                    .then(CommandManager.argument("value", IntegerArgumentType.integer(0, 100))
-                        .executes(CustomBorderManager::setConsciousnessCommandWithStringArgument))))
-            .then(CommandManager.literal("reloadConfig")
-                 .executes(context -> {
-                    ModConfig newConfig = ModConfig.load(); // Загружаем основной конфиг мода
-                    if (newConfig != null) {
-                        currentConfig = newConfig;
-                        setupBordersFromConfig();
-                        // Перезагружаем зоны ментального здоровья для текущего мира
-                        if (context.getSource().getServer() != null) {
-                            loadMentalHealthZonesForCurrentWorld(context.getSource().getServer());
-                        }
-                        LOGGER.info("Mod config reloaded. MH Zones reloaded for current world.");
-                        context.getSource().sendFeedback(() -> Text.literal("Конфигурация мода " + VanillaDamir00109.MOD_ID + " перезагружена, зоны восстановления для мира обновлены."), true);
-                    } else {
-                        LOGGER.error("Failed to reload mod config!");
-                        context.getSource().sendError(Text.literal("Ошибка при перезагрузке конфигурации " + VanillaDamir00109.MOD_ID + "!"));
-                    }
-                    return 1;}))
-            .then(CommandManager.literal("setBorderInConfig")
-                .then(CommandManager.argument("minX", FloatArgumentType.floatArg())
-                    .then(CommandManager.argument("maxX", FloatArgumentType.floatArg())
-                        .then(CommandManager.argument("minZ", FloatArgumentType.floatArg())
-                            .then(CommandManager.argument("maxZ", FloatArgumentType.floatArg())
-                                .executes(CustomBorderManager::setBorderInConfigCommand))))))
-            .then(CommandManager.literal("checkmentall")
-                .executes(CustomBorderManager::checkMentalSelf)
-                .then(CommandManager.argument("target", StringArgumentType.greedyString())
-                    .suggests((ctx, builder) -> {
-                        MinecraftServer currentServer = ctx.getSource().getServer();
-                        List<String> suggestions = new ArrayList<>(Arrays.asList(currentServer.getPlayerManager().getPlayerNames()));
+                .then(CommandManager.argument("player", EntityArgumentType.player())
+                    .then(CommandManager.argument("consciousness", IntegerArgumentType.integer(0, 100))
+                        .executes(context -> {
+                            if (currentConfig == null || !currentConfig.enableBorderSystem) {
+                                context.getSource().sendError(Text.literal("Border system is disabled. Command unavailable."));
+                                return 0;
+                            }
+                            return setConsciousnessCommand(context);
+                        })
+                    )
+                    .then(CommandManager.argument("mode", StringArgumentType.word())
+                        .suggests((context, builder) -> CommandSource.suggestMatching(Arrays.asList("set", "add", "remove"), builder))
+                        .then(CommandManager.argument("value", IntegerArgumentType.integer())
+                            .executes(context -> {
+                                if (currentConfig == null || !currentConfig.enableBorderSystem) {
+                                    context.getSource().sendError(Text.literal("Border system is disabled. Command unavailable."));
+                                    return 0;
+                                }
+                                return setConsciousnessCommandWithStringArgument(context);
+                            })
+                        )
+                    )
+                )
+            )
+            .then(CommandManager.literal("checkMental")
+                .executes(CustomBorderManager::checkMentalPlayerSelf)
+                .then(CommandManager.argument("target", StringArgumentType.string())
+                    .suggests((context, builder) -> {
+                        List<String> suggestions = new ArrayList<>();
                         suggestions.add("all");
+                        ServerPlayerEntity player = context.getSource().getPlayer();
+                        if (player != null) {
+                            MinecraftServer currentServer = player.getServer();
+                            if (currentServer != null) {
+                                currentServer.getPlayerManager().getPlayerList().forEach(p -> suggestions.add(p.getName().getString()));
+                            }
+                        }
                         return CommandSource.suggestMatching(suggestions, builder);
                     })
-                    .executes(CustomBorderManager::checkMentalTarget))
+                    .executes(context -> {
+                        if (currentConfig == null || !currentConfig.enableBorderSystem) {
+                            context.getSource().sendError(Text.literal("Border system is disabled. Command unavailable."));
+                            return 0;
+                        }
+                        return checkMentalTarget(context);
+                    })
+                )
             )
-            // Новые команды для mental_health_zone
-            .then(CommandManager.literal("mental_health_zone")
-                .then(CommandManager.literal("add")
-                    .then(CommandManager.argument("name", StringArgumentType.string())
-                        .then(CommandManager.argument("x1", DoubleArgumentType.doubleArg())
-                            .then(CommandManager.argument("z1", DoubleArgumentType.doubleArg())
-                                .then(CommandManager.argument("x2", DoubleArgumentType.doubleArg())
-                                    .then(CommandManager.argument("z2", DoubleArgumentType.doubleArg())
-                                        .then(CommandManager.argument("ratePerMinute", DoubleArgumentType.doubleArg())
-                                            .then(CommandManager.argument("dimension", DimensionArgumentType.dimension())
-                                                .executes(CustomBorderManager::addMentalHealthZoneCommand)
-                                            )
-                                        )
-                                    )
-                                )
+            .then(CommandManager.literal("setConfigBorder")
+                .then(CommandManager.argument("minX", DoubleArgumentType.doubleArg())
+                    .then(CommandManager.argument("minZ", DoubleArgumentType.doubleArg())
+                        .then(CommandManager.argument("maxX", DoubleArgumentType.doubleArg())
+                            .then(CommandManager.argument("maxZ", DoubleArgumentType.doubleArg())
+                                .executes(CustomBorderManager::setBorderInConfigCommand)
                             )
                         )
                     )
                 )
-                .then(CommandManager.literal("list")
-                    .executes(CustomBorderManager::listMentalHealthZonesCommand)
+            )
+            .then(CommandManager.literal("addMentalZone")
+                .then(CommandManager.argument("name", StringArgumentType.string())
+                .then(CommandManager.argument("x1", DoubleArgumentType.doubleArg())
+                .then(CommandManager.argument("z1", DoubleArgumentType.doubleArg())
+                .then(CommandManager.argument("x2", DoubleArgumentType.doubleArg())
+                .then(CommandManager.argument("z2", DoubleArgumentType.doubleArg())
+                .then(CommandManager.argument("ratePerMinute", DoubleArgumentType.doubleArg())
+                .then(CommandManager.argument("dimension", DimensionArgumentType.dimension())
+                    .executes(context -> {
+                        if (currentConfig == null || !currentConfig.enableBorderSystem) {
+                            context.getSource().sendError(Text.literal("Border system is disabled. Command unavailable."));
+                            return 0;
+                        }
+                        return addMentalHealthZoneCommand(context);
+                    })
+                )))))))
+            )
+            .then(CommandManager.literal("listMentalZones")
+                .executes(context -> {
+                    if (currentConfig == null || !currentConfig.enableBorderSystem) {
+                        context.getSource().sendError(Text.literal("Border system is disabled. Command unavailable."));
+                        return 0;
+                    }
+                    return listMentalHealthZonesCommand(context);
+                })
+            )
+            .then(CommandManager.literal("deleteMentalZone")
+                .then(CommandManager.argument("zoneName", StringArgumentType.string())
+                    .suggests((context, builder) -> {
+                        List<String> zoneNames = new ArrayList<>();
+                        if (currentConfig != null && currentConfig.enableBorderSystem) {
+                           for (MentalHealthZone zone : mentalHealthZones) {
+                               zoneNames.add(zone.name);
+                           }
+                        }
+                        return CommandSource.suggestMatching(zoneNames, builder);
+                    })
+                    .executes(context -> {
+                        if (currentConfig == null || !currentConfig.enableBorderSystem) {
+                            context.getSource().sendError(Text.literal("Border system is disabled. Command unavailable."));
+                            return 0;
+                        }
+                        return deleteMentalHealthZoneCommand(context);
+                    })
                 )
-                .then(CommandManager.literal("delete")
-                    .then(CommandManager.argument("name", StringArgumentType.string())
-                        .suggests((ctx, builder) -> {
-                            List<String> zoneNames = new ArrayList<>();
-                            // mentalHealthZones теперь напрямую используется, а не из currentConfig
-                            for (MentalHealthZone zone : mentalHealthZones) {
-                                zoneNames.add(zone.name);
-                            }
-                            return CommandSource.suggestMatching(zoneNames, builder);
-                        })
-                        .executes(CustomBorderManager::deleteMentalHealthZoneCommand))))
+            )
         );
     }
 
@@ -661,9 +722,9 @@ public class CustomBorderManager {
         return 1;
     }
 
-    private static int checkMentalSelf(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int checkMentalPlayerSelf(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayerOrThrow();
+        ServerPlayerEntity player = source.getPlayerOrThrow(); // Получаем игрока, вызвавшего команду
         PlayerState state = playerStates.get(player.getUuid());
 
         if (state != null) {
@@ -677,116 +738,79 @@ public class CustomBorderManager {
     }
 
     public static Map<UUID, Integer> loadConsciousnessData(MinecraftServer server) {
-        Map<UUID, Integer> consciousnessMap = new HashMap<>();
+        if (currentConfig == null || !currentConfig.enableBorderSystem) {
+            LOGGER.info("Border system disabled, not loading consciousness data.");
+            return new HashMap<>();
+        }
+        if (server == null) {
+            LOGGER.error("MinecraftServer instance is null. Cannot determine world save path for consciousness data.");
+            return new HashMap<>();
+        }
         String levelName = server.getSaveProperties().getLevelName();
-        LOGGER.info("Using level name for path construction: '{}'", levelName);
+        Path worldSavePath = server.getRunDirectory().resolve("saves").resolve(levelName);
+        Path targetJsonFilePath = worldSavePath.resolve(vpl.MOD_ID + "_consciousness.json");
 
-        Path serverRunDirectory = server.getRunDirectory();
-        Path worldSavePath = serverRunDirectory.resolve("saves").resolve(levelName);
-        LOGGER.info("Constructed world save path for loading: '{}'", worldSavePath.toAbsolutePath().toString());
-
-        Path targetJsonFilePath = worldSavePath.resolve("svsp_island_consciousness.json");
-        
-        LOGGER.info("Attempting to load/create consciousness file at: {}", targetJsonFilePath.toAbsolutePath().toString());
-
-        Path parentPath = targetJsonFilePath.getParent();
-        if (parentPath != null) {
-            if (Files.notExists(parentPath)) {
-                LOGGER.info("Parent directory for consciousness file does not exist: {}. Attempting to create.", parentPath.toAbsolutePath());
-                try {
-                    Files.createDirectories(parentPath);
-                    LOGGER.info("Successfully created parent directory: {}", parentPath.toAbsolutePath());
-                } catch (IOException e) {
-                    LOGGER.error("Failed to create parent directory: {} due to IOException. File operations will likely fail.", parentPath.toAbsolutePath(), e);
-                    return consciousnessMap; // Не можем продолжать без родительской директории
-                }
-            } else {
-                LOGGER.info("Parent directory already exists: {}", parentPath.toAbsolutePath());
-            }
-        }
-
-        File jsonFileToRead = targetJsonFilePath.toFile();
-        if (!jsonFileToRead.exists()) {
-            LOGGER.info("Consciousness file does not exist at {}. Creating a new empty file.", targetJsonFilePath.toAbsolutePath());
-            try {
-                if (jsonFileToRead.createNewFile()) {
-                    try (FileWriter writer = new FileWriter(jsonFileToRead)) {
-                        writer.write("{}"); // Записываем пустой JSON объект
-                        LOGGER.info("Successfully created and initialized new consciousness file: {}", targetJsonFilePath.toAbsolutePath());
-                    }
-                } else {
-                    // Эта ситуация (createNewFile вернул false) означает, что файл уже существовал,
-                    // что противоречит проверке !jsonFileToRead.exists(), если только не было гонки потоков.
-                    // В однопоточном контексте инициализации это маловероятно. Просто логируем.
-                    LOGGER.warn("createNewFile() returned false for {}, implying it suddenly exists. Proceeding to read.", targetJsonFilePath.toAbsolutePath());
-                }
-            } catch (IOException e) {
-                LOGGER.error("IOException while creating new consciousness file {}: ", targetJsonFilePath.toAbsolutePath(), e);
-                return consciousnessMap; // Не удалось создать файл, возвращаем пустую карту
-            }
-        }
-
-        // Если файл существует (либо был, либо только что успешно создан), пытаемся его прочитать
-        if (jsonFileToRead.exists() && jsonFileToRead.length() == 0) {
-             // Файл существует, но пуст (например, только что создан, но запись {} не удалась, или был создан пустым вручную)
-             // В этом случае JSONParser выдаст ошибку. Лучше сразу вернуть пустую карту.
-             LOGGER.warn("Consciousness file {} is empty. Returning empty map.", targetJsonFilePath.toAbsolutePath());
-             return consciousnessMap;
+        if (!Files.exists(targetJsonFilePath)) {
+            LOGGER.info("Consciousness data file not found at {}. Returning empty map.", targetJsonFilePath);
+            return new HashMap<>();
         }
         
-        try (FileReader reader = new FileReader(jsonFileToRead)) {
+        try (FileReader reader = new FileReader(targetJsonFilePath.toFile())) {
             JSONParser parser = new JSONParser();
             Object obj = parser.parse(reader);
 
             if (obj instanceof JSONObject) {
                 JSONObject jsonObject = (JSONObject) obj;
+                Map<UUID, Integer> consciousnessMap = new HashMap<>();
                 for (Object key : jsonObject.keySet()) {
                     String uuidString = (String) key;
-                    Object value = jsonObject.get(uuidString);
-                    if (value instanceof Number) {
-                        try {
-                            UUID uuid = UUID.fromString(uuidString);
+                    try {
+                        UUID uuid = UUID.fromString(uuidString);
+                        Object value = jsonObject.get(key);
+                        if (value instanceof Number) {
                             consciousnessMap.put(uuid, ((Number) value).intValue());
-                        } catch (IllegalArgumentException e) {
-                            LOGGER.warn("Invalid UUID string in consciousness file: {}", uuidString, e);
+                        } else {
+                             LOGGER.warn("Invalid value type for UUID {} in consciousness file: {}", uuidString, value.getClass().getName());
                         }
-                    } else {
-                         LOGGER.warn("Invalid value type for UUID {} in consciousness file. Expected Number, got {}.", uuidString, value != null ? value.getClass().getSimpleName() : "null");
+                    } catch (IllegalArgumentException e) {
+                        LOGGER.warn("Invalid UUID string in consciousness file: {}", uuidString);
                     }
                 }
+                return consciousnessMap;
             } else {
                 LOGGER.warn("Consciousness file does not contain a valid JSON object: {}", targetJsonFilePath);
+                return new HashMap<>();
             }
         } catch (FileNotFoundException e) {
             LOGGER.error("Consciousness file not found (should have been caught by exists() check): {}", targetJsonFilePath, e);
+            return new HashMap<>();
         } catch (IOException e) {
             LOGGER.error("Error reading consciousness file: {}", targetJsonFilePath, e);
+            return new HashMap<>();
         } catch (ParseException e) { 
             LOGGER.error("Error parsing consciousness file: {}", targetJsonFilePath, e);
+            return new HashMap<>();
         }
-        return consciousnessMap;
     }
 
     public static void saveConsciousnessData(MinecraftServer currentServer, Map<UUID, PlayerState> statesToSave) {
-        if (currentServer == null) {
-            LOGGER.error("Cannot save consciousness data: MinecraftServer instance is null.");
+        if (currentConfig == null || !currentConfig.enableBorderSystem) {
+            LOGGER.info("Border system disabled, not saving consciousness data.");
             return;
         }
-        if (statesToSave == null) { 
-            LOGGER.info("No consciousness data provided to saveConsciousnessData (statesToSave is null).");
+        if (currentServer == null) {
+            LOGGER.error("MinecraftServer instance is null. Cannot save consciousness data.");
+            return;
+        }
+        if (statesToSave == null || statesToSave.isEmpty()) {
+            LOGGER.info("No consciousness data provided or statesToSave is empty. Skipping save.");
             return;
         }
 
         String levelName = currentServer.getSaveProperties().getLevelName();
-        LOGGER.info("Saving consciousness data for level: '{}'", levelName);
-
-        Path serverRunDirectory = currentServer.getRunDirectory();
-        Path worldSavePath = serverRunDirectory.resolve("saves").resolve(levelName);
-        LOGGER.info("Constructed world save path for saving: '{}'", worldSavePath.toAbsolutePath().toString());
-
-        Path targetJsonFilePath = worldSavePath.resolve("svsp_island_consciousness.json");
-        
-        LOGGER.info("Attempting to save consciousness data to: {}", targetJsonFilePath.toAbsolutePath().toString());
+        Path worldSavePath = currentServer.getRunDirectory().resolve("saves").resolve(levelName);
+        Path targetJsonFilePath = worldSavePath.resolve(vpl.MOD_ID + "_consciousness.json");
+        LOGGER.info("Attempting to save consciousness data to: {}", targetJsonFilePath.toString());
 
         Path parentPath = targetJsonFilePath.getParent();
         if (parentPath != null) {
@@ -797,7 +821,7 @@ public class CustomBorderManager {
                     LOGGER.info("Successfully created parent directory for saving: {}", parentPath.toAbsolutePath());
                 } catch (IOException e) {
                     LOGGER.error("Failed to create parent directory for saving: {} due to IOException. Cannot save file.", parentPath.toAbsolutePath(), e);
-                    return; // Не можем сохранить, если директорию не создать
+                    return;
                 }
             } else {
                 LOGGER.info("Parent directory for saving already exists: {}", parentPath.toAbsolutePath());

@@ -1,6 +1,6 @@
 package com.damir00109.zona;
 
-import com.damir00109.VanillaDamir00109;
+import com.damir00109.vpl;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
@@ -16,9 +16,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 public class ConfigHelper {
-    private static final Logger LOGGER = LoggerFactory.getLogger(VanillaDamir00109.SVSP_MOD_ID + "_ConfigHelper");
+    private static final Logger LOGGER = LoggerFactory.getLogger(vpl.MOD_ID + "_ConfigHelper");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_FILE_PATH = FabricLoader.getInstance().getConfigDir().resolve(VanillaDamir00109.SVSP_MOD_ID + "_ZonaConfig.json");
+    private static final Path CONFIG_FILE_PATH = FabricLoader.getInstance().getConfigDir().resolve(vpl.MOD_ID + "_ZonaConfig.json");
 
     public static ZonaConfig loadConfig() {
         if (Files.exists(CONFIG_FILE_PATH)) {
