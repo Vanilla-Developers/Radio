@@ -2,8 +2,8 @@
 	"schemaVersion": 1,
 	"id": "vpl",
 	"version": "${version}",
-	"name": "Vanilla+ Damir00109",
-	"description": "Это бета версия мода для лора на проекте vanilla+!",
+	"name": "Vanilla+ Radio",
+	"description": "modmenu.description",
 	"authors": [
 		"Damir00109",
 		"GameMutPlay14"
@@ -20,7 +20,7 @@
 			"com.damir00109.vpl"
 		],
 		"client": [
-			"com.damir00109.client.vpl"
+			"com.damir00109.vplClient"
 		],
 		"voicechat": [
 			"com.damir00109.vpl"

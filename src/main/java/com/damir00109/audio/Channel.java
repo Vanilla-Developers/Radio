@@ -1,5 +1,6 @@
 package com.damir00109.audio;
 
+import com.damir00109.vpl;
 import de.maxhenkel.voicechat.api.*;
 import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.minecraft.util.math.BlockPos;
@@ -12,9 +13,9 @@ import java.util.concurrent.*;
 public class Channel {
 	private final VoicechatServerApi api;
 	private final int num;
-	public static final HashMap<BlockPos, Listener> listeners = new HashMap<>();
-	public static final HashMap<BlockPos, Sender> senders = new HashMap<>();
-	private static final ExecutorService executor = Executors.newCachedThreadPool();
+	private final HashMap<BlockPos, Listener> listeners = new HashMap<>();
+	private final HashMap<BlockPos, Sender> senders = new HashMap<>();
+	private static final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	private final List<BlockPos> radios = new CopyOnWriteArrayList<>();
 
 	public Channel(int index, VoicechatServerApi api) {
@@ -75,6 +76,17 @@ public class Channel {
 
 	public void removeRadio(BlockPos pos) {
 		radios.remove(pos);
+	}
+
+	public void removeListener(BlockPos pos) {
+		Listener removedListener = listeners.remove(pos);
+		if (removedListener != null) {
+			// Можно добавить дополнительную логику, если слушатель требует очистки
+			// например, removedListener.cleanup();
+			vpl.LOGGER.info("Removed listener for channel {} at pos {}", num, pos);
+		} else {
+			vpl.LOGGER.warn("Attempted to remove non-existent listener for channel {} at pos {}", num, pos);
+		}
 	}
 
 	public void broadcast(MicrophonePacket packet, @Nullable VoicechatConnection fromConnection, @Nullable BlockPos radioPos) {

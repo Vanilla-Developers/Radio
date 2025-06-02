@@ -52,12 +52,18 @@ public class vpl implements ModInitializer, VoicechatPlugin {
 	public static ModConfig CONFIG;
 
 	public static Channel getChannel(int index) {
-		if (index <= 0) return getChannel(index+1);
+		if (index <= 0 || index > channels.length) {
+			LOGGER.warn("Attempted to get channel with invalid index: {}", index);
+			return null;
+		}
 		return channels[index-1];
 	}
 
 	public static Channel createChannel(int index) {
-		if (index <= 0) return createChannel(index+1);
+		if (index <= 0 || index > channels.length) {
+			LOGGER.warn("Attempted to create channel with invalid index: {}", index);
+			return null;
+		}
 		Channel channel = new Channel(index-1, api);
 		channels[index-1] = channel;
 		return channel;

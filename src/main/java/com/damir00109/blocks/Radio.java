@@ -81,6 +81,7 @@ public class Radio {
 					Channel channel = vpl.getChannel(state.get(POWER));
 					if (channel != null) {
 						channel.removeRadio(pos);
+						channel.removeListener(pos);
 					}
 				}
 			}
@@ -179,8 +180,12 @@ public class Radio {
 					boolean currentActive = stateInWorldAfterUpdate.get(ACTIVE);
 					boolean currentListen = stateInWorldAfterUpdate.get(LISTEN);
 
-					listener.setActive(currentActive && currentListen);
-					sender.setActive(currentActive && !currentListen);
+					if (listener != null) {
+						listener.setActive(currentActive && currentListen);
+					}
+					if (sender != null) {
+						sender.setActive(currentActive && !currentListen);
+					}
 				}
 			}
 		}
@@ -192,19 +197,26 @@ public class Radio {
 		}
 
 		public Sender getSender(BlockState state, BlockPos pos, ServerLevel level) {
+			if (state.get(POWER) == 0) return null;
 			Channel channel = vpl.getOrCreate(state.get(POWER));
+			if (channel == null) return null;
 			VoicechatServerApi api = vpl.getAPI();
 			return channel.getOrCreateSender(level, pos);
 		}
 		public Listener getListener(BlockState state, BlockPos pos, ServerLevel level) {
+			if (state.get(POWER) == 0) return null;
 			Channel channel = vpl.getOrCreate(state.get(POWER));
+			if (channel == null) return null;
 			VoicechatServerApi api = vpl.getAPI();
 			return channel.getOrCreateListener(level, pos);
 		}
 
 		public void onMicrophoneNearby(BlockState state, BlockPos pos, ServerLevel level, MicrophonePacket packet) {
+			if (state.get(POWER) == 0) return;
 			Sender sender = getSender(state, pos, level);
-			sender.send(packet);
+			if (sender != null) {
+				sender.send(packet);
+			}
 		}
 
 		public void onStruckByLightning(World world, BlockPos pos) {
