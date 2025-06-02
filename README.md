@@ -1,4 +1,4 @@
-# русский-вариант
+# RU
 ## Описание:
 Vanilla+ Radio — это мод, который добавляет новые виды связи и функциональность для улучшения многопользовательского геймплея.
 
@@ -31,7 +31,7 @@ Fabric API<br>
 Simple Voice Chat<br>
 Ledger
 
-# English version
+# EN
 ## Description:
 Vanilla+ Radio is a mod that adds new communication methods and functionality to enhance multiplayer gameplay.
 
