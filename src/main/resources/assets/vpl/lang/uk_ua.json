@@ -2,5 +2,9 @@
     "item.vpl.radio": "Радіо",
 	"item.vpl.burnt_radio": "Згоріле радіо",
     "item.vpl.glowing_brush": "Сяйна щітка",
-  "modmenu.descriptionTranslation.vpl": "Це бета-версія мода для лору на проєкті vanilla+!"
+    "text.vpl.bed.no_sleep_custom": "Ви занадто знервовані, щоб спати…",
+    "item.vpl.chamomile_soup": "Ромашковий суп",
+    "death.attack.vpl.mysterious_death": "%1$s помер з невідомої причини",
+    "death.attack.vpl.mysterious_death.player": "%1$s помер з невідомої причини",
+    "modmenu.descriptionTranslation.vpl": "Це бета-версія мода для лору на проєкті vanilla+!"
 }
