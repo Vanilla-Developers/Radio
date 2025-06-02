@@ -9,10 +9,10 @@
 		"GameMutPlay14"
 	],
 	"contact": {
-		"homepage": "https://mcvanilla.ru",
-		"sources": "https://mcvanilla.ru"
+		"homepage": "https://github.com/Vanilla-Developers/Radio",
+		"sources": "https://github.com/Vanilla-Developers/Radio"
 	},
-	"license": "all rights reserved",
+	"license": "All Rights Reserved",
 	"icon": "assets/vpl/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -34,7 +34,7 @@
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.16.9",
+		"fabricloader": ">=0.16.14",
 		"minecraft": "1.21.5",
 		"java": ">=21",
 		"voicechat": "*",
