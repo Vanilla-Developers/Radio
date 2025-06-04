@@ -8,13 +8,14 @@ import de.maxhenkel.voicechat.api.packets.MicrophonePacket;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Listener {
 	private final int num;
 	private final Channel channel;
 	private final LocationalAudioChannel static_channel;
-	private final List<short[]> packetBuffer = new ArrayList<>();
+	private final Queue<short[]> packetBuffer = new ConcurrentLinkedQueue<>();
 	private final BlockPos pos;
 	private final VoicechatServerApi api;
 	private final ServerLevel level;
@@ -49,11 +50,18 @@ public class Listener {
 		this.static_channel = null;
 	}
 
-	public void setActive(boolean active1) {
-		active.set(active1);
-		if (!active1 && audioPlayer != null) {
-			audioPlayer.stopPlaying();
+	public void setActive(boolean activeState) {
+		boolean oldActive = active.getAndSet(activeState);
+		vpl.LOGGER.info("[Listener {} at {}] setActive: old={}, new={}", num, pos, oldActive, activeState);
+		if (!activeState && oldActive) { // Becoming inactive
+			if (audioPlayer != null) {
+				vpl.LOGGER.info("[Listener {} at {}] setActive: Stopping player due to becoming inactive.", num, pos);
+				audioPlayer.stopPlaying();
+			}
+			vpl.LOGGER.info("[Listener {} at {}] setActive: Clearing packet buffer due to becoming inactive. Size before: {}", num, pos, packetBuffer.size());
+			packetBuffer.clear();
 		}
+		// If becoming active, sendAudio will handle starting the player when data arrives.
 	}
 
 	public boolean getActive() {
@@ -71,59 +79,56 @@ public class Listener {
 	}
 
 	private short[] getAudio() {
-		if (!active.get() && packetBuffer.isEmpty()) {
-			if (audioPlayer != null) {
+		// vpl.LOGGER.info("[Listener {} at {}] getAudio called.", num, pos); // Can be too spammy
+		short[] audioFrame = packetBuffer.poll();
+
+		if (audioFrame != null) {
+			vpl.LOGGER.debug("[Listener {} at {}] getAudio: Returning audio frame. Buffer size after poll: {}", num, pos, packetBuffer.size());
+			return audioFrame;
+		} else {
+			// Buffer is empty.
+			vpl.LOGGER.debug("[Listener {} at {}] getAudio: Buffer empty.", num, pos);
+			if (audioPlayer != null && audioPlayer.isPlaying()) {
+				vpl.LOGGER.info("[Listener {} at {}] getAudio: Buffer empty, stopping player.", num, pos);
 				audioPlayer.stopPlaying();
 			}
 			return null;
 		}
-		short[] audio = getCombinedAudio();
-		if (audio == null) {
-			return null;
-		}
-		return audio;
-	}
-
-	public short[] getCombinedAudio() {
-		short[] result = new short[960];
-
-		if (packetBuffer.isEmpty()) {
-			if (!active.get()) return null;
-			return result;
-		}
-
-		int sample;
-		int[] sums = new int[result.length];
-		List<short[]> currentPackets = new ArrayList<>(packetBuffer);
-		packetBuffer.clear();
-
-		for (short[] audioChunk : currentPackets) {
-			for (int i = 0; i < sums.length && i < audioChunk.length; i++) {
-				sums[i] += audioChunk[i];
-			}
-		}
-		for (int i = 0; i < result.length; i++) {
-			sample = sums[i];
-			if (sample > Short.MAX_VALUE) sample = Short.MAX_VALUE;
-			if (sample < Short.MIN_VALUE) sample = Short.MIN_VALUE;
-			result[i] = (short) sample;
-		}
-		return result;
 	}
 
 	public void sendAudio(MicrophonePacket packet) {
-		if (!active.get()) return;
+		if (!active.get()) {
+			// vpl.LOGGER.warn("[Listener {} at {}] sendAudio: Called while listener inactive. Discarding.", num, pos); // Can be spammy if radio toggled often
+			return;
+		}
+		vpl.LOGGER.info("[Listener {} at {}] sendAudio: Listener active, processing packet.", num, pos);
 		
 		byte[] data = packet.getOpusEncodedData();
-		if (data == null || data.length == 0) return;
+		if (data == null || data.length == 0) {
+			vpl.LOGGER.warn("[Listener {} at {}] sendAudio: Packet data is null or empty. Discarding.", num, pos);
+			return;
+		}
 
 		short[] decoded = decoder.decode(data);
-		if (decoded == null || decoded.length == 0) return;
+		if (decoded == null || decoded.length == 0) {
+			vpl.LOGGER.warn("[Listener {} at {}] sendAudio: Decoder returned null or empty audio. Discarding.", num, pos);
+			return;
+		}
 
-		packetBuffer.add(decoded);
+		vpl.LOGGER.debug("[Listener {} at {}] sendAudio: Decoded audio successfully. Offering to buffer. Buffer size before: {}", num, pos, packetBuffer.size());
+		packetBuffer.offer(decoded);
+		vpl.LOGGER.debug("[Listener {} at {}] sendAudio: Offered to buffer. Buffer size after: {}", num, pos, packetBuffer.size());
 
-		if (getAudioPlayer() != null && !audioPlayer.isPlaying() && !packetBuffer.isEmpty()) {
-			audioPlayer.startPlaying();
+		AudioPlayer player = getAudioPlayer(); 
+		if (player != null) {
+			if (!player.isPlaying()) {
+				vpl.LOGGER.info("[Listener {} at {}] sendAudio: Player was not playing. Buffer not empty (size {}). Starting player.", num, pos, packetBuffer.size());
+				player.startPlaying();
+			} else {
+				// vpl.LOGGER.debug("[Listener {} at {}] sendAudio: Player already playing. Buffer size: {}", num, pos, packetBuffer.size());
+			}
+		} else {
+			vpl.LOGGER.error("[Listener {} at {}] sendAudio: getAudioPlayer() returned null! Cannot start playback.", num, pos);
 		}
 	}
 

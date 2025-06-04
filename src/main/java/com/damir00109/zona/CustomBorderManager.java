@@ -2,7 +2,6 @@ package com.damir00109.zona;
 
 import com.damir00109.vpl;
 import com.damir00109.ModConfig;
-import com.damir00109.zona.MentalHealthZone;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.FloatArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -23,6 +22,7 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -38,24 +38,15 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.util.Formatting;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import com.github.cliftonlabs.json_simple.JsonObject;
+import com.github.cliftonlabs.json_simple.Jsoner;
+import com.github.cliftonlabs.json_simple.JsonException;
 import java.io.FileWriter;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Comparator;
 import java.nio.file.Files;
 import net.minecraft.world.World;
 import com.google.gson.Gson;
@@ -153,10 +144,20 @@ public class CustomBorderManager {
         LOGGER.info("Borders configured from ModConfig. System Enabled: {}.", currentConfig.enableBorderSystem);
     }
 
-    private static Path getMentalHealthZonesFilePath(MinecraftServer currentSrv) {
+    private static File getMentalHealthZonesFilePath(MinecraftServer currentSrv) { // Возвращаем File
         if (currentSrv == null) return null;
         String levelName = currentSrv.getSaveProperties().getLevelName();
-        return currentSrv.getRunDirectory().resolve("saves").resolve(levelName).resolve(vpl.MOD_ID + "_mental_health_zones.json");
+        Path runDirectory = currentSrv.getRunDirectory().toAbsolutePath(); // Получаем Path
+        Path worldPath;
+        if (currentSrv instanceof DedicatedServer) { // Используем instanceof
+            worldPath = runDirectory.resolve(levelName);
+        } else { // Если это клиентский (интегрированный) сервер или другой не-дедикейтед
+            worldPath = runDirectory.resolve("saves").resolve(levelName);
+        }
+        File worldDir = worldPath.toFile(); // Директория мира
+        File targetFile = new File(worldDir, vpl.MOD_ID + "_mental_health_zones.json");
+        LOGGER.info("Path for mental health zones for world '{}': {}", levelName, targetFile.getAbsolutePath());
+        return targetFile;
     }
 
     private static void loadMentalHealthZonesForCurrentWorld(MinecraftServer currentSrv) {
@@ -166,25 +167,25 @@ public class CustomBorderManager {
             return;
         }
         mentalHealthZones.clear(); // Очищаем старые зоны перед загрузкой новых
-        Path filePath = getMentalHealthZonesFilePath(currentSrv);
+        File filePath = getMentalHealthZonesFilePath(currentSrv); // Стало File
         if (filePath == null) {
             LOGGER.error("Cannot load mental health zones: server instance is null for path generation.");
             return;
         }
 
-        if (Files.exists(filePath)) {
-            try (FileReader reader = new FileReader(filePath.toFile())) {
+        if (filePath.exists()) { // Используем File.exists()
+            try (FileReader reader = new FileReader(filePath)) { // filePath уже File
                 Type listType = new TypeToken<ArrayList<MentalHealthZone>>() {}.getType();
                 List<MentalHealthZone> loadedZones = GSON.fromJson(reader, listType);
                 if (loadedZones != null) {
                     mentalHealthZones.addAll(loadedZones);
-                    LOGGER.info("Successfully loaded {} mental health zones from {}", mentalHealthZones.size(), filePath.toString());
+                    LOGGER.info("Successfully loaded {} mental health zones from {}", mentalHealthZones.size(), filePath.getAbsolutePath());
                 }
             } catch (IOException | JsonSyntaxException e) {
-                LOGGER.error("Failed to load or parse mental health zones from " + filePath.toString(), e);
+                LOGGER.error("Failed to load or parse mental health zones from " + filePath.getAbsolutePath(), e);
             }
         } else {
-            LOGGER.info("Mental health zones file not found at {}. No zones loaded.", filePath.toString());
+            LOGGER.info("Mental health zones file not found at {}. No zones loaded.", filePath.getAbsolutePath());
             // Файл будет создан при первом добавлении зоны
         }
     }
@@ -194,23 +195,23 @@ public class CustomBorderManager {
             LOGGER.info("Border system disabled, not saving mental health zones.");
             return;
         }
-        Path filePath = getMentalHealthZonesFilePath(currentSrv);
+        File filePath = getMentalHealthZonesFilePath(currentSrv); // Стало File
         if (filePath == null) {
             LOGGER.error("Cannot save mental health zones: server instance is null for path generation.");
             return;
         }
 
         try {
-            Path parentDir = filePath.getParent();
-            if (parentDir != null && Files.notExists(parentDir)) {
-                Files.createDirectories(parentDir);
+            File parentDirFile = filePath.getParentFile(); // Используем getParentFile()
+            if (parentDirFile != null && !parentDirFile.exists()) {
+                parentDirFile.mkdirs(); // Используем mkdirs() для File
             }
-            try (FileWriter writer = new FileWriter(filePath.toFile())) {
+            try (FileWriter writer = new FileWriter(filePath)) { // filePath уже File
                 GSON.toJson(mentalHealthZones, writer);
-                LOGGER.info("Successfully saved {} mental health zones to {}", mentalHealthZones.size(), filePath.toString());
+                LOGGER.info("Successfully saved {} mental health zones to {}", mentalHealthZones.size(), filePath.getAbsolutePath());
             } 
         } catch (IOException e) {
-            LOGGER.error("Failed to save mental health zones to " + filePath.toString(), e);
+            LOGGER.error("Failed to save mental health zones to " + filePath.getAbsolutePath(), e);
         }
     }
 
@@ -738,108 +739,125 @@ public class CustomBorderManager {
     }
 
     public static Map<UUID, Integer> loadConsciousnessData(MinecraftServer server) {
-        if (currentConfig == null || !currentConfig.enableBorderSystem) {
-            LOGGER.info("Border system disabled, not loading consciousness data.");
-            return new HashMap<>();
-        }
         if (server == null) {
-            LOGGER.error("MinecraftServer instance is null. Cannot determine world save path for consciousness data.");
+            LOGGER.error("Attempted to load consciousness data with a null server instance.");
             return new HashMap<>();
         }
-        String levelName = server.getSaveProperties().getLevelName();
-        Path worldSavePath = server.getRunDirectory().resolve("saves").resolve(levelName);
-        Path targetJsonFilePath = worldSavePath.resolve(vpl.MOD_ID + "_consciousness.json");
-
-        if (!Files.exists(targetJsonFilePath)) {
-            LOGGER.info("Consciousness data file not found at {}. Returning empty map.", targetJsonFilePath);
-            return new HashMap<>();
+        String levelName = server.getSaveProperties().getLevelName(); // Получаем имя текущего мира
+        Path runDirectory = server.getRunDirectory().toAbsolutePath(); // Получаем Path
+        Path worldPath;
+        if (server instanceof DedicatedServer) { // Используем instanceof
+            worldPath = runDirectory.resolve(levelName);
+        } else { // Если это клиентский (интегрированный) сервер или другой не-дедикейтед
+            worldPath = runDirectory.resolve("saves").resolve(levelName);
         }
-        
-        try (FileReader reader = new FileReader(targetJsonFilePath.toFile())) {
-            JSONParser parser = new JSONParser();
-            Object obj = parser.parse(reader);
+        File worldDir = worldPath.toFile(); // Директория мира
+        File dataFile = new File(worldDir, vpl.MOD_ID + "_consciousness_data.json"); // Используем File
 
-            if (obj instanceof JSONObject) {
-                JSONObject jsonObject = (JSONObject) obj;
-                Map<UUID, Integer> consciousnessMap = new HashMap<>();
+        LOGGER.info("Path for consciousness data (load) for world '{}': {}", levelName, dataFile.getAbsolutePath());
+
+        Map<UUID, Integer> consciousnessData = new HashMap<>();
+        if (dataFile.exists()) {
+            try (FileReader reader = new FileReader(dataFile)) {
+                JsonObject jsonObject = (JsonObject) Jsoner.deserialize(reader);
+
                 for (Object key : jsonObject.keySet()) {
                     String uuidString = (String) key;
                     try {
-                        UUID uuid = UUID.fromString(uuidString);
+                        UUID playerUuid = UUID.fromString(uuidString);
                         Object value = jsonObject.get(key);
                         if (value instanceof Number) {
-                            consciousnessMap.put(uuid, ((Number) value).intValue());
+                            consciousnessData.put(playerUuid, ((Number) value).intValue());
+                        } else if (value instanceof String) {
+                            try {
+                                consciousnessData.put(playerUuid, Integer.parseInt((String) value));
+                            } catch (NumberFormatException nfe) {
+                                LOGGER.warn("Could not parse consciousness value for UUID {} from string: {}", playerUuid, value);
+                            }
                         } else {
-                             LOGGER.warn("Invalid value type for UUID {} in consciousness file: {}", uuidString, value.getClass().getName());
+                             LOGGER.warn("Unexpected type for consciousness value for UUID {}: {}", playerUuid, value.getClass().getName());
                         }
                     } catch (IllegalArgumentException e) {
-                        LOGGER.warn("Invalid UUID string in consciousness file: {}", uuidString);
+                        LOGGER.warn("Invalid UUID string in consciousness data: {}", uuidString);
                     }
                 }
-                return consciousnessMap;
-            } else {
-                LOGGER.warn("Consciousness file does not contain a valid JSON object: {}", targetJsonFilePath);
-                return new HashMap<>();
+                LOGGER.info("Successfully loaded consciousness data for {} players from {}", consciousnessData.size(), dataFile.getAbsolutePath());
+            } catch (FileNotFoundException e) {
+                LOGGER.warn("Consciousness data file not found (should not happen if dataFile.exists() is true): {}", dataFile.getAbsolutePath());
+            } catch (IOException e) {
+                LOGGER.error("IOException while reading consciousness data from {}: {}", dataFile.getAbsolutePath(), e.getMessage());
+            } catch (JsonException e) {
+                LOGGER.error("JsonException (parse error) while reading consciousness data from {}: {}", dataFile.getAbsolutePath(), e.getMessage());
+            } catch (Exception e) {
+                LOGGER.error("Unexpected exception while loading consciousness data from {}: {}", dataFile.getAbsolutePath(), e.getMessage(), e);
             }
-        } catch (FileNotFoundException e) {
-            LOGGER.error("Consciousness file not found (should have been caught by exists() check): {}", targetJsonFilePath, e);
-            return new HashMap<>();
-        } catch (IOException e) {
-            LOGGER.error("Error reading consciousness file: {}", targetJsonFilePath, e);
-            return new HashMap<>();
-        } catch (ParseException e) { 
-            LOGGER.error("Error parsing consciousness file: {}", targetJsonFilePath, e);
-            return new HashMap<>();
+        } else {
+            LOGGER.info("Consciousness data file not found at {}. A new one will be created if needed.", dataFile.getAbsolutePath());
         }
+        return consciousnessData;
     }
 
     public static void saveConsciousnessData(MinecraftServer currentServer, Map<UUID, PlayerState> statesToSave) {
-        if (currentConfig == null || !currentConfig.enableBorderSystem) {
-            LOGGER.info("Border system disabled, not saving consciousness data.");
-            return;
-        }
         if (currentServer == null) {
-            LOGGER.error("MinecraftServer instance is null. Cannot save consciousness data.");
+            LOGGER.error("Attempted to save consciousness data with a null server instance.");
             return;
         }
-        if (statesToSave == null || statesToSave.isEmpty()) {
-            LOGGER.info("No consciousness data provided or statesToSave is empty. Skipping save.");
-            return;
+        String levelName = currentServer.getSaveProperties().getLevelName(); // Имя текущего мира
+        Path runDirectory = currentServer.getRunDirectory().toAbsolutePath(); // Получаем Path
+        Path worldPath;
+        if (currentServer instanceof DedicatedServer) { // Используем instanceof
+            worldPath = runDirectory.resolve(levelName);
+        } else { // Если это клиентский (интегрированный) сервер или другой не-дедикейтед
+            worldPath = runDirectory.resolve("saves").resolve(levelName);
         }
+        File worldDir = worldPath.toFile(); // Директория мира
+        File dataFile = new File(worldDir, vpl.MOD_ID + "_consciousness_data.json"); // Используем File
 
-        String levelName = currentServer.getSaveProperties().getLevelName();
-        Path worldSavePath = currentServer.getRunDirectory().resolve("saves").resolve(levelName);
-        Path targetJsonFilePath = worldSavePath.resolve(vpl.MOD_ID + "_consciousness.json");
-        LOGGER.info("Attempting to save consciousness data to: {}", targetJsonFilePath.toString());
+        LOGGER.info("Path for consciousness data (save) for world '{}': {}", levelName, dataFile.getAbsolutePath());
+        File backupFile = new File(dataFile.getAbsolutePath() + ".bak");
 
-        Path parentPath = targetJsonFilePath.getParent();
-        if (parentPath != null) {
-            if (Files.notExists(parentPath)) {
-                LOGGER.info("Parent directory for saving consciousness file does not exist: {}. Attempting to create.", parentPath.toAbsolutePath());
-                try {
-                    Files.createDirectories(parentPath);
-                    LOGGER.info("Successfully created parent directory for saving: {}", parentPath.toAbsolutePath());
-                } catch (IOException e) {
-                    LOGGER.error("Failed to create parent directory for saving: {} due to IOException. Cannot save file.", parentPath.toAbsolutePath(), e);
-                    return;
-                }
-            } else {
-                LOGGER.info("Parent directory for saving already exists: {}", parentPath.toAbsolutePath());
-            }
-        }
-
-        JSONObject jsonObject = new JSONObject();
+        JsonObject jsonObject = new JsonObject();
         for (Map.Entry<UUID, PlayerState> entry : statesToSave.entrySet()) {
-            if (entry.getValue() != null) {
-                jsonObject.put(entry.getKey().toString(), entry.getValue().getConsciousness());
+            jsonObject.put(entry.getKey().toString(), entry.getValue().getConsciousness());
+        }
+
+        try {
+            File parentDir = dataFile.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+                if (parentDir.mkdirs()) {
+                    LOGGER.info("Created directory for consciousness data: {}", parentDir.getAbsolutePath());
+                } else {
+                    LOGGER.error("Failed to create directory for consciousness data: {}", parentDir.getAbsolutePath());
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error creating parent directories for {}: {}", dataFile.getAbsolutePath(), e.getMessage());
+        }
+
+        if (dataFile.exists()) {
+            try {
+                Path backupFilePath = backupFile.toPath(); 
+                Files.copy(dataFile.toPath(), backupFilePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                LOGGER.info("Backup of consciousness data created at {}", backupFile.getAbsolutePath());
+            } catch (IOException e) {
+                LOGGER.warn("Could not create backup of consciousness data file {}: {}", dataFile.getAbsolutePath(), e.getMessage());
             }
         }
 
-        try (FileWriter writer = new FileWriter(targetJsonFilePath.toFile())) {
-            writer.write(jsonObject.toJSONString());
-            LOGGER.info("Successfully saved {} consciousness entries to: {}", jsonObject.size(), targetJsonFilePath.toAbsolutePath().toString());
+        try (FileWriter writer = new FileWriter(dataFile)) {
+            writer.write(jsonObject.toJson());
+            LOGGER.info("Successfully saved consciousness data for {} players to {}", statesToSave.size(), dataFile.getAbsolutePath());
         } catch (IOException e) {
-            LOGGER.error("IOException while saving consciousness file: {}", targetJsonFilePath.toAbsolutePath().toString(), e);
+            LOGGER.error("Could not save consciousness data to {}: {}", dataFile.getAbsolutePath(), e.getMessage());
+            if (backupFile.exists()) {
+                try {
+                    Path backupFilePath = backupFile.toPath(); 
+                    Files.copy(backupFilePath, dataFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    LOGGER.info("Restored consciousness data from backup {} due to write error.", backupFile.getAbsolutePath());
+                } catch (IOException restoreEx) {
+                    LOGGER.error("Could not restore consciousness data from backup {}: {}", backupFile.getAbsolutePath(), restoreEx.getMessage());
+                }
+            }
         }
     }
 

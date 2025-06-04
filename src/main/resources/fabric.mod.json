@@ -3,14 +3,14 @@
 	"id": "vpl",
 	"version": "${version}",
 	"name": "Vanilla+ Radio",
-	"description": "modmenu.description",
 	"authors": [
 		"Damir00109",
 		"GameMutPlay14"
 	],
 	"contact": {
 		"homepage": "https://github.com/Vanilla-Developers/Radio",
-		"sources": "https://github.com/Vanilla-Developers/Radio"
+		"sources": "https://github.com/Vanilla-Developers/Radio",
+		"issues": "https://github.com/Vanilla-Developers/Radio/issues"
 	},
 	"license": "All Rights Reserved",
 	"icon": "assets/vpl/icon.png",
@@ -42,5 +42,10 @@
 	},
 	"suggests": {
 		"another-mod": "*"
+	},
+	"custom": {
+		"modmenu": {
+			"update_checker": true
+		}
 	}
 }

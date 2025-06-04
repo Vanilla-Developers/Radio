@@ -78,10 +78,13 @@ public class Radio {
 			if (api != null) {
 				ServerLevel serverLevel = api.fromServerLevel(world);
 				if (serverLevel != null) {
-					Channel channel = vpl.getChannel(state.get(POWER));
-					if (channel != null) {
-						channel.removeRadio(pos);
-						channel.removeListener(pos);
+					int power = state.get(POWER);
+					if (power > 0) {
+						Channel channel = vpl.getChannel(power);
+						if (channel != null) {
+							channel.removeRadio(pos);
+							channel.removeListener(pos);
+						}
 					}
 				}
 			}
@@ -101,20 +104,33 @@ public class Radio {
 
 			if (hasFirstRod && hasSecondRod) {
 				boolean twoRodStackIsClear = false;
-				BlockPos.Mutable mutableRodPos = new BlockPos.Mutable(pos.getX(), pos.getY() + 2, pos.getZ());
+				BlockPos.Mutable mutableRodPos = new BlockPos.Mutable(pos.getX(), pos.getY() + 3, pos.getZ());
+				BlockState stateAtRodCheck = world.getBlockState(pos.up(2));
 
-				while(world.getBlockState(mutableRodPos).isOf(Blocks.LIGHTNING_ROD)) {
-					if (mutableRodPos.getY() >= world.getHeight() - 1) {
+				if (stateAtRodCheck.isOf(Blocks.LIGHTNING_ROD)) {
+					if (pos.getY() + 2 >= world.getHeight() -1) {
 						twoRodStackIsClear = true;
-						break;
-					}
-					mutableRodPos.move(Direction.UP);
-				}
-
-				if (!twoRodStackIsClear) {
-					BlockState stateAboveStack = world.getBlockState(mutableRodPos);
-					if (stateAboveStack.isAir() || stateAboveStack.isOf(Blocks.LIGHTNING_ROD)) {
-						twoRodStackIsClear = true;
+					} else {
+						BlockPos.Mutable scanPos = new BlockPos.Mutable(pos.getX(), pos.getY() + 3, pos.getZ());
+						BlockState stateAboveStack = world.getBlockState(scanPos);
+						if (stateAboveStack.isAir()) {
+							twoRodStackIsClear = true;
+						} else {
+							mutableRodPos = new BlockPos.Mutable(pos.getX(), pos.getY() + 2, pos.getZ());
+							while(world.getBlockState(mutableRodPos).isOf(Blocks.LIGHTNING_ROD)) {
+								if (mutableRodPos.getY() >= world.getHeight() - 1) {
+									twoRodStackIsClear = true;
+									break;
+								}
+								mutableRodPos.move(Direction.UP);
+							}
+							if (!twoRodStackIsClear) {
+								BlockState stateDirectlyAboveStack = world.getBlockState(mutableRodPos);
+								if (stateDirectlyAboveStack.isAir()) {
+									twoRodStackIsClear = true;
+								}
+							}
+						}
 					}
 				}
 
@@ -122,6 +138,7 @@ public class Radio {
 					BlockState newState = state.with(LISTEN, !state.get(LISTEN));
 					world.setBlockState(pos, newState, 3);
 					player.swingHand(Hand.MAIN_HAND);
+					((RadioBlock)newState.getBlock()).update(newState, world, pos);
 					return ActionResult.SUCCESS;
 				} else {
 					return ActionResult.FAIL;

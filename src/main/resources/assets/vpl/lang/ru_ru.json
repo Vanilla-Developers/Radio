@@ -6,5 +6,6 @@
     "item.vpl.chamomile_soup": "Ромашковый суп",
     "death.attack.vpl.mysterious_death": "%1$s умер по неизвестной причине",
     "death.attack.vpl.mysterious_death.player": "%1$s умер по неизвестной причине",
-    "modmenu.description": "Vanilla+ Radio - радиостанция для Minecraft это не мод это попытка оказатся в своих мечтах (Vanilla+ SVSP)"
+    "vpl.nameTranslation.vpl": "Vanilla+ Радио",
+    "modmenu.descriptionTranslation.vpl": "Радиостанция для Minecraft это не мод это попытка оказатся в своих мечтах (Vanilla+ SVSP)"
 }
