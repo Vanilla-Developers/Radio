@@ -54,6 +54,13 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+import java.util.concurrent.CompletableFuture;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.math.BlockPos;
+import java.util.function.Function;
 
 public class CustomBorderManager {
 
@@ -580,46 +587,69 @@ public class CustomBorderManager {
         }
     }
     
+    private static CompletableFuture<Suggestions> suggestTargetCoordinate(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder, Function<BlockPos, Integer> coordinateExtractor) {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player;
+        try {
+            player = source.getPlayerOrThrow(); // Может выбросить исключение, если не игрок
+        } catch (CommandSyntaxException e) {
+            return Suggestions.empty(); // Не игрок или ошибка получения игрока, нет специфичных подсказок
+        }
+
+        // Выполняем луч из глаз игрока
+        HitResult hitResult = player.raycast(5.0D, 0.0F, false); // Макс. дистанция 5 блоков, без учета жидкостей
+
+        if (hitResult.getType() == HitResult.Type.BLOCK) {
+            BlockHitResult blockHitResult = (BlockHitResult) hitResult;
+            BlockPos targetPos = blockHitResult.getBlockPos();
+            builder.suggest(String.valueOf(coordinateExtractor.apply(targetPos)));
+        }
+        // Если не попали в блок, можно предложить относительные координаты, например, "~"
+        // else { builder.suggest("~"); }
+        return builder.buildFuture();
+    }
+
     public static void registerCommands(CommandDispatcher<ServerCommandSource> dispatcher, CommandRegistryAccess registryAccess, CommandManager.RegistrationEnvironment environment) {
         dispatcher.register(CommandManager.literal("customborder")
-            .requires(source -> source.hasPermissionLevel(2))
+            .requires(source -> source.hasPermissionLevel(2) && currentConfig != null && currentConfig.enableBorderSystem)
             .then(CommandManager.literal("setConsciousness")
-                .then(CommandManager.argument("player", EntityArgumentType.player())
-                    .then(CommandManager.argument("consciousness", IntegerArgumentType.integer(0, 100))
+                .then(CommandManager.argument("playerName", StringArgumentType.string())
+                    .suggests((context, builder) -> CommandSource.suggestMatching(context.getSource().getServer().getPlayerNames(), builder))
+                    .then(CommandManager.argument("consciousnessValue", IntegerArgumentType.integer(0, 100))
                         .executes(context -> {
                             if (currentConfig == null || !currentConfig.enableBorderSystem) {
                                 context.getSource().sendError(Text.literal("Border system is disabled. Command unavailable."));
                                 return 0;
                             }
-                            return setConsciousnessCommand(context);
+                            try {
+                                return executeSetConsciousnessByName(context);
+                            } catch (CommandSyntaxException e) {
+                                context.getSource().sendError(Text.literal("Ошибка выполнения команды: " + e.getMessage()));
+                                return 0;
+                            }
                         })
-                    )
-                    .then(CommandManager.argument("mode", StringArgumentType.word())
-                        .suggests((context, builder) -> CommandSource.suggestMatching(Arrays.asList("set", "add", "remove"), builder))
-                        .then(CommandManager.argument("value", IntegerArgumentType.integer())
-                            .executes(context -> {
-                                if (currentConfig == null || !currentConfig.enableBorderSystem) {
-                                    context.getSource().sendError(Text.literal("Border system is disabled. Command unavailable."));
-                                    return 0;
-                                }
-                                return setConsciousnessCommandWithStringArgument(context);
-                            })
-                        )
                     )
                 )
             )
             .then(CommandManager.literal("checkMental")
-                .executes(CustomBorderManager::checkMentalPlayerSelf)
+                .executes(context -> {
+                    if (currentConfig == null || !currentConfig.enableBorderSystem) {
+                        context.getSource().sendError(Text.literal("Border system is disabled. Command unavailable."));
+                        return 0;
+                    }
+                    return checkMentalPlayerSelf(context);
+                })
                 .then(CommandManager.argument("target", StringArgumentType.string())
                     .suggests((context, builder) -> {
                         List<String> suggestions = new ArrayList<>();
                         suggestions.add("all");
-                        ServerPlayerEntity player = context.getSource().getPlayer();
-                        if (player != null) {
-                            MinecraftServer currentServer = player.getServer();
-                            if (currentServer != null) {
-                                currentServer.getPlayerManager().getPlayerList().forEach(p -> suggestions.add(p.getName().getString()));
-                            }
+                        MinecraftServer currentServer = context.getSource().getServer();
+                        if (currentServer != null) {
+                            currentServer.getPlayerManager().getPlayerList().forEach(p -> {
+                                if (p != null && p.getName() != null) {
+                                    suggestions.add(p.getName().getString());
+                                }
+                            });
                         }
                         return CommandSource.suggestMatching(suggestions, builder);
                     })
@@ -632,23 +662,16 @@ public class CustomBorderManager {
                     })
                 )
             )
-            .then(CommandManager.literal("setConfigBorder")
-                .then(CommandManager.argument("minX", DoubleArgumentType.doubleArg())
-                    .then(CommandManager.argument("minZ", DoubleArgumentType.doubleArg())
-                        .then(CommandManager.argument("maxX", DoubleArgumentType.doubleArg())
-                            .then(CommandManager.argument("maxZ", DoubleArgumentType.doubleArg())
-                                .executes(CustomBorderManager::setBorderInConfigCommand)
-                            )
-                        )
-                    )
-                )
-            )
             .then(CommandManager.literal("addMentalZone")
                 .then(CommandManager.argument("name", StringArgumentType.string())
                 .then(CommandManager.argument("x1", DoubleArgumentType.doubleArg())
+                    .suggests((ctx, bld) -> suggestTargetCoordinate(ctx, bld, BlockPos::getX))
                 .then(CommandManager.argument("z1", DoubleArgumentType.doubleArg())
+                    .suggests((ctx, bld) -> suggestTargetCoordinate(ctx, bld, BlockPos::getZ))
                 .then(CommandManager.argument("x2", DoubleArgumentType.doubleArg())
+                    .suggests((ctx, bld) -> suggestTargetCoordinate(ctx, bld, BlockPos::getX))
                 .then(CommandManager.argument("z2", DoubleArgumentType.doubleArg())
+                    .suggests((ctx, bld) -> suggestTargetCoordinate(ctx, bld, BlockPos::getZ))
                 .then(CommandManager.argument("ratePerMinute", DoubleArgumentType.doubleArg())
                 .then(CommandManager.argument("dimension", DimensionArgumentType.dimension())
                     .executes(context -> {
@@ -656,10 +679,14 @@ public class CustomBorderManager {
                             context.getSource().sendError(Text.literal("Border system is disabled. Command unavailable."));
                             return 0;
                         }
-                        return addMentalHealthZoneCommand(context);
+                        try {
+                            return addMentalHealthZoneCommand(context);
+                        } catch (CommandSyntaxException e) {
+                            context.getSource().sendError(Text.literal("Ошибка выполнения команды addMentalHealthZone: " + e.getMessage()));
+                            return 0;
+                        }
                     })
-                )))))))
-            )
+                )))))))) // Закрываем 7 аргументов и 1 литерал addMentalZone
             .then(CommandManager.literal("listMentalZones")
                 .executes(context -> {
                     if (currentConfig == null || !currentConfig.enableBorderSystem) {
@@ -692,20 +719,10 @@ public class CustomBorderManager {
         );
     }
 
-    private static int setConsciousnessCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-        int value = IntegerArgumentType.getInteger(context, "value");
-        PlayerState state = playerStates.computeIfAbsent(player.getUuid(), uuid -> new PlayerState(false));
-        state.setConsciousness(value);
-        context.getSource().sendFeedback(() -> Text.literal("Сознание для " + player.getName().getString() + " -> " + value), true);
-        if (server != null) {
-            saveConsciousnessData(server, playerStates);
-        }
-        return 1;
-    }
-
-    private static int setConsciousnessCommandWithStringArgument(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int executeSetConsciousnessByName(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         String playerName = StringArgumentType.getString(context, "playerName");
+        int value = IntegerArgumentType.getInteger(context, "consciousnessValue");
+
         ServerPlayerEntity player = context.getSource().getServer().getPlayerManager().getPlayer(playerName);
 
         if (player == null) {
@@ -713,12 +730,14 @@ public class CustomBorderManager {
             return 0;
         }
 
-        int value = IntegerArgumentType.getInteger(context, "value");
-        PlayerState state = playerStates.computeIfAbsent(player.getUuid(), uuid -> new PlayerState(false)); // Existing state or new
+        PlayerState state = playerStates.computeIfAbsent(player.getUuid(), uuid -> {
+            LOGGER.info("PlayerState for {} (setConsciousness) created on the fly. Initializing with previous or default values.", playerName);
+            return new PlayerState(false); // Инициализируем, если не существует
+        });
         state.setConsciousness(value);
         context.getSource().sendFeedback(() -> Text.literal("Сознание для " + player.getName().getString() + " установлено на " + value), true);
         if (server != null) {
-            saveConsciousnessData(server, playerStates); // Save data after modification
+            saveConsciousnessData(server, playerStates);
         }
         return 1;
     }
@@ -948,40 +967,7 @@ public class CustomBorderManager {
             }
         }
         return 1;
-    }
-
-    private static int setBorderInConfigCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        if (currentConfig == null) {
-            context.getSource().sendError(Text.literal("Конфигурация мода не загружена."));
-            return 0;
-        }
-
-        float minX = FloatArgumentType.getFloat(context, "minX");
-        float maxX = FloatArgumentType.getFloat(context, "maxX");
-        float minZ = FloatArgumentType.getFloat(context, "minZ");
-        float maxZ = FloatArgumentType.getFloat(context, "maxZ");
-
-        if (minX >= maxX) {
-            context.getSource().sendError(Text.literal("minX должен быть меньше maxX."));
-            return 0;
-        }
-        if (minZ >= maxZ) {
-            context.getSource().sendError(Text.literal("minZ должен быть меньше maxZ."));
-            return 0;
-        }
-
-        currentConfig.borderMinX = minX;
-        currentConfig.borderMaxX = maxX;
-        currentConfig.borderMinZ = minZ;
-        currentConfig.borderMaxZ = maxZ;
-
-        ModConfig.save(currentConfig);
-        setupBordersFromConfig(); // Применяем изменения немедленно
-
-        context.getSource().sendFeedback(() -> Text.literal(String.format("Границы мира в конфиге обновлены: X(%.1f до %.1f), Z(%.1f до %.1f). Перезагрузка конфига и применение границ выполнены.", minX, maxX, minZ, maxZ)), true);
-        LOGGER.info("World border in config updated via command: minX={}, maxX={}, minZ={}, maxZ={}. Config saved and borders re-applied.", minX, maxX, minZ, maxZ);
-        return 1;
-    }
+    };
 
     private static int addMentalHealthZoneCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         String name = StringArgumentType.getString(context, "name");
@@ -1041,7 +1027,7 @@ public class CustomBorderManager {
     }
 
     private static int deleteMentalHealthZoneCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        String name = StringArgumentType.getString(context, "name");
+        String name = StringArgumentType.getString(context, "zoneName");
         MinecraftServer currentSrv = context.getSource().getServer();
         if (currentSrv == null) {
             context.getSource().sendError(Text.literal("Сервер не доступен для удаления зоны."));
@@ -1049,7 +1035,7 @@ public class CustomBorderManager {
         }
 
         // Удаляем из текущего списка mentalHealthZones
-        boolean removed = mentalHealthZones.removeIf(zone -> zone.name.equalsIgnoreCase(name));
+        boolean removed = mentalHealthZones.removeIf(zone -> zone.name != null && zone.name.equalsIgnoreCase(name));
 
         if (removed) {
             saveMentalHealthZonesToWorldFile(currentSrv); // Сохраняем изменения в файл мира

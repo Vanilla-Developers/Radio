@@ -1,0 +1,12 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "ingredients": [
+        "minecraft:oxeye_daisy",
+        "minecraft:sugar",
+        "minecraft:bowl"
+    ],
+    "result": {
+        "id": "vpl:chamomile_soup",
+        "count": 1
+    }
+}
