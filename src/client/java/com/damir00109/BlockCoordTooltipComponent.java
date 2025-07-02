@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.client.MinecraftClient;
 
 public class BlockCoordTooltipComponent implements TooltipComponent {
     // Координаты блока
@@ -20,8 +21,8 @@ public class BlockCoordTooltipComponent implements TooltipComponent {
 
     // Константы отрисовки
     private static final int ORIGINAL_ICON_SIZE = 16;
-    private static final float SCALE = 0.7f;
-    private static final int ICON_SIZE = (int)(ORIGINAL_ICON_SIZE * SCALE);
+    // private static final float SCALE = 0.7f; // Scaling is problematic
+    private static final int ICON_SIZE = ORIGINAL_ICON_SIZE;
     private static final int H_PAD_TOP = 2;
     private static final int H_PAD_BOTTOM = 2;
     private static final int H_PAD_SIDES = 2;
@@ -46,11 +47,7 @@ public class BlockCoordTooltipComponent implements TooltipComponent {
     public void drawItems(TextRenderer textRenderer, int x, int y, int width, int height, DrawContext context) {
         int innerY = y + H_PAD_TOP;
 
-        context.getMatrices().push();
-        context.getMatrices().translate(x + H_PAD_SIDES, innerY, 0);
-        context.getMatrices().scale(SCALE, SCALE, SCALE);
-        context.drawItem(iconStack, 0, 0);
-        context.getMatrices().pop();
+        context.drawItem(iconStack, x + H_PAD_SIDES, innerY);
 
         int textX = x + H_PAD_SIDES + ICON_SIZE + TEXT_GAP;
         int textY = innerY + (ICON_SIZE - textRenderer.fontHeight) / 2;

@@ -328,7 +328,7 @@ public class CustomBorderManager {
                 LOGGER.info("PlayerState for {} created on the fly in onServerTick (general mechanics). Initializing with random consciousness.", playerEntity.getName().getString());
                 return new PlayerState(true);
             });
-            ServerWorld playerWorld = playerEntity.getServerWorld(); // Мир игрока для общих механик
+            ServerWorld playerWorld = playerEntity.getWorld(); // Мир игрока для общих механик
 
             // 1. Логика восстановления в зонах ментального здоровья
             if (!mentalHealthZones.isEmpty() && state.getConsciousness() < 100) {
@@ -416,7 +416,7 @@ public class CustomBorderManager {
             // Если система границ включена и игрок в разрешенном измерении:
             Vec3d playerPosVec = playerBorderSystem.getPos();
             Point playerPosPoint = new Point(playerPosVec.x, playerPosVec.z);
-            ServerWorld playerWorldForBorder = playerBorderSystem.getServerWorld();
+            ServerWorld playerWorldForBorder = playerBorderSystem.getWorld();
 
             // Проверка на выход за аварийную границу (EMERGENCY ZONE)
             if (!emergencyBorder.isInside(playerPosPoint)) {
@@ -553,7 +553,7 @@ public class CustomBorderManager {
 
             double offsetX = (random.nextDouble() - 0.5) * 0.1;
             double offsetZ = (random.nextDouble() - 0.5) * 0.1;
-            player.teleport(player.getServerWorld(), player.getX() + offsetX, player.getY(), player.getZ() + offsetZ, Collections.emptySet(), player.getYaw(), player.getPitch(), true);
+            player.teleport(player.getWorld(), player.getX() + offsetX, player.getY(), player.getZ() + offsetZ, Collections.emptySet(), player.getYaw(), player.getPitch(), true);
 
             if (currentTick % 2 == 0) {
                 ParticleEffect effectParticle = "EMERGENCY ZONE".equals(activeBorderName) ? ParticleTypes.FLAME : ParticleTypes.PORTAL;
