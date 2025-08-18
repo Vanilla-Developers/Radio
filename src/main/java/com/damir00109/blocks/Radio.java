@@ -23,6 +23,7 @@ import net.minecraft.entity.LightningEntity;
 import net.minecraft.util.math.Direction;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class Radio {
@@ -58,9 +59,7 @@ public class Radio {
 		@Override
 		protected void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
 			if (world.isClient) return;
-			if (state.getBlock() != oldState.getBlock()) {
-				update(world.getBlockState(pos), world, pos);
-			}
+			update(world.getBlockState(pos), world, pos);
 		}
 
 		@Override
@@ -73,104 +72,55 @@ public class Radio {
 		@Override
 		public BlockState onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
 			if (world.isClient) return state;
-			vpl.radios.remove(pos);
+
 			VoicechatServerApi api = vpl.getAPI();
-			if (api != null) {
-				ServerLevel serverLevel = api.fromServerLevel(world);
-				if (serverLevel != null) {
-					int power = state.get(POWER);
-					if (power > 0) {
-						Channel channel = vpl.getChannel(power);
-						if (channel != null) {
-							channel.removeRadio(pos);
-							channel.removeListener(pos);
-						}
-					}
-				}
-			}
+			if (api == null) return state;
+
+			ServerLevel serverLevel = api.fromServerLevel(world);
+			if (serverLevel == null) return state;
+
+			vpl.radios.remove(pos);
+			int power = state.get(POWER);
+
+			Channel channel = vpl.getChannel(power);
+			if (channel == null) return state;
+
+			channel.removeRadio(pos);
+			channel.removeListener(pos);
+
 			return state;
 		}
 
 		@Override
 		protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-			if (world.isClient) return ActionResult.SUCCESS;
-
-			if (!state.get(ACTIVE)) {
-				return ActionResult.PASS;
-			}
+			if (world.isClient) return ActionResult.PASS;
+			if (!state.get(ACTIVE)) return ActionResult.PASS;
 
 			boolean hasFirstRod = world.getBlockState(pos.up()).isOf(Blocks.LIGHTNING_ROD);
 			boolean hasSecondRod = world.getBlockState(pos.up(2)).isOf(Blocks.LIGHTNING_ROD);
 
-			if (hasFirstRod && hasSecondRod) {
-				boolean twoRodStackIsClear = false;
-				BlockPos.Mutable mutableRodPos = new BlockPos.Mutable(pos.getX(), pos.getY() + 3, pos.getZ());
-				BlockState stateAtRodCheck = world.getBlockState(pos.up(2));
+			boolean hasBothRods = hasFirstRod && hasSecondRod;
 
-				if (stateAtRodCheck.isOf(Blocks.LIGHTNING_ROD)) {
-					if (pos.getY() + 2 >= world.getHeight() -1) {
-						twoRodStackIsClear = true;
-					} else {
-						BlockPos.Mutable scanPos = new BlockPos.Mutable(pos.getX(), pos.getY() + 3, pos.getZ());
-						BlockState stateAboveStack = world.getBlockState(scanPos);
-						if (stateAboveStack.isAir()) {
-							twoRodStackIsClear = true;
-						} else {
-							mutableRodPos = new BlockPos.Mutable(pos.getX(), pos.getY() + 2, pos.getZ());
-							while(world.getBlockState(mutableRodPos).isOf(Blocks.LIGHTNING_ROD)) {
-								if (mutableRodPos.getY() >= world.getHeight() - 1) {
-									twoRodStackIsClear = true;
-									break;
-								}
-								mutableRodPos.move(Direction.UP);
-							}
-							if (!twoRodStackIsClear) {
-								BlockState stateDirectlyAboveStack = world.getBlockState(mutableRodPos);
-								if (stateDirectlyAboveStack.isAir()) {
-									twoRodStackIsClear = true;
-								}
-							}
-						}
-					}
-				}
+			if (!hasBothRods) return ActionResult.PASS;
 
-				if (twoRodStackIsClear) {
-					BlockState newState = state.with(LISTEN, !state.get(LISTEN));
-					world.setBlockState(pos, newState, 3);
-					player.swingHand(Hand.MAIN_HAND);
-					((RadioBlock)newState.getBlock()).update(newState, world, pos);
-					return ActionResult.SUCCESS;
-				} else {
-					return ActionResult.FAIL;
-				}
-			} else {
-				return ActionResult.PASS;
-			}
+			boolean twoRodStackIsClear = vpl.getAnyBlockAbove(pos, world, 5, List.of(world.getBlockState(pos.up()), world.getBlockState(pos.up(2)))) == null;
+			if (!twoRodStackIsClear) return ActionResult.FAIL;
+
+			BlockState newState = state.with(LISTEN, !state.get(LISTEN));
+			world.setBlockState(pos, newState, 3);
+			player.swingHand(Hand.MAIN_HAND);
+			((RadioBlock)newState.getBlock()).update(newState, world, pos);
+
+			return ActionResult.SUCCESS;
 		}
 
 		public void update(BlockState state, World world, BlockPos currentPos) {
 			if (world.isClient) return;
 
 			boolean hasAtLeastOneRod = world.getBlockState(currentPos.up()).isOf(Blocks.LIGHTNING_ROD);
-			boolean isAntennaSetupClear = false;
-
-			if (hasAtLeastOneRod) {
-				BlockPos.Mutable mutableRodPos = new BlockPos.Mutable(currentPos.getX(), currentPos.getY() + 1, currentPos.getZ());
-				while(world.getBlockState(mutableRodPos).isOf(Blocks.LIGHTNING_ROD)) {
-					if (mutableRodPos.getY() >= world.getHeight() - 1) {
-						isAntennaSetupClear = true;
-						break;
-					}
-					mutableRodPos.move(Direction.UP);
-				}
-
-				if (!isAntennaSetupClear) {
-					BlockState stateAboveStack = world.getBlockState(mutableRodPos);
-					if (stateAboveStack.isAir() || stateAboveStack.isOf(Blocks.LIGHTNING_ROD)) {
-						isAntennaSetupClear = true;
-					}
-				}
-			}
+			ArrayList<BlockState> existingRods = new ArrayList<>();
+			existingRods.add(world.getBlockState(currentPos.up()));
+			boolean isAntennaSetupClear = vpl.getAnyBlockAbove(currentPos, world, 3, existingRods) == null;
 
 			boolean newActiveState = hasAtLeastOneRod && isAntennaSetupClear;
 			
@@ -184,26 +134,29 @@ public class Radio {
 				world.setBlockState(currentPos, potentiallyNewState, 3);
 			}
 			
-			BlockState stateInWorldAfterUpdate = world.getBlockState(currentPos);
-			vpl.radios.put(currentPos, stateInWorldAfterUpdate);
+			BlockState newState = world.getBlockState(currentPos);
+			vpl.radios.put(currentPos, newState);
 
 			VoicechatServerApi api = vpl.getAPI();
-			if (api != null) {
-				ServerLevel serverLevel = api.fromServerLevel(world);
-				if (serverLevel != null) {
-					Listener listener = getListener(stateInWorldAfterUpdate, currentPos, serverLevel);
-					Sender sender = getSender(stateInWorldAfterUpdate, currentPos, serverLevel);
-					
-					boolean currentActive = stateInWorldAfterUpdate.get(ACTIVE);
-					boolean currentListen = stateInWorldAfterUpdate.get(LISTEN);
+			if (api == null) return;
 
-					if (listener != null) {
-						listener.setActive(currentActive && currentListen);
-					}
-					if (sender != null) {
-						sender.setActive(currentActive && !currentListen);
-					}
-				}
+			ServerLevel serverLevel = api.fromServerLevel(world);
+			if (serverLevel == null) return;
+
+			Listener listener = getListener(newState, currentPos, serverLevel);
+			Sender sender = getSender(newState, currentPos, serverLevel);
+					
+			boolean currentActive = newState.get(ACTIVE);
+			boolean currentListen = newState.get(LISTEN);
+
+			if (!newState.get(ACTIVE)) return;
+
+			if (listener != null) {
+				listener.setActive(currentActive && currentListen);
+			} else if (sender != null) {
+				sender.setActive(currentActive && !currentListen);
+			} else {
+				throw new IllegalStateException("Neither Listener nor Sender could be created for the radio at " + currentPos);
 			}
 		}
 
@@ -214,43 +167,40 @@ public class Radio {
 		}
 
 		public Sender getSender(BlockState state, BlockPos pos, ServerLevel level) {
-			if (state.get(POWER) == 0) return null;
+			//if (state.get(POWER) == 0) return null;
+			if (!state.get(ACTIVE) || state.get(LISTEN)) return null;
 			Channel channel = vpl.getOrCreate(state.get(POWER));
 			if (channel == null) return null;
-			VoicechatServerApi api = vpl.getAPI();
 			return channel.getOrCreateSender(level, pos);
 		}
 		public Listener getListener(BlockState state, BlockPos pos, ServerLevel level) {
-			if (state.get(POWER) == 0) return null;
+			//if (state.get(POWER) == 0) return null;
+			if (!state.get(ACTIVE) && !state.get(LISTEN)) return null;
 			Channel channel = vpl.getOrCreate(state.get(POWER));
 			if (channel == null) return null;
-			VoicechatServerApi api = vpl.getAPI();
 			return channel.getOrCreateListener(level, pos);
 		}
 
 		public void onMicrophoneNearby(BlockState state, BlockPos pos, ServerLevel level, MicrophonePacket packet) {
 			if (state.get(POWER) == 0) return;
 			Sender sender = getSender(state, pos, level);
-			if (sender != null) {
-				sender.send(packet);
-			}
+			if (sender == null) return;
+			sender.send(packet);
 		}
 
 		public void onStruckByLightning(World world, BlockPos pos) {
-			if (!world.isClient()) {
-				BlockState currentState = world.getBlockState(pos);
-				int power = currentState.get(POWER);
+			if (world.isClient()) return;
+			BlockState currentState = world.getBlockState(pos);
+			int power = currentState.get(POWER);
 
-				world.setBlockState(pos, DModBlocks.BURNT_RADIO.getDefaultState(), 3);
+			world.setBlockState(pos, DModBlocks.BURNT_RADIO.getDefaultState(), 3);
 
-				if (vpl.radios.containsKey(pos)) {
-					Channel channel = vpl.getChannel(power);
-					if (channel != null) {
-						channel.removeRadio(pos);
-					}
-					vpl.radios.remove(pos);
-				}
+			if (!vpl.radios.containsKey(pos)) return;
+			Channel channel = vpl.getChannel(power);
+			if (channel != null) {
+				channel.removeRadio(pos);
 			}
+			vpl.radios.remove(pos);
 		}
 	}
 }

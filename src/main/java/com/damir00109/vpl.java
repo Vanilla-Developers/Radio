@@ -52,18 +52,12 @@ public class vpl implements ModInitializer, VoicechatPlugin {
 	public static ModConfig CONFIG;
 
 	public static Channel getChannel(int index) {
-		if (index <= 0 || index > channels.length) {
-			LOGGER.warn("Attempted to get channel with invalid index: {}", index);
-			return null;
-		}
+		if (Math.max(0, Math.min(15, index)) != index) return null;
 		return channels[index-1];
 	}
 
 	public static Channel createChannel(int index) {
-		if (index <= 0 || index > channels.length) {
-			LOGGER.warn("Attempted to create channel with invalid index: {}", index);
-			return null;
-		}
+		if (Math.max(0, Math.min(15, index)) != index) return null;
 		Channel channel = new Channel(index-1, api);
 		channels[index-1] = channel;
 		return channel;
@@ -201,8 +195,8 @@ public class vpl implements ModInitializer, VoicechatPlugin {
 				for (int y = -radius; y <= radius; y++) {
 					BlockPos checkPos = playerPos.add(x, y, z);
 					BlockState state = radios.get(checkPos);
-					if (state != null)
-						return new BlockData(state, checkPos);
+					if (state == null) continue;
+					return new BlockData(state, checkPos);
 				}
 			}
 		}
