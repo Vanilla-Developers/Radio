@@ -85,7 +85,7 @@ public class Radio {
 			Channel channel = vpl.getChannel(power);
 			if (channel == null) return state;
 
-			channel.removeRadio(pos);
+			channel.removeSender(pos);
 			channel.removeListener(pos);
 
 			return state;
@@ -182,7 +182,7 @@ public class Radio {
 		}
 
 		public void onMicrophoneNearby(BlockState state, BlockPos pos, ServerLevel level, MicrophonePacket packet) {
-			if (state.get(POWER) == 0) return;
+			//if (state.get(POWER) == 0) return;
 			Sender sender = getSender(state, pos, level);
 			if (sender == null) return;
 			sender.send(packet);
@@ -198,7 +198,8 @@ public class Radio {
 			if (!vpl.radios.containsKey(pos)) return;
 			Channel channel = vpl.getChannel(power);
 			if (channel != null) {
-				channel.removeRadio(pos);
+				channel.removeSender(pos);
+				channel.removeListener(pos);
 			}
 			vpl.radios.remove(pos);
 		}

@@ -41,7 +41,7 @@ import com.damir00109.items.ChamomileSoup;
 public class vpl implements ModInitializer, VoicechatPlugin {
 	public static final String MOD_ID = "vpl";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-	public static final Channel[] channels = new Channel[15];
+	public static final Channel[] channels = new Channel[16];
 	public static final Map<BlockPos, BlockState> radios = new HashMap<>();
 	public static VoicechatServerApi api;
 
@@ -53,13 +53,13 @@ public class vpl implements ModInitializer, VoicechatPlugin {
 
 	public static Channel getChannel(int index) {
 		if (Math.max(0, Math.min(15, index)) != index) return null;
-		return channels[index-1];
+		return channels[index];
 	}
 
 	public static Channel createChannel(int index) {
 		if (Math.max(0, Math.min(15, index)) != index) return null;
 		Channel channel = new Channel(index-1, api);
-		channels[index-1] = channel;
+		channels[index] = channel;
 		return channel;
 	}
 	public static Channel getOrCreate(int index) {
@@ -229,10 +229,12 @@ public class vpl implements ModInitializer, VoicechatPlugin {
 
 		world.setBlockState(radioPos, DModBlocks.BURNT_RADIO.getDefaultState(), 3);
 
-		Channel channel = getChannel(power);
+		Channel channel = channels[radioState.get(Radio.POWER)];
 		if (channel != null) {
-			channel.removeRadio(radioPos);
+			channel.removeSender(radioPos);
+			channel.removeListener(radioPos);
 		}
+
 		radios.remove(radioPos);
 	}
 
