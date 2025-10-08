@@ -52,7 +52,7 @@ public class ChamomileSoup {
             super.finishUsing(stack, world, user);
             if (user instanceof ServerPlayerEntity) {
                 ServerPlayerEntity playerEntity = (ServerPlayerEntity) user;
-                if (!world.isClient) {
+                if (!world.isClient()) {
                     playerEntity.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 5 * 20, 0));
 
                     PlayerState state = CustomBorderManager.getPlayerState(playerEntity.getUuid());
@@ -60,8 +60,8 @@ public class ChamomileSoup {
                         state.setConsciousness(Math.min(100, state.getConsciousness() + 10));
                         state.setAteChamomileSoupRecently(true);
                         state.setTimeWhenSoupWasEaten(world.getTime());
-                        if (playerEntity.getServer() != null) {
-                            CustomBorderManager.saveConsciousnessData(playerEntity.getServer(), CustomBorderManager.getAllPlayerStates());
+                        if (world != null && world.getServer() != null) {
+                            CustomBorderManager.saveConsciousnessData(world.getServer(), CustomBorderManager.getAllPlayerStates());
                         }
                         vpl.LOGGER.info("Player {} ate Chamomile Soup. Consciousness: {}, AteRecently: true, TimeEaten: {}",
                             playerEntity.getName().getString(), state.getConsciousness(), state.getTimeWhenSoupWasEaten());

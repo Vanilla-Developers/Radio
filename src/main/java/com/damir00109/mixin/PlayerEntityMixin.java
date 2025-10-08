@@ -33,7 +33,17 @@ public abstract class PlayerEntityMixin extends LivingEntity {
             PlayerState state = CustomBorderManager.getPlayerState(player.getUuid());
 
             if (state != null && state.hasEatenChamomileSoupRecently()) {
-                long timeSinceSoupEaten = player.getWorld().getTime() - state.getTimeWhenSoupWasEaten();
+                net.minecraft.server.MinecraftServer srv = com.damir00109.zona.CustomBorderManager.getServerInstance();
+                net.minecraft.server.world.ServerWorld sw = null;
+                if (srv != null) {
+                    for (net.minecraft.server.world.ServerWorld w : srv.getWorlds()) {
+                        for (ServerPlayerEntity p : w.getPlayers()) {
+                            if (p.getUuid().equals(player.getUuid())) { sw = w; break; }
+                        }
+                        if (sw != null) break;
+                    }
+                }
+                long timeSinceSoupEaten = (sw != null ? sw.getTime() : 0L) - state.getTimeWhenSoupWasEaten();
                 vpl.LOGGER.info("Player {} woke up. Time since soup eaten: {} ticks. DURATION_UNTIL_SOUP_EFFECT_EXPIRES_TICKS: {}",
                                         player.getName().getString(), timeSinceSoupEaten, CustomBorderManager.DURATION_UNTIL_SOUP_EFFECT_EXPIRES_TICKS);
 
@@ -41,8 +51,8 @@ public abstract class PlayerEntityMixin extends LivingEntity {
                     state.setAteChamomileSoupRecently(false);
                     state.setTimeWhenSoupWasEaten(0); // Сбрасываем время
                     vpl.LOGGER.info("Player {} slept before soup effect expired. Debuff avoided.", player.getName().getString());
-                    if (player.getServer() != null) {
-                        CustomBorderManager.saveConsciousnessData(player.getServer(), CustomBorderManager.getAllPlayerStates());
+                    if (srv != null) {
+                        CustomBorderManager.saveConsciousnessData(srv, CustomBorderManager.getAllPlayerStates());
                     }
                 } else {
                     vpl.LOGGER.info("Player {} slept AFTER soup effect should have expired (or DURATION is wrong). TimeSince: {}, DurationConst: {}",

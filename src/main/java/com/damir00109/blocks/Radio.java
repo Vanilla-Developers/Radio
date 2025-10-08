@@ -58,20 +58,20 @@ public class Radio {
 
 		@Override
 		protected void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
-			if (world.isClient) return;
+			if (world.isClient()) return;
 			update(world.getBlockState(pos), world, pos);
 		}
 
 		@Override
 		public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
-			if (world.isClient) return;
+			if (world.isClient()) return;
 			vpl.radios.put(pos, world.getBlockState(pos));
 			update(world.getBlockState(pos), world, pos);
 		}
 
 		@Override
 		public BlockState onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-			if (world.isClient) return state;
+			if (world.isClient()) return state;
 
 			VoicechatServerApi api = vpl.getAPI();
 			if (api == null) return state;
@@ -93,7 +93,7 @@ public class Radio {
 
 		@Override
 		protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-			if (world.isClient) return ActionResult.PASS;
+			if (world.isClient()) return ActionResult.PASS;
 			if (!state.get(ACTIVE)) return ActionResult.PASS;
 
 			boolean hasFirstRod = world.getBlockState(pos.up()).isOf(Blocks.LIGHTNING_ROD);
@@ -115,7 +115,7 @@ public class Radio {
 		}
 
 		public void update(BlockState state, World world, BlockPos currentPos) {
-			if (world.isClient) return;
+			if (world.isClient()) return;
 
 			boolean hasAtLeastOneRod = world.getBlockState(currentPos.up()).isOf(Blocks.LIGHTNING_ROD);
 			ArrayList<BlockState> existingRods = new ArrayList<>();
@@ -162,7 +162,7 @@ public class Radio {
 
 		@Override
 		public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify) {
-			if (world.isClient) return;
+			if (world.isClient()) return;
 			update(world.getBlockState(pos), world, pos);
 		}
 

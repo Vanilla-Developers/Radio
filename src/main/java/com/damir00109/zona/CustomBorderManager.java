@@ -248,6 +248,22 @@ public class CustomBorderManager {
         }
     }
 
+    public static MinecraftServer getServerInstance() {
+        return server;
+    }
+
+    private static ServerWorld findPlayerWorld(ServerPlayerEntity player) {
+        if (server == null || player == null) return null;
+        for (ServerWorld candidate : server.getWorlds()) {
+            for (ServerPlayerEntity p : candidate.getPlayers()) {
+                if (p != null && p.getUuid().equals(player.getUuid())) {
+                    return candidate;
+                }
+            }
+        }
+        return null;
+    }
+
     public static void onPlayerJoin(ServerPlayerEntity player) {
         if (currentConfig == null || !currentConfig.enableBorderSystem) {
             return;
@@ -328,11 +344,11 @@ public class CustomBorderManager {
                 LOGGER.info("PlayerState for {} created on the fly in onServerTick (general mechanics). Initializing with random consciousness.", playerEntity.getName().getString());
                 return new PlayerState(true);
             });
-            ServerWorld playerWorld = playerEntity.getWorld(); // Мир игрока для общих механик
+            ServerWorld playerWorld = findPlayerWorld(playerEntity); // Мир игрока для общих механик
 
             // 1. Логика восстановления в зонах ментального здоровья
             if (!mentalHealthZones.isEmpty() && state.getConsciousness() < 100) {
-                Vec3d playerPosVec = playerEntity.getPos();
+                Vec3d playerPosVec = new Vec3d(playerEntity.getX(), playerEntity.getY(), playerEntity.getZ());
                 String playerDimensionId = playerWorld.getRegistryKey().getValue().toString();
                 for (MentalHealthZone zone : mentalHealthZones) {
                     if (zone.isInside(playerPosVec.x, playerPosVec.z, playerDimensionId)) {
@@ -352,8 +368,8 @@ public class CustomBorderManager {
                     state.setTimeWhenSoupWasEaten(0);
                     state.setChamomileDebuffActive(true);
                     state.setChamomileDebuffEndTick(currentTick + SOUP_DEBUFF_DURATION_TICKS);
-                    if (playerEntity.getServer() != null) {
-                        saveConsciousnessData(playerEntity.getServer(), playerStates);
+                    if (server != null) {
+                        saveConsciousnessData(server, playerStates);
                     }
                 }
             }
@@ -399,7 +415,8 @@ public class CustomBorderManager {
                 continue;
             }
 
-            String playerDimension = playerBorderSystem.getWorld().getRegistryKey().getValue().toString();
+            ServerWorld dimWorld = findPlayerWorld(playerBorderSystem);
+            String playerDimension = dimWorld != null ? dimWorld.getRegistryKey().getValue().toString() : "";
             if (!currentConfig.allowedDimensions.contains(playerDimension)) {
                 if (state.isOutsideBorder()) {
                     state.setOutsideBorder(false);
@@ -414,9 +431,9 @@ public class CustomBorderManager {
             }
 
             // Если система границ включена и игрок в разрешенном измерении:
-            Vec3d playerPosVec = playerBorderSystem.getPos();
+            Vec3d playerPosVec = new Vec3d(playerBorderSystem.getX(), playerBorderSystem.getY(), playerBorderSystem.getZ());
             Point playerPosPoint = new Point(playerPosVec.x, playerPosVec.z);
-            ServerWorld playerWorldForBorder = playerBorderSystem.getWorld();
+            ServerWorld playerWorldForBorder = dimWorld;
 
             // Проверка на выход за аварийную границу (EMERGENCY ZONE)
             if (!emergencyBorder.isInside(playerPosPoint)) {
@@ -553,7 +570,7 @@ public class CustomBorderManager {
 
             double offsetX = (random.nextDouble() - 0.5) * 0.1;
             double offsetZ = (random.nextDouble() - 0.5) * 0.1;
-            player.teleport(player.getWorld(), player.getX() + offsetX, player.getY(), player.getZ() + offsetZ, Collections.emptySet(), player.getYaw(), player.getPitch(), true);
+            player.teleport(playerWorld, player.getX() + offsetX, player.getY(), player.getZ() + offsetZ, Collections.emptySet(), player.getYaw(), player.getPitch(), true);
 
             if (currentTick % 2 == 0) {
                 ParticleEffect effectParticle = "EMERGENCY ZONE".equals(activeBorderName) ? ParticleTypes.FLAME : ParticleTypes.PORTAL;
@@ -910,9 +927,8 @@ public class CustomBorderManager {
                     message = Text.empty().append(coloredName).append(Text.literal(": " + consciousness));
                     onlinePlayerMessages.add(message);
                 } else {
-                    Optional<GameProfile> gameProfileOpt = currentServer.getUserCache().getByUuid(playerUuid);
-                    playerName = gameProfileOpt.map(GameProfile::getName)
-                                                   .orElse("OfflinePlayer_" + playerUuid.toString().substring(0, 8));
+                    // UserCache API changed; fallback to UUID prefix for offline players
+                    playerName = "OfflinePlayer_" + playerUuid.toString().substring(0, 8);
                     Text coloredName = Text.literal(playerName).formatted(Formatting.RED);
                     message = Text.empty().append(coloredName).append(Text.literal(": " + consciousness));
                     offlinePlayerMessages.add(message);
@@ -944,21 +960,19 @@ public class CustomBorderManager {
                     source.sendError(Text.literal("Состояние для онлайн игрока " + targetOnlinePlayer.getName().getString() + " не найдено в playerStates (ошибка!)."));
                 }
             } else {
-                UUID targetUuid = null;
-                Optional<GameProfile> profileByName = currentServer.getUserCache().findByName(targetArgument);
-                if (profileByName.isPresent()) {
-                    targetUuid = profileByName.get().getId();
-                }
-
-                if (targetUuid != null) {
-                    PlayerState state = playerStates.get(targetUuid);
+                // If not online, allow specifying UUID directly
+                try {
+                    UUID asUuid = UUID.fromString(targetArgument);
+                    PlayerState state = playerStates.get(asUuid);
                     if (state != null) {
-                        String nameToDisplay = profileByName.get().getName();
+                        String nameToDisplay = "OfflinePlayer_" + asUuid.toString().substring(0, 8);
                         Text coloredName = Text.literal(nameToDisplay).formatted(Formatting.RED);
                         Text message = Text.empty().append(coloredName).append(Text.literal(": " + state.getConsciousness()));
                         source.sendFeedback(() -> message, false);
                         found = true;
                     }
+                } catch (IllegalArgumentException ignored) {
+                    // not a UUID; without user cache we cannot resolve offline names by name
                 }
             }
 
