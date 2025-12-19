@@ -124,18 +124,8 @@ public class RadioCommand implements CommandRegistrationCallback {
 								.append(
 									Text.literal(uuid.toString())
 										.styled(style -> style.withColor(Formatting.GRAY)
-											.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to stop")) {
-												@Override
-												public Action getAction() {
-													return null;
-												}
-											})
-											.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/radio fakesound stop " + uuid) {
-												@Override
-												public Action getAction() {
-													return null;
-												}
-											})
+											.withHoverEvent(() -> null)
+											.withClickEvent(() -> null)
 										)
                                 ),
 							true

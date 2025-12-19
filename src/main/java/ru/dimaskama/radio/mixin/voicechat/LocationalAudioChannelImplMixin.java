@@ -3,6 +3,7 @@ package ru.dimaskama.radio.mixin.voicechat;
 import de.maxhenkel.voicechat.api.ServerLevel;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
@@ -30,7 +31,7 @@ abstract class LocationalAudioChannelImplMixin {
         if (this.level.getServerLevel() instanceof ServerWorld world) {
             VoiceIntegration.onPluginLocationPacket(
                     world,
-                    (BlockPos) packet.getPosition(),
+                    Vec3d.of((BlockPos) packet.getPosition()),
                     packet.getChannelId(),
                     packet.getOpusEncodedData(),
                     packet.getDistance()

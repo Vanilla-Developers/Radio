@@ -73,6 +73,7 @@ public class RadioBlockEntity extends BlockEntity {
 
     public void onLoad() {
         super.onLoad();
+        assert this.getWorld() != null;
         if (!this.getWorld().isClient() && this.getWorld() instanceof ServerWorld serverWorld) {
             BlockState bs = this.getCachedState();
             RadioState state = bs.get(ModBlocks.Properties.RADIO_STATE);

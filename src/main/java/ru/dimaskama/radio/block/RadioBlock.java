@@ -38,7 +38,7 @@ import ru.dimaskama.radio.item.ModItems.DataComponents;
 
 public class RadioBlock extends Block {
 
-    private static final MapCodec<RadioBlock> CODEC =
+    public static final MapCodec<RadioBlock> CODEC =
             MapCodec.unit(() -> new RadioBlock(Settings.create()));
 
     public RadioBlock(Settings settings) {
