@@ -2,20 +2,20 @@ package ru.dimaskama.radio;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.minecraft.class_2338;
-import net.minecraft.class_243;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3;
 
 public class RadioListener {
 	public static final int AMPLITUDES_QUEUE_SIZE = 40;
 	public final AtomicInteger idleTicks = new AtomicInteger();
 	public final IntArrayList amplitudes = new IntArrayList();
-	public final class_2338 blockPos;
-	public final class_243 pos;
+	public final BlockPos blockPos;
+	public final Vec3 pos;
 	public int comparatorOutput;
 
-	public RadioListener(class_2338 blockPos) {
+	public RadioListener(BlockPos blockPos) {
 		this.blockPos = blockPos;
-		this.pos = blockPos.method_46558();
+		this.pos = blockPos.toCenterPos();
 	}
 
 	public void writeAmplitude(short[] audio) {
@@ -37,7 +37,7 @@ public class RadioListener {
 	}
 
 	public static int encodeAmplitude(short min, short max) {
-		return min << 16 | max;
+		return (min & 0xFFFF) << 16 | (max & 0xFFFF);
 	}
 
 	public static short decodeMin(int minMax) {
@@ -45,6 +45,6 @@ public class RadioListener {
 	}
 
 	public static short decodeMax(int minMax) {
-		return (short)(minMax & 65535);
+		return (short)(minMax & 0xFFFF);
 	}
 }
