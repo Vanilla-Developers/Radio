@@ -44,16 +44,16 @@ public class RadioBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void writeNbt(NbtCompound tag) {
-        super.writeNbt(tag);
+    protected void writeNbt(NbtCompound tag, net.minecraft.registry.RegistryWrapper.WrapperLookup registryLookup) {
+        super.writeNbt(tag, registryLookup);
         if (this.lastEnabledState != null) {
             tag.putString("LastEnabledState", this.lastEnabledState.name());
         }
     }
 
     @Override
-    protected void readNbt(NbtCompound tag) {
-        super.readNbt(tag);
+    protected void readNbt(NbtCompound tag, net.minecraft.registry.RegistryWrapper.WrapperLookup registryLookup) {
+        super.readNbt(tag, registryLookup);
         if (tag.contains("LastEnabledState")) {
             try {
                 this.lastEnabledState = RadioState.valueOf(tag.getString("LastEnabledState"));
@@ -68,7 +68,7 @@ public class RadioBlockEntity extends BlockEntity {
     @Override
     public void markRemoved() {
         super.markRemoved();
-        if (this.world instanceof ServerWorld serverWorld) {
+        if (this.getWorld() instanceof ServerWorld serverWorld) {
             this.unregister(serverWorld, this.getPos());
         }
     }
@@ -76,7 +76,7 @@ public class RadioBlockEntity extends BlockEntity {
     @Override
     public void onLoad() {
         super.onLoad();
-        if (!this.world.isClient && this.world instanceof ServerWorld serverWorld) {
+        if (!this.getWorld().isClient() && this.getWorld() instanceof ServerWorld serverWorld) {
             BlockState bs = this.getCachedState();
             RadioState state = bs.get(ModBlocks.Properties.RADIO_STATE);
             this.register(serverWorld, this.getPos(), state);
@@ -150,7 +150,7 @@ public class RadioBlockEntity extends BlockEntity {
     private void updateLastEnabledState(ServerWorld world, RadioState newRadioState) {
         if (newRadioState.isEnabled() && this.lastEnabledState != newRadioState) {
             this.lastEnabledState = newRadioState;
-            world.updateNeighborsAlways(this.getPos(), this.getCachedState().getBlock());
+            world.updateNeighborsAlways(this.getPos(), this.getCachedState().getBlock(), null);
         }
     }
 
@@ -170,9 +170,9 @@ public class RadioBlockEntity extends BlockEntity {
     }
 
     public void setLeftIndicator(boolean leftIndicator) {
-        BlockState state = this.world.getBlockState(this.getPos());
+        BlockState state = this.getWorld().getBlockState(this.getPos());
         if (state.get(ModBlocks.Properties.LEFT_INDICATOR) != leftIndicator) {
-            this.world.setBlockState(this.getPos(), state.with(ModBlocks.Properties.LEFT_INDICATOR, leftIndicator), 3);
+            this.getWorld().setBlockState(this.getPos(), state.with(ModBlocks.Properties.LEFT_INDICATOR, leftIndicator), 3);
         }
     }
 
@@ -224,7 +224,7 @@ public class RadioBlockEntity extends BlockEntity {
         for (int y = world.getTopY(Heightmap.Type.WORLD_SURFACE, mutable.getX(), mutable.getZ()); y > radioY; y--) {
             mutable.setY(y);
             BlockState state = world.getBlockState(mutable);
-            if (state.isIn(TagKey.of(RegistryKeys.BLOCK, new Identifier("radio", "antenna_segments")))
+            if (state.isIn(TagKey.of(RegistryKeys.BLOCK, Identifier.of("radio", "antenna_segments")))
                     && state.get(Properties.AXIS) == net.minecraft.util.math.Direction.Axis.Y) {
                 antennaCount++;
             } else if (antennaCount > 0 || !isAcceptableBlockAboveAntenna(world, mutable, state)) {
@@ -249,5 +249,16 @@ public class RadioBlockEntity extends BlockEntity {
             }
         }
         return RadioState.DISABLED;
+    }
+
+    // Метод tick, который вызывается из тикера
+    public void tick(World world, BlockPos pos, BlockState state) {
+        // Обработка горения
+        if (this.burningTicks > 0) {
+            this.burningTicks++;
+            if (this.burningTicks > 20) {
+                this.burningTicks = 0;
+            }
+        }
     }
 }

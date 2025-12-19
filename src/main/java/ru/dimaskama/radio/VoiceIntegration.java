@@ -15,106 +15,88 @@ import java.util.UUID;
 import javax.imageio.ImageIO;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 import ru.dimaskama.radio.extend.ServerWorldExtend;
 
 public class VoiceIntegration {
-	public static final int SAMPLE_RATE = 48000;
-	public static final int PACKET_SIZE = 960;
-	public static final long PACKET_RATE_NANOS = 20000000L;
+    public static final int SAMPLE_RATE = 48000;
+    public static final int PACKET_SIZE = 960;
+    public static final long PACKET_RATE_NANOS = 20000000L;
 
-	@Nullable
-	private static VoicechatServerApi voicechatServerApi;
-	@Nullable
-	private static VolumeCategory radios;
+    @Nullable
+    private static VoicechatServerApi voicechatServerApi;
+    @Nullable
+    private static VolumeCategory radios;
 
-	@Nullable
-	public static VoicechatServerApi getServerApi() {
-		return voicechatServerApi;
-	}
+    @Nullable
+    public static VoicechatServerApi getServerApi() {
+        return voicechatServerApi;
+    }
 
-	@Nullable
-	public static VolumeCategory getRadiosVolumeCategory() {
-		return radios;
-	}
+    @Nullable
+    public static VolumeCategory getRadiosVolumeCategory() {
+        return radios;
+    }
 
-	static void registerEvents(EventRegistration registration) {
-		registration.registerEvent(VoicechatServerStartedEvent.class, VoiceIntegration::onServerStarted);
-		registration.registerEvent(VoicechatServerStoppedEvent.class, VoiceIntegration::onServerStopped);
-		registration.registerEvent(MicrophonePacketEvent.class, VoiceIntegration::onMicPacket);
-	}
+    static void registerEvents(EventRegistration registration) {
+        registration.registerEvent(VoicechatServerStartedEvent.class, VoiceIntegration::onServerStarted);
+        registration.registerEvent(VoicechatServerStoppedEvent.class, VoiceIntegration::onServerStopped);
+        registration.registerEvent(MicrophonePacketEvent.class, VoiceIntegration::onMicPacket);
+    }
 
-	private static void onServerStarted(VoicechatServerStartedEvent event) {
-		VoicechatServerApi api = voicechatServerApi = event.getVoicechat();
-		radios = api.volumeCategoryBuilder().setId("radios").setName("Radios").setIcon(loadIcon("assets/radio/category_icon.png")).build();
-		api.registerVolumeCategory(radios);
-	}
+    private static void onServerStarted(VoicechatServerStartedEvent event) {
+        VoicechatServerApi api = voicechatServerApi = event.getVoicechat();
+        radios = api.volumeCategoryBuilder()
+                .setId("radios")
+                .setName("Radios")
+                .setIcon(loadIcon("assets/radio/category_icon.png"))
+                .build();
+        api.registerVolumeCategory(radios);
+    }
 
-	private static void onServerStopped(VoicechatServerStoppedEvent event) {
-		voicechatServerApi = null;
-		radios = null;
-	}
+    private static void onServerStopped(VoicechatServerStoppedEvent event) {
+        voicechatServerApi = null;
+        radios = null;
+    }
 
-	public static void onPluginLocationPacket(ServerWorld world, BlockPos pos, UUID id, byte[] data, float distance) {
-		WorldRadioManager radioManager = ((ServerWorldExtend) world).radio_getRadioManager();
-		if (radioManager != null) {
-			radioManager.handlePluginLocPacket(pos, id, data, distance);
-		}
-	}
+    // Изменено с BlockPos на Vec3d
+    public static void onPluginLocationPacket(ServerWorld world, Vec3d pos, UUID id, byte[] data, float distance) {
+        WorldRadioManager radioManager = ((ServerWorldExtend) world).radio_getRadioManager();
+        if (radioManager != null) {
+            radioManager.handlePluginLocPacket(pos, id, data, distance);
+        }
+    }
 
-	private static void onMicPacket(MicrophonePacketEvent event) {
-		VoicechatConnection con;
-		WorldRadioManager radioManager;
-		if ((con = event.getSenderConnection()) != null
-			&& con.getPlayer().getPlayer() instanceof ServerPlayerEntity player
-			&& (radioManager = ((ServerWorldExtend) player.getWorld()).radio_getRadioManager()) != null) {
-			radioManager.handleMicPacket(player, (MicrophonePacket) event.getPacket());
-		}
-	}
+    private static void onMicPacket(MicrophonePacketEvent event) {
+        VoicechatConnection con;
+        WorldRadioManager radioManager;
+        if ((con = event.getSenderConnection()) != null
+                && con.getPlayer().getPlayer() instanceof ServerPlayerEntity player
+                // Исправлено: getWorld() -> getServerWorld() (или serverWorld)
+                && (radioManager = ((ServerWorldExtend) player.serverWorld).radio_getRadioManager()) != null) {
+            radioManager.handleMicPacket(player, (MicrophonePacket) event.getPacket());
+        }
+    }
 
-	private static int[][] loadIcon(String filename) {
-		return RadioMod.MOD_CONTAINER.findPath(filename).map(path -> {
-			try {
-				InputStream in = Files.newInputStream(path);
+    private static int[][] loadIcon(String filename) {
+        return RadioMod.MOD_CONTAINER.findPath(filename).map(path -> {
+            try (InputStream in = Files.newInputStream(path)) {
+                BufferedImage image = ImageIO.read(in);
+                int[][] arr = new int[16][16];
 
-				int[][] result;
-				try {
-					BufferedImage image = ImageIO.read(in);
-					int[][] arr = new int[16][16];
-
-					for (int x = 0; x < 16; x++) {
-						int imgX = x * image.getWidth() / 16;
-
-						for (int y = 0; y < 16; y++) {
-							int imgY = y * image.getHeight() / 16;
-							// Используем прямой RGB из BufferedImage (ARGB int)
-							arr[x][y] = image.getRGB(imgX, imgY);
-						}
-					}
-
-					result = arr;
-				} catch (Throwable t) {
-					if (in != null) {
-						try {
-							in.close();
-						} catch (Throwable sup) {
-							t.addSuppressed(sup);
-						}
-					}
-
-					throw t;
-				}
-
-				if (in != null) {
-					in.close();
-				}
-
-				return result;
-			} catch (Exception e) {
-				RadioMod.LOGGER.error("Failed to load icon {}", filename);
-				return null;
-			}
-		}).orElse(null);
-	}
+                for (int x = 0; x < 16; x++) {
+                    int imgX = x * image.getWidth() / 16;
+                    for (int y = 0; y < 16; y++) {
+                        int imgY = y * image.getHeight() / 16;
+                        arr[x][y] = image.getRGB(imgX, imgY);
+                    }
+                }
+                return arr;
+            } catch (Exception e) {
+                RadioMod.LOGGER.error("Failed to load icon {}", filename, e);
+                return null;
+            }
+        }).orElse(null);
+    }
 }
