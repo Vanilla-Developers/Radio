@@ -60,7 +60,6 @@ public class VoiceIntegration {
         radios = null;
     }
 
-    // Изменено с BlockPos на Vec3d
     public static void onPluginLocationPacket(ServerWorld world, Vec3d pos, UUID id, byte[] data, float distance) {
         WorldRadioManager radioManager = ((ServerWorldExtend) world).radio_getRadioManager();
         if (radioManager != null) {
@@ -73,8 +72,9 @@ public class VoiceIntegration {
         WorldRadioManager radioManager;
         if ((con = event.getSenderConnection()) != null
                 && con.getPlayer().getPlayer() instanceof ServerPlayerEntity player
-                // Исправлено: getWorld() -> getServerWorld() (или serverWorld)
-                && (radioManager = ((ServerWorldExtend) player.serverWorld).radio_getRadioManager()) != null) {
+                // Исправление: player.getEntityWorld() и проверка на ServerWorld
+                && player.getEntityWorld() instanceof ServerWorld serverWorld
+                && (radioManager = ((ServerWorldExtend) serverWorld).radio_getRadioManager()) != null) {
             radioManager.handleMicPacket(player, (MicrophonePacket) event.getPacket());
         }
     }
