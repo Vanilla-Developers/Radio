@@ -11,7 +11,7 @@ base {
 }
 
 repositories {
-    maven { url 'api.modrinth.com' }
+    maven { url = 'api.modrinth.com' }
     mavenCentral()
     maven { url = 'https://maven.maxhenkel.de/repository/public' }
 	// Add repositories to retrieve artifacts from in here.
