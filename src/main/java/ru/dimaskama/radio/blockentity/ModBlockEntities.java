@@ -1,18 +1,18 @@
 package ru.dimaskama.radio.blockentity;
 
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
-import net.minecraft.class_2248;
-import net.minecraft.class_2378;
-import net.minecraft.class_2591;
-import net.minecraft.class_7923;
+import net.minecraft.block.Block;
+import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.Registries;
 import ru.dimaskama.radio.RadioMod;
 import ru.dimaskama.radio.block.ModBlocks;
 
 public final class ModBlockEntities {
-	public static final class_2591<RadioBlockEntity> RADIO_TYPE = FabricBlockEntityTypeBuilder.create(RadioBlockEntity::new, new class_2248[]{ModBlocks.RADIO})
+	public static final BlockEntityType<RadioBlockEntity> RADIO_TYPE = FabricBlockEntityTypeBuilder.create(RadioBlockEntity::new, new Block[]{ModBlocks.RADIO})
 		.build();
 
 	public static void init() {
-		class_2378.method_10230(class_7923.field_41181, RadioMod.id("radio"), RADIO_TYPE);
+		Registry.register(Registries.BLOCK_ENTITY_TYPE, RadioMod.id("radio"), RADIO_TYPE);
 	}
 }
