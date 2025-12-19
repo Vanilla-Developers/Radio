@@ -22,7 +22,8 @@ abstract class ServerWorldMixin implements ServerWorldExtend {
             at = {@At("TAIL")}
     )
     private void initTail(CallbackInfo ci) {
-        ServerWorld thisServerWorld = (ServerWorld) this;
+        // Исправление: приводим this к Object, затем к ServerWorld
+        ServerWorld thisServerWorld = (ServerWorld) (Object) this;
         this.radio_radioManager = new WorldRadioManager(thisServerWorld);
     }
 
