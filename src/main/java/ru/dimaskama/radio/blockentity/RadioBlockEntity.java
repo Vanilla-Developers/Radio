@@ -43,7 +43,6 @@ public class RadioBlockEntity extends BlockEntity {
         super(ModBlockEntities.RADIO_TYPE, pos, state);
     }
 
-    @Override
     protected void writeNbt(NbtCompound tag, net.minecraft.registry.RegistryWrapper.WrapperLookup registryLookup) {
         super.writeNbt(tag, registryLookup);
         if (this.lastEnabledState != null) {
@@ -51,7 +50,6 @@ public class RadioBlockEntity extends BlockEntity {
         }
     }
 
-    @Override
     protected void readNbt(NbtCompound tag, net.minecraft.registry.RegistryWrapper.WrapperLookup registryLookup) {
         super.readNbt(tag, registryLookup);
         if (tag.contains("LastEnabledState")) {
@@ -73,7 +71,6 @@ public class RadioBlockEntity extends BlockEntity {
         }
     }
 
-    @Override
     public void onLoad() {
         super.onLoad();
         if (!this.getWorld().isClient() && this.getWorld() instanceof ServerWorld serverWorld) {
