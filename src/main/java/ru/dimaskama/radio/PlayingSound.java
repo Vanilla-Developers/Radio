@@ -70,7 +70,7 @@ public class PlayingSound extends Thread {
 				System.arraycopy(audio, pos, buf1, 0, Math.min(size, 960));
 				this.sender.accept((Consumer)channel -> {
 					System.arraycopy(buf1, 0, buf2, 0, 960);
-					channel.handleFakeSoundPiece(this.uuid, buf2);
+					((RadioChannel) channel).handleFakeSoundPiece(this.uuid, buf2);
 				});
 				long nextPlay = start + ++packetCount * 20000000L;
 				long sleep = nextPlay - System.nanoTime();
@@ -84,7 +84,7 @@ public class PlayingSound extends Thread {
 			}
 		}
 
-		this.sender.accept((Consumer)channel -> channel.handleFakeSoundPiece(this.uuid, null));
+		this.sender.accept((Consumer)channel -> ((RadioChannel) channel).handleFakeSoundPiece(this.uuid, null));
 		this.ended = true;
 	}
 }
