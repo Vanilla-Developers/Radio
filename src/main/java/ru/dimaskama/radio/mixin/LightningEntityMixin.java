@@ -24,9 +24,11 @@ import ru.dimaskama.radio.block.RadioBlock;
 
 @Mixin(LightningEntity.class)
 abstract class LightningEntityMixin extends Entity {
+    private World world;
 
     private LightningEntityMixin(EntityType<?> type, World world) {
         super(type, world);
+        this.world = world;
         throw new AssertionError();
     }
 
@@ -39,7 +41,7 @@ abstract class LightningEntityMixin extends Entity {
             @Local BlockPos pos,
             @Local BlockState state
     ) {
-        if (this.getWorld() instanceof ServerWorld world) {
+        if (this.world instanceof ServerWorld world) {
 
             Mutable mutable = pos.mutableCopy();
 
