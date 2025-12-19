@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.function.Function;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
-import net.minecraft.block.Material;
+import net.minecraft.block.MapColor;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.Registries;
 import net.minecraft.sound.BlockSoundGroup;
@@ -20,7 +20,10 @@ public final class ModBlocks {
 	private static final List<Pair<Identifier, Block>> BLOCKS_TO_REGISTER = new ArrayList<>();
 	public static final RadioBlock RADIO = registerOnInit(
 		"radio",
-		AbstractBlock.Settings.of(Material.METAL).strength(1.5F, 3.5F).sounds(BlockSoundGroup.METAL),
+			AbstractBlock.Settings.create()
+					.mapColor(MapColor.IRON_GRAY)
+					.strength(3.0f, 6.0f)
+					.requiresTool(),
 		RadioBlock::new
 	);
 
