@@ -1,216 +1,163 @@
 package ru.dimaskama.radio.block;
 
 import com.mojang.serialization.MapCodec;
-import net.minecraft.block.Block;
-import net.minecraft.item.BlockItem;
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
+import java.util.List;
+import java.util.function.BiConsumer;
+
+import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityTicker;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemGroup;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.collection.DefaultedList;
-import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.random.Random;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldView;
-import net.minecraft.world.explosion.Explosion;
 import org.jetbrains.annotations.Nullable;
 import ru.dimaskama.radio.RadioState;
-import ru.dimaskama.radio.block.ModBlocks;
+import ru.dimaskama.radio.block.ModBlocks.Properties;
 import ru.dimaskama.radio.blockentity.ModBlockEntities;
 import ru.dimaskama.radio.blockentity.RadioBlockEntity;
 import ru.dimaskama.radio.item.ModItems;
 import ru.dimaskama.radio.item.ModItems.DataComponents;
 
-public class RadioBlock extends Block {
+public class RadioBlock extends AbstractBlock {
+    private final MapCodec<RadioBlock> CODEC = createCodec(RadioBlock::new);
 
-    public static final MapCodec<RadioBlock> CODEC =
-            MapCodec.unit(() -> new RadioBlock(Settings.create()));
-
-    public RadioBlock(Settings settings) {
+    protected RadioBlock(Settings settings) {
         super(settings);
-        this.setDefaultState(
-                this.getDefaultState()
-                        .with(ModBlocks.Properties.RADIO_STATE, RadioState.DISABLED)
-                        .with(ModBlocks.Properties.LEFT_INDICATOR, false)
-                        .with(Properties.POWER, 0)
-                        .with(Properties.HORIZONTAL_FACING, Direction.NORTH)
+        this.method_9590(
+                (BlockState)((BlockState)((BlockState)((BlockState)((BlockState)this.method_9595().method_11664()).method_11657(Properties.RADIO_STATE, RadioState.DISABLED))
+                        .method_11657(Properties.LEFT_INDICATOR, false))
+                        .method_11657(class_2741.field_12511, 0))
+                        .method_11657(class_2741.field_12481, class_2350.field_11043)
         );
     }
 
-    @Override
-    public MapCodec<? extends Block> getCodec() {
-        return CODEC;
+    protected MapCodec<RadioBlock> method_53969() {
+        return this.CODEC;
     }
 
     @Nullable
-    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+    public class_2586 method_10123(BlockPos pos, BlockState state) {
         return new RadioBlockEntity(pos, state);
     }
 
     @Nullable
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
-            World world,
-            BlockState state,
-            BlockEntityType<T> type
-    ) {
-        if (world.isClient()) return null;
-        return createTickerHelper(
-                type,
-                ModBlockEntities.RADIO_TYPE,
-                (world1, pos, state1, be) -> be.tick(world1, pos, state1)
-        );
+    public <T extends class_2586> class_5558<T> method_31645(class_1937 world, BlockState state, class_2591<T> type) {
+        return method_31618(type, ModBlockEntities.RADIO_TYPE, (world1, pos, state1, blockEntity) -> blockEntity.tick(world1, pos, state1));
     }
 
-    public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-        if (!state.isOf(newState.getBlock()) && world instanceof ServerWorld serverWorld) {
-            update(pos, newState, serverWorld);
+    protected void method_9615(BlockState state, class_1937 world, BlockPos pos, BlockState oldState, boolean notify) {
+        super.method_9615(state, world, pos, oldState, notify);
+        if (!oldState.method_27852(state.method_26204()) && world instanceof ServerWorld serverWorld) {
+            this.update(pos, state, serverWorld);
         }
     }
 
-    public void neighborUpdate(
-            BlockState state,
-            World world,
-            BlockPos pos,
-            Block sourceBlock,
-            @Nullable BlockPos fromPos,
-            boolean notify
-    ) {
+    protected void method_9612(BlockState state, class_1937 world, BlockPos pos, class_2248 sourceBlock, @Nullable class_9904 wireOrientation, boolean notify) {
+        super.method_9612(state, world, pos, sourceBlock, wireOrientation, notify);
         if (world instanceof ServerWorld serverWorld) {
-            update(pos, state, serverWorld);
+            this.update(pos, state, serverWorld);
         }
     }
 
     private void update(BlockPos pos, BlockState state, ServerWorld world) {
-        BlockEntity be = world.getBlockEntity(pos);
-        if (be instanceof RadioBlockEntity blockEntity) {
+        if (world.getBlockEntity(pos) instanceof RadioBlockEntity blockEntity) {
             BlockState s = blockEntity.updateState(pos, state, world, false);
             if (s != null) {
-                world.setBlockState(pos, s, 2);
+                world.method_8652(pos, s, 2);
             }
         }
     }
 
-    public ActionResult onUse(
-            BlockState state,
-            World world,
-            BlockPos pos,
-            PlayerEntity player,
-            Hand hand,
-            BlockHitResult hit
-    ) {
-        return tryToggle(state, world, pos);
+    protected class_1269 method_55766(BlockState state, class_1937 world, BlockPos pos, class_1657 player, class_3965 hit) {
+        return this.tryToggle(state, world, pos);
     }
 
-//    public void onBlockExploded(BlockState state, World world, BlockPos pos, Explosion explosion) {
-//        if (explosion.causesFire()) {
-//            tryToggle(state, world, pos);
-//        }
-//    }
-
-    protected ActionResult tryToggle(BlockState state, World world, BlockPos pos) {
-        if (world instanceof ServerWorld serverWorld &&
-                world.getBlockEntity(pos) instanceof RadioBlockEntity blockEntity) {
-            return blockEntity.tryToggle(serverWorld, pos, state);
+    protected void method_55124(BlockState state, ServerWorld world, BlockPos pos, class_1927 explosion, BiConsumer<class_1799, BlockPos> stackMerger) {
+        if (explosion.method_60274()) {
+            this.tryToggle(state, world, pos);
         }
-        return ActionResult.PASS;
+
+        super.method_55124(state, world, pos, explosion, stackMerger);
     }
 
-    @Override
-    public boolean hasComparatorOutput(BlockState state) {
+    protected class_1269 tryToggle(BlockState state, class_1937 world, BlockPos pos) {
+        return (class_1269)(world instanceof ServerWorld serverWorld && world.getBlockEntity(pos) instanceof RadioBlockEntity blockEntity
+                ? blockEntity.tryToggle(serverWorld, pos, state)
+                : class_1269.field_21466);
+    }
+
+    protected class_1269 method_55765(class_1799 stack, BlockState state, class_1937 world, BlockPos pos, class_1657 player, class_1268 hand, class_3965 hit) {
+        return (class_1269)(stack.method_7909() instanceof class_1747 && new class_1750(player, hand, stack, hit).method_7716()
+                ? class_1269.field_5811
+                : class_1269.field_52423);
+    }
+
+    protected boolean method_9498(BlockState state) {
         return true;
     }
 
-    public int getComparatorOutput(BlockState state, World world, BlockPos pos) {
-        BlockEntity be = world.getBlockEntity(pos);
-        return be instanceof RadioBlockEntity r ? r.getComparatorOutput() : 0;
+    protected int method_9572(BlockState state, class_1937 world, BlockPos pos, class_2350 direction) {
+        return world.getBlockEntity(pos) instanceof RadioBlockEntity radioBlockEntity ? radioBlockEntity.getComparatorOutput() : 0;
     }
 
     @Nullable
-    @Override
-    public BlockState getPlacementState(ItemPlacementContext ctx) {
-        return getDefaultState()
-                .with(Properties.HORIZONTAL_FACING, ctx.getHorizontalPlayerFacing())
-                .with(
-                        ModBlocks.Properties.RADIO_STATE,
-                        ctx.getStack().getOrDefault(DataComponents.RADIO_STATE, RadioState.DISABLED)
-                );
+    public BlockState method_9605(class_1750 ctx) {
+        return (BlockState)((BlockState)this.method_9564().method_11657(class_2741.field_12481, ctx.method_8042().method_10153()))
+                .method_11657(Properties.RADIO_STATE, (RadioState)ctx.method_8041().method_58695(DataComponents.RADIO_STATE, RadioState.DISABLED));
     }
 
-    public ItemStack getPickStack(WorldView world, BlockPos pos, BlockState state) {
-        ItemStack stack = super.getPickStack(world, pos, state, false);
-        stack.set(
-                DataComponents.RADIO_STATE,
-                state.get(ModBlocks.Properties.RADIO_STATE) == RadioState.DESTROYED
-                        ? RadioState.DESTROYED
-                        : RadioState.DISABLED
-        );
+    protected class_1799 method_9574(class_4538 world, BlockPos pos, BlockState state, boolean includeData) {
+        class_1799 stack = super.method_9574(world, pos, state, includeData);
+        RadioState radioState = (RadioState)state.method_11654(Properties.RADIO_STATE);
+        stack.method_57379(DataComponents.RADIO_STATE, radioState == RadioState.DESTROYED ? RadioState.DESTROYED : RadioState.DISABLED);
         return stack;
     }
 
+    protected List<class_1799> method_9560(BlockState state, class_8568 builder) {
+        RadioState radioState = (RadioState)state.method_11654(Properties.RADIO_STATE);
+        List<class_1799> list = super.method_9560(state, builder);
 
-    @Override
-    public BlockState rotate(BlockState state, BlockRotation rotation) {
-        return state.with(
-                Properties.HORIZONTAL_FACING,
-                rotation.rotate(state.get(Properties.HORIZONTAL_FACING))
-        );
+        for (class_1799 stack : list) {
+            if (stack.method_31574(ModItems.RADIO)) {
+                stack.method_57379(DataComponents.RADIO_STATE, radioState == RadioState.DESTROYED ? RadioState.DESTROYED : RadioState.DISABLED);
+            }
+        }
+
+        return list;
     }
 
-    @Override
-    public BlockState mirror(BlockState state, BlockMirror mirror) {
-        return rotate(state, mirror.getRotation(state.get(Properties.HORIZONTAL_FACING)));
+    protected BlockState rotate(BlockState state, class_2470 rotation) {
+        return (BlockState)state.method_11657(class_2741.field_12481, rotation.method_10503((class_2350)state.method_11654(class_2741.field_12481)));
     }
 
-    @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
-        builder.add(
-                ModBlocks.Properties.RADIO_STATE,
-                ModBlocks.Properties.LEFT_INDICATOR,
-                Properties.POWER,
-                Properties.HORIZONTAL_FACING
-        );
+    protected BlockState method_9569(BlockState state, class_2415 mirror) {
+        return this.rotate(state, mirror.method_10345((class_2350)state.method_11654(class_2741.field_12481)));
     }
 
-    @Override
-    public void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
-        if (world.getBlockEntity(pos) instanceof RadioBlockEntity radio) {
-            BlockState newState = radio.newBurnedState(world, pos, state);
-            if (newState != null) {
-                world.setBlockState(pos, newState, 2);
-                world.playSound(
-                        null,
-                        pos.getX() + 0.5,
-                        pos.getY() + 0.5,
-                        pos.getZ() + 0.5,
-                        SoundEvents.BLOCK_FIRE_AMBIENT,
-                        SoundCategory.BLOCKS,
-                        0.5F,
-                        0.7F
+    protected void appendProperties(class_2690<class_2248, BlockState> builder) {
+        super.appendProperties(builder);
+        builder.method_11667(new class_2769[]{Properties.RADIO_STATE, Properties.LEFT_INDICATOR, class_2741.field_12511, class_2741.field_12481});
+    }
+
+    public void precipitationTick(BlockState state, class_1937 world, BlockPos pos, class_1963 precipitation) {
+        super.precipitationTick(state, world, pos, precipitation);
+    }
+
+    protected void tick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
+        if (world.getBlockEntity(pos) instanceof RadioBlockEntity radioBlockEntity) {
+            state = radioBlockEntity.newBurnedState(world, pos, state);
+            if (state != null) {
+                world.method_8652(pos, state, 2);
+                world.method_43128(
+                        null, pos.method_10263() + 0.5, pos.method_10264() + 0.5, pos.method_10260() + 0.5, class_3417.field_19199, class_3419.field_15245, 0.5F, 0.7F
                 );
             }
         }
     }
 
     public static void burnRadio(ServerWorld world, BlockPos pos) {
-        if (world.getBlockEntity(pos) instanceof RadioBlockEntity radio) {
-            radio.markBurning();
-            world.scheduleBlockTick(pos, ModBlocks.RADIO, 6);
+        if (world.getBlockEntity(pos) instanceof RadioBlockEntity radioBlockEntity) {
+            radioBlockEntity.markBurning();
+            world.setBlockState(pos, ModBlocks.RADIO, 6);
         }
     }
 }
