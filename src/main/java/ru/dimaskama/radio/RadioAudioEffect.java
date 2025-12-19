@@ -1,14 +1,15 @@
 package ru.dimaskama.radio;
 
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.random.RandomSource;
+import java.util.Random;
+
 
 public class RadioAudioEffect {
 	private static final float SAMPLE_RATE = 48000.0F;
 	private static final int FRAME_SIZE = 960;
 	private static final float MAX_SHORT = 32767.0F;
 	private static final float LN_2 = (float)Math.log(2.0);
-	private final RandomSource random = RandomSource.create();
+	private final Random random = new Random();
 	private final float normalizedCenterFrequency;
 	private final float normalizedBandwidth;
 	private final float severity;

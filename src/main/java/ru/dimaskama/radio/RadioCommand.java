@@ -50,7 +50,7 @@ public class RadioCommand implements CommandRegistrationCallback {
 	private static final IntSet ALL_RADIO_CHANNELS = IntSet.of(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15});
 
 	@Override
-	public void register(CommandDispatcher<ServerCommandSource> commandDispatcher, net.minecraft.server.command.CommandRegistryAccess commandRegistryAccess, CommandManager.RegistrationEnvironment registrationEnvironment) {
+	public void register(CommandDispatcher<ServerCommandSource> commandDispatcher, net.minecraft.command.CommandRegistryAccess commandRegistryAccess, CommandManager.RegistrationEnvironment registrationEnvironment) {
 		commandDispatcher.register(
 			(LiteralArgumentBuilder<ServerCommandSource>) (CommandManager.literal("radio").requires(src -> Permissions.check(src, "radio.command", 2)))
 				.then(
@@ -124,11 +124,20 @@ public class RadioCommand implements CommandRegistrationCallback {
 								.append(
 									Text.literal(uuid.toString())
 										.styled(style -> style.withColor(Formatting.GRAY)
-											.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to stop")))
-											.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/radio fakesound stop " + uuid))
-										),
-									false
-								),
+											.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to stop")) {
+												@Override
+												public Action getAction() {
+													return null;
+												}
+											})
+											.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/radio fakesound stop " + uuid) {
+												@Override
+												public Action getAction() {
+													return null;
+												}
+											})
+										)
+                                ),
 							true
 						);
 					return 1;

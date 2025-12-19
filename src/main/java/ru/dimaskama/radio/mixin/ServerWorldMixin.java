@@ -15,7 +15,6 @@ abstract class ServerWorldMixin implements ServerWorldExtend {
 
     @Unique
     @Nullable
-    @Nullable
     private WorldRadioManager radio_radioManager;
 
     @Inject(

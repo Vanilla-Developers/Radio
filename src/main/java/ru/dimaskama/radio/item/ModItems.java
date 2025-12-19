@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.function.Function;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents.ModifyEntries;
+
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.item.ItemGroups;
@@ -14,6 +15,7 @@ import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.component.ComponentType;
+import net.minecraft.item.Item.Settings;
 
 import ru.dimaskama.radio.RadioMod;
 import ru.dimaskama.radio.RadioState;
@@ -25,11 +27,12 @@ public final class ModItems {
 
     public static final RadioItem RADIO = registerOnInit(
             "radio",
-            new Item.Settings()
+            new Settings()
                     .maxCount(64)
                     .component(ModItems.DataComponents.RADIO_STATE, RadioState.DISABLED),
             settings -> new RadioItem(ModBlocks.RADIO, settings)
     );
+
 
     public static void init() {
         ModItems.DataComponents.init();
@@ -51,10 +54,13 @@ public final class ModItems {
 
     private static <T extends Item> T registerOnInit(
             String radioModId,
-            Item.Settings settings,
-            Function<Item.Settings, T> factory
+            Settings settings,
+            Function<Settings, T> factory
     ) {
         Identifier id = RadioMod.id(radioModId);
+
+        settings.registryKey(RegistryKey.of(Registries.ITEM.getKey(), id));
+
         T item = factory.apply(settings);
         ITEMS_TO_REGISTER.add(new Pair<>(id, item));
         return item;
@@ -65,8 +71,7 @@ public final class ModItems {
         public static final ComponentType<RadioState> RADIO_STATE =
                 ComponentType.<RadioState>builder()
                         .codec(RadioState.CODEC)
-                        .packetCodec(RadioState.CODEC)  // Используем тот же CODEC для пакетов
-                        .cache()
+                        .packetCodec(RadioState.PACKET_CODEC)
                         .build();
 
         private static void init() {

@@ -58,13 +58,11 @@ public class RadioBlock extends Block {
     }
 
     @Nullable
-    @Override
     public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
         return new RadioBlockEntity(pos, state);
     }
 
     @Nullable
-    @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
             World world,
             BlockState state,
@@ -78,7 +76,6 @@ public class RadioBlock extends Block {
         );
     }
 
-    @Override
     public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
         super.onStateReplaced(state, world, pos, newState, moved);
         if (!state.isOf(newState.getBlock()) && world instanceof ServerWorld serverWorld) {
@@ -86,7 +83,6 @@ public class RadioBlock extends Block {
         }
     }
 
-    @Override
     public void neighborUpdate(
             BlockState state,
             World world,
@@ -111,7 +107,6 @@ public class RadioBlock extends Block {
         }
     }
 
-    @Override
     public ActionResult onUse(
             BlockState state,
             World world,
@@ -123,7 +118,6 @@ public class RadioBlock extends Block {
         return tryToggle(state, world, pos);
     }
 
-    @Override
     public void onBlockExploded(BlockState state, World world, BlockPos pos, Explosion explosion) {
         if (explosion.causesFire()) {
             tryToggle(state, world, pos);
@@ -144,7 +138,6 @@ public class RadioBlock extends Block {
         return true;
     }
 
-    @Override
     public int getComparatorOutput(BlockState state, World world, BlockPos pos) {
         BlockEntity be = world.getBlockEntity(pos);
         return be instanceof RadioBlockEntity r ? r.getComparatorOutput() : 0;
@@ -161,7 +154,6 @@ public class RadioBlock extends Block {
                 );
     }
 
-    @Override
     public ItemStack getPickStack(BlockView world, BlockPos pos, BlockState state) {
         ItemStack stack = super.getPickStack(world, pos, state);
         stack.set(
@@ -173,15 +165,6 @@ public class RadioBlock extends Block {
         return stack;
     }
 
-    @Override
-    public void appendStacks(ItemGroup group, DefaultedList<ItemStack> stacks) {
-        super.appendStacks(group, stacks);
-        for (ItemStack stack : stacks) {
-            if (stack.isOf(ModItems.RADIO)) {
-                stack.set(DataComponents.RADIO_STATE, RadioState.DISABLED);
-            }
-        }
-    }
 
     @Override
     public BlockState rotate(BlockState state, BlockRotation rotation) {

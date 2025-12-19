@@ -1,7 +1,10 @@
 package ru.dimaskama.radio;
 
 import com.mojang.serialization.Codec;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.util.StringIdentifiable;
 
 public enum RadioState implements StringIdentifiable {
@@ -11,6 +14,7 @@ public enum RadioState implements StringIdentifiable {
 	DESTROYED("destroyed");
 
 	public static final Codec<RadioState> CODEC = StringIdentifiable.createCodec(RadioState::values);
+	public static final PacketCodec<ByteBuf, RadioState> PACKET_CODEC = PacketCodec.tuple(PacketCodecs.VAR_INT, Enum::ordinal, i -> values()[i]);
 
 	private final String key;
 
