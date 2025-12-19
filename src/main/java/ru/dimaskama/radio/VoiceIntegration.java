@@ -13,10 +13,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.UUID;
 import javax.imageio.ImageIO;
-import net.minecraft.class_243;
-import net.minecraft.class_3218;
-import net.minecraft.class_3222;
-import net.minecraft.class_9848;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
 import ru.dimaskama.radio.extend.ServerWorldExtend;
 
@@ -24,10 +23,9 @@ public class VoiceIntegration {
 	public static final int SAMPLE_RATE = 48000;
 	public static final int PACKET_SIZE = 960;
 	public static final long PACKET_RATE_NANOS = 20000000L;
-	@Nullable
+
 	@Nullable
 	private static VoicechatServerApi voicechatServerApi;
-	@Nullable
 	@Nullable
 	private static VolumeCategory radios;
 
@@ -58,8 +56,8 @@ public class VoiceIntegration {
 		radios = null;
 	}
 
-	public static void onPluginLocationPacket(class_3218 world, class_243 pos, UUID id, byte[] data, float distance) {
-		WorldRadioManager radioManager = ((ServerWorldExtend)world).radio_getRadioManager();
+	public static void onPluginLocationPacket(ServerWorld world, BlockPos pos, UUID id, byte[] data, float distance) {
+		WorldRadioManager radioManager = ((ServerWorldExtend) world).radio_getRadioManager();
 		if (radioManager != null) {
 			radioManager.handlePluginLocPacket(pos, id, data, distance);
 		}
@@ -69,18 +67,18 @@ public class VoiceIntegration {
 		VoicechatConnection con;
 		WorldRadioManager radioManager;
 		if ((con = event.getSenderConnection()) != null
-			&& con.getPlayer().getPlayer() instanceof class_3222 player
-			&& (radioManager = ((ServerWorldExtend)player.method_51469()).radio_getRadioManager()) != null) {
-			radioManager.handleMicPacket(player, (MicrophonePacket)event.getPacket());
+			&& con.getPlayer().getPlayer() instanceof ServerPlayerEntity player
+			&& (radioManager = ((ServerWorldExtend) player.getWorld()).radio_getRadioManager()) != null) {
+			radioManager.handleMicPacket(player, (MicrophonePacket) event.getPacket());
 		}
 	}
 
 	private static int[][] loadIcon(String filename) {
-		return (int[][])RadioMod.MOD_CONTAINER.findPath(filename).map(path -> {
+		return RadioMod.MOD_CONTAINER.findPath(filename).map(path -> {
 			try {
 				InputStream in = Files.newInputStream(path);
 
-				int[][] var12;
+				int[][] result;
 				try {
 					BufferedImage image = ImageIO.read(in);
 					int[][] arr = new int[16][16];
@@ -90,29 +88,30 @@ public class VoiceIntegration {
 
 						for (int y = 0; y < 16; y++) {
 							int imgY = y * image.getHeight() / 16;
-							arr[x][y] = class_9848.method_61334(image.getRGB(imgX, imgY));
+							// Используем прямой RGB из BufferedImage (ARGB int)
+							arr[x][y] = image.getRGB(imgX, imgY);
 						}
 					}
 
-					var12 = arr;
-				} catch (Throwable var10) {
+					result = arr;
+				} catch (Throwable t) {
 					if (in != null) {
 						try {
 							in.close();
-						} catch (Throwable var9) {
-							var10.addSuppressed(var9);
+						} catch (Throwable sup) {
+							t.addSuppressed(sup);
 						}
 					}
 
-					throw var10;
+					throw t;
 				}
 
 				if (in != null) {
 					in.close();
 				}
 
-				return var12;
-			} catch (Exception var11) {
+				return result;
+			} catch (Exception e) {
 				RadioMod.LOGGER.error("Failed to load icon {}", filename);
 				return null;
 			}
