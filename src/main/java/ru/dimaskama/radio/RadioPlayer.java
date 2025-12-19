@@ -8,36 +8,36 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.minecraft.class_2338;
-import net.minecraft.class_243;
-import net.minecraft.class_3218;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.math.BlockPos;
 
 public class RadioPlayer implements AutoCloseable {
 	public final AtomicBoolean isNew = new AtomicBoolean(true);
-	private final Map<UUID, LocationalAudioChannel> shadowChannels = new ConcurrentHashMap();
+	private final Map<UUID, LocationalAudioChannel> shadowChannels = new ConcurrentHashMap<>();
 	private final VoicechatServerApi api;
-	private final class_3218 world;
-	public final class_243 pos;
+	private final ServerWorld world;
+	public final BlockPos pos;
 	private final Set<UUID> radioAudioChannels;
 
-	public RadioPlayer(VoicechatServerApi api, class_3218 world, class_2338 pos, Set<UUID> radioAudioChannels) {
+	public RadioPlayer(VoicechatServerApi api, ServerWorld world, BlockHitResult hitResult, Set<UUID> radioAudioChannels) {
 		this.api = api;
 		this.world = world;
-		this.pos = pos.method_46558();
+		this.pos = hitResult.getBlockPos();
 		this.radioAudioChannels = radioAudioChannels;
 	}
 
 	public void packet(UUID uuid, byte[] data) {
 		LocationalAudioChannel channel = data.length != 0
-			? (LocationalAudioChannel)this.shadowChannels
-				.computeIfAbsent(
+			? this.shadowChannels.computeIfAbsent(
 					uuid,
 					u -> {
 						UUID shadowUuid = UUID.randomUUID();
-						LocationalAudioChannel ch = this.api
-							.createLocationalAudioChannel(
-								shadowUuid, this.api.fromServerLevel(this.world), this.api.createPosition(this.pos.field_1352, this.pos.field_1351, this.pos.field_1350)
-							);
+						LocationalAudioChannel ch = this.api.createLocationalAudioChannel(
+							shadowUuid,
+							this.api.fromServerLevel(this.world),
+							this.api.createPosition(this.pos.getX(), this.pos.getY(), this.pos.getZ())
+						);
 						if (ch == null) {
 							throw new IllegalStateException("Can't create audio channel");
 						} else {
@@ -52,7 +52,8 @@ public class RadioPlayer implements AutoCloseable {
 						}
 					}
 				)
-			: (LocationalAudioChannel)this.shadowChannels.get(uuid);
+			: this.shadowChannels.get(uuid);
+
 		if (channel != null) {
 			if (data.length != 0) {
 				channel.send(data);
@@ -64,11 +65,14 @@ public class RadioPlayer implements AutoCloseable {
 		}
 	}
 
+	@Override
 	public void close() {
 		this.shadowChannels.keySet().forEach(uuid -> {
-			LocationalAudioChannel ch = (LocationalAudioChannel)this.shadowChannels.remove(uuid);
-			this.radioAudioChannels.remove(ch.getId());
-			ch.flush();
+			LocationalAudioChannel ch = this.shadowChannels.remove(uuid);
+			if (ch != null) {
+				this.radioAudioChannels.remove(ch.getId());
+				ch.flush();
+			}
 		});
 	}
 }
