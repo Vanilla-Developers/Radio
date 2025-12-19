@@ -27,6 +27,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldView;
 import net.minecraft.world.explosion.Explosion;
 import org.jetbrains.annotations.Nullable;
 import ru.dimaskama.radio.RadioState;
@@ -77,7 +78,6 @@ public class RadioBlock extends Block {
     }
 
     public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
-        super.onStateReplaced(state, world, pos, newState, moved);
         if (!state.isOf(newState.getBlock()) && world instanceof ServerWorld serverWorld) {
             update(pos, newState, serverWorld);
         }
@@ -91,7 +91,6 @@ public class RadioBlock extends Block {
             @Nullable BlockPos fromPos,
             boolean notify
     ) {
-        super.neighborUpdate(state, world, pos, sourceBlock, fromPos, notify);
         if (world instanceof ServerWorld serverWorld) {
             update(pos, state, serverWorld);
         }
@@ -118,12 +117,11 @@ public class RadioBlock extends Block {
         return tryToggle(state, world, pos);
     }
 
-    public void onBlockExploded(BlockState state, World world, BlockPos pos, Explosion explosion) {
-        if (explosion.causesFire()) {
-            tryToggle(state, world, pos);
-        }
-        super.onBlockExploded(state, world, pos, explosion);
-    }
+//    public void onBlockExploded(BlockState state, World world, BlockPos pos, Explosion explosion) {
+//        if (explosion.causesFire()) {
+//            tryToggle(state, world, pos);
+//        }
+//    }
 
     protected ActionResult tryToggle(BlockState state, World world, BlockPos pos) {
         if (world instanceof ServerWorld serverWorld &&
@@ -154,8 +152,8 @@ public class RadioBlock extends Block {
                 );
     }
 
-    public ItemStack getPickStack(BlockView world, BlockPos pos, BlockState state) {
-        ItemStack stack = super.getPickStack(world, pos, state);
+    public ItemStack getPickStack(WorldView world, BlockPos pos, BlockState state) {
+        ItemStack stack = super.getPickStack(world, pos, state, false);
         stack.set(
                 DataComponents.RADIO_STATE,
                 state.get(ModBlocks.Properties.RADIO_STATE) == RadioState.DESTROYED
