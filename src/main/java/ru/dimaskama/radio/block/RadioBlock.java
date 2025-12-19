@@ -2,9 +2,9 @@ package ru.dimaskama.radio.block;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.block.Block;
-import net.minecraft.block.BlockItem;
-import net.minecraft.block.BlockMirror;
-import net.minecraft.block.BlockRotation;
+import net.minecraft.item.BlockItem;
+import net.minecraft.util.BlockMirror;
+import net.minecraft.util.BlockRotation;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;

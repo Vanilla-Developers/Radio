@@ -11,7 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.server.world.ServerWorld;
 import org.jetbrains.annotations.Nullable;
 import ru.dimaskama.radio.blockentity.RadioBlockEntity;
@@ -89,7 +89,7 @@ public class RadioChannel implements AutoCloseable {
 		return !this.fakeSounds.isEmpty() && this.fakeSounds.stream().anyMatch(PlayingSound::hasLeftIndicator);
 	}
 
-	public void handleAudioPacket(UUID id, Vec3 pos, double maxDistSquared, byte[] encoded) {
+	public void handleAudioPacket(UUID id, Vec3d pos, double maxDistSquared, byte[] encoded) {
 		if (encoded.length != 0 && !this.isLocked()) {
 			RadioListener closestListener = null;
 			double minSqDist = Double.MAX_VALUE;

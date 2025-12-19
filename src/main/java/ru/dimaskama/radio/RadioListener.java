@@ -3,14 +3,14 @@ package ru.dimaskama.radio;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3;
+import net.minecraft.util.math.Vec3d;
 
 public class RadioListener {
 	public static final int AMPLITUDES_QUEUE_SIZE = 40;
 	public final AtomicInteger idleTicks = new AtomicInteger();
 	public final IntArrayList amplitudes = new IntArrayList();
 	public final BlockPos blockPos;
-	public final Vec3 pos;
+	public final Vec3d pos;
 	public int comparatorOutput;
 
 	public RadioListener(BlockPos blockPos) {
