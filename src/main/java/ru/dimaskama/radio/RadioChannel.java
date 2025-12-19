@@ -10,25 +10,25 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.minecraft.class_2338;
-import net.minecraft.class_243;
-import net.minecraft.class_3218;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3;
+import net.minecraft.server.world.ServerWorld;
 import org.jetbrains.annotations.Nullable;
 import ru.dimaskama.radio.blockentity.RadioBlockEntity;
 
 public class RadioChannel implements AutoCloseable {
 	private static final byte[] FLUSH_PACKET = new byte[0];
-	private final Map<class_2338, RadioListener> radioListeners = new ConcurrentHashMap();
-	private final Map<class_2338, RadioPlayer> radioPlayers = new ConcurrentHashMap();
-	private final Map<UUID, RadioChannel.AudioProcessor> audioProcessors = new ConcurrentHashMap();
+	private final Map<BlockPos, RadioListener> radioListeners = new ConcurrentHashMap<>();
+	private final Map<BlockPos, RadioPlayer> radioPlayers = new ConcurrentHashMap<>();
+	private final Map<UUID, RadioChannel.AudioProcessor> audioProcessors = new ConcurrentHashMap<>();
 	private final Set<RadioListener> activeListeners = Sets.newConcurrentHashSet();
 	private final Set<PlayingSound> fakeSounds = Sets.newConcurrentHashSet();
 	private final Set<UUID> radioAudioChannels;
 	private final VoicechatServerApi api;
-	private final class_3218 world;
+	private final ServerWorld world;
 	private boolean lastLeftIndicator;
 
-	public RadioChannel(VoicechatServerApi api, class_3218 world, Set<UUID> radioAudioChannels) {
+	public RadioChannel(VoicechatServerApi api, ServerWorld world, Set<UUID> radioAudioChannels) {
 		this.api = api;
 		this.world = world;
 		this.radioAudioChannels = radioAudioChannels;
@@ -56,22 +56,22 @@ public class RadioChannel implements AutoCloseable {
 		}
 	}
 
-	public void registerListener(class_2338 pos) {
+	public void registerListener(BlockPos pos) {
 		this.unregisterPlayer(pos);
 		this.radioListeners.computeIfAbsent(pos, RadioListener::new);
 	}
 
-	public void unregisterListener(class_2338 pos) {
+	public void unregisterListener(BlockPos pos) {
 		this.radioListeners.remove(pos);
 	}
 
-	public void registerPlayer(class_2338 pos) {
+	public void registerPlayer(BlockPos pos) {
 		this.unregisterListener(pos);
 		this.radioPlayers.computeIfAbsent(pos, p -> new RadioPlayer(this.api, this.world, p, this.radioAudioChannels));
 	}
 
-	public void unregisterPlayer(class_2338 pos) {
-		RadioPlayer radioPlayer = (RadioPlayer)this.radioPlayers.remove(pos);
+	public void unregisterPlayer(BlockPos pos) {
+		RadioPlayer radioPlayer = this.radioPlayers.remove(pos);
 		if (radioPlayer != null) {
 			radioPlayer.close();
 		}
@@ -89,13 +89,13 @@ public class RadioChannel implements AutoCloseable {
 		return !this.fakeSounds.isEmpty() && this.fakeSounds.stream().anyMatch(PlayingSound::hasLeftIndicator);
 	}
 
-	public void handleAudioPacket(UUID id, class_243 pos, double maxDistSquared, byte[] encoded) {
+	public void handleAudioPacket(UUID id, Vec3 pos, double maxDistSquared, byte[] encoded) {
 		if (encoded.length != 0 && !this.isLocked()) {
 			RadioListener closestListener = null;
 			double minSqDist = Double.MAX_VALUE;
 
 			for (RadioListener listener : this.radioListeners.values()) {
-				double d = listener.pos.method_1025(pos);
+				double d = listener.pos.squaredDistanceTo(pos);
 				if (minSqDist > d) {
 					closestListener = listener;
 					minSqDist = d;
@@ -129,21 +129,21 @@ public class RadioChannel implements AutoCloseable {
 
 	private void updatePlayerBlockEntities(boolean all, Boolean leftIndicatorToSet) {
 		if (all) {
-			this.world.method_8503().execute(() -> this.radioPlayers.forEach((pos, radioPlayer) -> {
+			this.world.getServer().execute(() -> this.radioPlayers.forEach((pos, radioPlayer) -> {
 				radioPlayer.isNew.set(false);
 				this.updatePlayerBlockEntity(pos, leftIndicatorToSet);
 			}));
 		} else {
 			this.radioPlayers.forEach((pos, radioPlayer) -> {
 				if (radioPlayer.isNew.compareAndSet(true, false)) {
-					this.world.method_8503().execute(() -> this.updatePlayerBlockEntity(pos, this.lastLeftIndicator));
+					this.world.getServer().execute(() -> this.updatePlayerBlockEntity(pos, this.lastLeftIndicator));
 				}
 			});
 		}
 	}
 
-	private void updatePlayerBlockEntity(class_2338 pos, Boolean leftIndicatorToSet) {
-		if (this.world.method_8321(pos) instanceof RadioBlockEntity radio) {
+	private void updatePlayerBlockEntity(BlockPos pos, Boolean leftIndicatorToSet) {
+		if (this.world.getBlockEntity(pos) instanceof RadioBlockEntity radio) {
 			radio.updateComparators(this.world, this.activeListeners);
 			if (leftIndicatorToSet != null) {
 				radio.setLeftIndicator(leftIndicatorToSet);
@@ -156,7 +156,7 @@ public class RadioChannel implements AutoCloseable {
 			int output = this.activeListeners.contains(radioListener) ? this.calculateListenerComparatorOutput(radioListener) : 0;
 			if (output != radioListener.comparatorOutput) {
 				radioListener.comparatorOutput = output;
-				if (this.world.method_8321(pos) instanceof RadioBlockEntity radioBlockEntity) {
+				if (this.world.getBlockEntity(pos) instanceof RadioBlockEntity radioBlockEntity) {
 					radioBlockEntity.updateComparators(this.world, output);
 				}
 			}
@@ -189,8 +189,7 @@ public class RadioChannel implements AutoCloseable {
 	}
 
 	private RadioChannel.AudioProcessor getOrCreateAudioProcessor(UUID id) {
-		return (RadioChannel.AudioProcessor)this.audioProcessors
-			.computeIfAbsent(id, uuid -> new RadioChannel.AudioProcessor(this.api, new RadioAudioEffect(), new AtomicInteger()));
+		return this.audioProcessors.computeIfAbsent(id, uuid -> new RadioChannel.AudioProcessor(this.api, new RadioAudioEffect(), new AtomicInteger()));
 	}
 
 	private void sendToPlayers(UUID id, byte[] packet) {
