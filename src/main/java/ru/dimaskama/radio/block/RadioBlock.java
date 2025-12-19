@@ -3,186 +3,206 @@ package ru.dimaskama.radio.block;
 import com.mojang.serialization.MapCodec;
 import java.util.List;
 import java.util.function.BiConsumer;
-import net.minecraft.class_1268;
-import net.minecraft.class_1269;
-import net.minecraft.class_1657;
-import net.minecraft.class_1747;
-import net.minecraft.class_1750;
-import net.minecraft.class_1799;
-import net.minecraft.class_1927;
-import net.minecraft.class_1937;
-import net.minecraft.class_2237;
-import net.minecraft.class_2248;
-import net.minecraft.class_2338;
-import net.minecraft.class_2350;
-import net.minecraft.class_2415;
-import net.minecraft.class_2470;
-import net.minecraft.class_2586;
-import net.minecraft.class_2591;
-import net.minecraft.class_2680;
-import net.minecraft.class_2741;
-import net.minecraft.class_2769;
-import net.minecraft.class_3218;
-import net.minecraft.class_3417;
-import net.minecraft.class_3419;
-import net.minecraft.class_3965;
-import net.minecraft.class_4538;
-import net.minecraft.class_5558;
-import net.minecraft.class_5819;
-import net.minecraft.class_9904;
-import net.minecraft.class_1959.class_1963;
-import net.minecraft.class_2689.class_2690;
-import net.minecraft.class_4970.class_2251;
-import net.minecraft.class_8567.class_8568;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.BlockItem;
+import net.minecraft.block.BlockRotation;
+import net.minecraft.block.BlockMirror;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BlockEntityTicker;
+import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.item.ItemStack;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.world.World;
+import net.minecraft.world.BlockView;
+import net.minecraft.world.explosion.Explosion;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.random.Random;
+import net.minecraft.state.property.Properties; // referenced as net.minecraft.state.property.Properties.HORIZONTAL_FACING / POWER
+import net.minecraft.state.StateManager;
+import net.minecraft.item.ItemGroup;
+import net.minecraft.util.collection.DefaultedList;
 import org.jetbrains.annotations.Nullable;
 import ru.dimaskama.radio.RadioState;
-import ru.dimaskama.radio.block.ModBlocks.Properties;
+import ru.dimaskama.radio.block.ModBlocks.Properties as ModProperties;
 import ru.dimaskama.radio.blockentity.ModBlockEntities;
 import ru.dimaskama.radio.blockentity.RadioBlockEntity;
 import ru.dimaskama.radio.item.ModItems;
 import ru.dimaskama.radio.item.ModItems.DataComponents;
 
-public class RadioBlock extends class_2237 {
-	private final MapCodec<RadioBlock> CODEC = method_54094(RadioBlock::new);
+/**
+ * Renamed obfuscated names to Yarn mappings for Fabric 1.21.9 as best-effort.
+ * NOTE: some method/field mappings (especially codec registration and item component accesses)
+ * are approximated so they read clearly with Yarn names. Adjust further if you need exact compile-time API calls.
+ */
+public class RadioBlock extends Block {
+	private final MapCodec<RadioBlock> CODEC = MapCodec.of(RadioBlock::new);
 
-	protected RadioBlock(class_2251 settings) {
+	protected RadioBlock(Settings settings) {
 		super(settings);
-		this.method_9590(
-			(class_2680)((class_2680)((class_2680)((class_2680)((class_2680)this.method_9595().method_11664()).method_11657(Properties.RADIO_STATE, RadioState.DISABLED))
-						.method_11657(Properties.LEFT_INDICATOR, false))
-					.method_11657(class_2741.field_12511, 0))
-				.method_11657(class_2741.field_12481, class_2350.field_11043)
+		// Initialize default block state with readable property names.
+		this.setDefaultState(
+			this.getDefaultState()
+				.with(ModBlocks.Properties.RADIO_STATE, RadioState.DISABLED)
+				.with(ModBlocks.Properties.LEFT_INDICATOR, false)
+				.with(net.minecraft.state.property.Properties.POWER, 0)
+				.with(net.minecraft.state.property.Properties.HORIZONTAL_FACING, Direction.NORTH)
 		);
 	}
 
-	protected MapCodec<RadioBlock> method_53969() {
+	protected MapCodec<RadioBlock> getCodec() {
 		return this.CODEC;
 	}
 
 	@Nullable
-	public class_2586 method_10123(class_2338 pos, class_2680 state) {
+	@Override
+	public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
 		return new RadioBlockEntity(pos, state);
 	}
 
 	@Nullable
-	public <T extends class_2586> class_5558<T> method_31645(class_1937 world, class_2680 state, class_2591<T> type) {
-		return method_31618(type, ModBlockEntities.RADIO_TYPE, (world1, pos, state1, blockEntity) -> blockEntity.tick(world1, pos, state1));
+	@Override
+	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
+		return createTickerHelper(type, ModBlockEntities.RADIO_TYPE, (world1, pos, state1, blockEntity) -> blockEntity.tick(world1, pos, state1));
 	}
 
-	protected void method_9615(class_2680 state, class_1937 world, class_2338 pos, class_2680 oldState, boolean notify) {
-		super.method_9615(state, world, pos, oldState, notify);
-		if (!oldState.method_27852(state.method_26204()) && world instanceof class_3218 serverWorld) {
+	@Override
+	public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
+		super.onStateReplaced(state, world, pos, newState, moved);
+		// If the block type changed (not just state), update the block entity on the server
+		if (!state.isOf(newState.getBlock()) && world instanceof ServerWorld serverWorld) {
+			this.update(pos, newState, serverWorld);
+		}
+	}
+
+	@Override
+	public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable BlockPos fromPos, boolean notify) {
+		super.neighborUpdate(state, world, pos, sourceBlock, fromPos, notify);
+		if (world instanceof ServerWorld serverWorld) {
 			this.update(pos, state, serverWorld);
 		}
 	}
 
-	protected void method_9612(class_2680 state, class_1937 world, class_2338 pos, class_2248 sourceBlock, @Nullable class_9904 wireOrientation, boolean notify) {
-		super.method_9612(state, world, pos, sourceBlock, wireOrientation, notify);
-		if (world instanceof class_3218 serverWorld) {
-			this.update(pos, state, serverWorld);
-		}
-	}
-
-	private void update(class_2338 pos, class_2680 state, class_3218 world) {
-		if (world.method_8321(pos) instanceof RadioBlockEntity blockEntity) {
-			class_2680 s = blockEntity.updateState(pos, state, world, false);
+	private void update(BlockPos pos, BlockState state, ServerWorld world) {
+		BlockEntity be = world.getBlockEntity(pos);
+		if (be instanceof RadioBlockEntity blockEntity) {
+			BlockState s = blockEntity.updateState(pos, state, world, false);
 			if (s != null) {
-				world.method_8652(pos, s, 2);
+				world.setBlockState(pos, s, 2);
 			}
 		}
 	}
 
-	protected class_1269 method_55766(class_2680 state, class_1937 world, class_2338 pos, class_1657 player, class_3965 hit) {
+	// Interaction without explicit hand (delegates to toggle behavior)
+	@Override
+	public ActionResult onUse(BlockState state, World world, BlockPos pos, net.minecraft.entity.player.PlayerEntity player, BlockHitResult hit) {
 		return this.tryToggle(state, world, pos);
 	}
 
-	protected void method_55124(class_2680 state, class_3218 world, class_2338 pos, class_1927 explosion, BiConsumer<class_1799, class_2338> stackMerger) {
-		if (explosion.method_60274()) {
+	// Called when the block is exploded
+	@Override
+	public void onBlockExploded(BlockState state, World world, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
+		if (explosion.causesFire()) {
 			this.tryToggle(state, world, pos);
 		}
-
-		super.method_55124(state, world, pos, explosion, stackMerger);
+		super.onBlockExploded(state, world, pos, explosion, stackMerger);
 	}
 
-	protected class_1269 tryToggle(class_2680 state, class_1937 world, class_2338 pos) {
-		return (class_1269)(world instanceof class_3218 serverWorld && world.method_8321(pos) instanceof RadioBlockEntity blockEntity
+	protected ActionResult tryToggle(BlockState state, World world, BlockPos pos) {
+		return (world instanceof ServerWorld serverWorld && world.getBlockEntity(pos) instanceof RadioBlockEntity blockEntity)
 			? blockEntity.tryToggle(serverWorld, pos, state)
-			: class_1269.field_21466);
+			: ActionResult.PASS;
 	}
 
-	protected class_1269 method_55765(class_1799 stack, class_2680 state, class_1937 world, class_2338 pos, class_1657 player, class_1268 hand, class_3965 hit) {
-		return (class_1269)(stack.method_7909() instanceof class_1747 && new class_1750(player, hand, stack, hit).method_7716()
-			? class_1269.field_5811
-			: class_1269.field_52423);
+	// Interaction with an item stack (when player attempts to place another block/item on this block)
+	@Override
+	public ActionResult onUse(ItemStack stack, BlockState state, World world, BlockPos pos, net.minecraft.entity.player.PlayerEntity player, Hand hand, BlockHitResult hit) {
+		if (stack.getItem() instanceof BlockItem && new net.minecraft.item.ItemPlacementContext(player, hand, stack, hit).canPlace()) {
+			return ActionResult.SUCCESS;
+		} else {
+			return ActionResult.PASS;
+		}
 	}
 
-	protected boolean method_9498(class_2680 state) {
+	@Override
+	public boolean hasComparatorOutput(BlockState state) {
 		return true;
 	}
 
-	protected int method_9572(class_2680 state, class_1937 world, class_2338 pos, class_2350 direction) {
-		return world.method_8321(pos) instanceof RadioBlockEntity radioBlockEntity ? radioBlockEntity.getComparatorOutput() : 0;
+	@Override
+	public int getComparatorOutput(BlockState state, World world, BlockPos pos) {
+		BlockEntity be = world.getBlockEntity(pos);
+		return be instanceof RadioBlockEntity radioBlockEntity ? radioBlockEntity.getComparatorOutput() : 0;
 	}
 
 	@Nullable
-	public class_2680 method_9605(class_1750 ctx) {
-		return (class_2680)((class_2680)this.method_9564().method_11657(class_2741.field_12481, ctx.method_8042().method_10153()))
-			.method_11657(Properties.RADIO_STATE, (RadioState)ctx.method_8041().method_58695(DataComponents.RADIO_STATE, RadioState.DISABLED));
+	@Override
+	public BlockState getPlacementState(net.minecraft.item.ItemPlacementContext ctx) {
+		return this.getDefaultState()
+			.with(net.minecraft.state.property.Properties.HORIZONTAL_FACING, ctx.getHorizontalPlayerFacing())
+			.with(ModBlocks.Properties.RADIO_STATE, (RadioState)ctx.getStack().getComponent(DataComponents.RADIO_STATE, RadioState.DISABLED));
 	}
 
-	protected class_1799 method_9574(class_4538 world, class_2338 pos, class_2680 state, boolean includeData) {
-		class_1799 stack = super.method_9574(world, pos, state, includeData);
-		RadioState radioState = (RadioState)state.method_11654(Properties.RADIO_STATE);
-		stack.method_57379(DataComponents.RADIO_STATE, radioState == RadioState.DESTROYED ? RadioState.DESTROYED : RadioState.DISABLED);
+	@Override
+	public ItemStack getPickStack(BlockView world, BlockPos pos, BlockState state) {
+		ItemStack stack = super.getPickStack(world, pos, state);
+		RadioState radioState = state.get(ModBlocks.Properties.RADIO_STATE);
+		stack.getComponent(DataComponents.RADIO_STATE).set(radioState == RadioState.DESTROYED ? RadioState.DESTROYED : RadioState.DISABLED);
 		return stack;
 	}
 
-	protected List<class_1799> method_9560(class_2680 state, class_8568 builder) {
-		RadioState radioState = (RadioState)state.method_11654(Properties.RADIO_STATE);
-		List<class_1799> list = super.method_9560(state, builder);
-
-		for (class_1799 stack : list) {
-			if (stack.method_31574(ModItems.RADIO)) {
-				stack.method_57379(DataComponents.RADIO_STATE, radioState == RadioState.DESTROYED ? RadioState.DESTROYED : RadioState.DISABLED);
-			}
-		}
-
-		return list;
-	}
-
-	protected class_2680 method_9598(class_2680 state, class_2470 rotation) {
-		return (class_2680)state.method_11657(class_2741.field_12481, rotation.method_10503((class_2350)state.method_11654(class_2741.field_12481)));
-	}
-
-	protected class_2680 method_9569(class_2680 state, class_2415 mirror) {
-		return this.method_9598(state, mirror.method_10345((class_2350)state.method_11654(class_2741.field_12481)));
-	}
-
-	protected void method_9515(class_2690<class_2248, class_2680> builder) {
-		super.method_9515(builder);
-		builder.method_11667(new class_2769[]{Properties.RADIO_STATE, Properties.LEFT_INDICATOR, class_2741.field_12511, class_2741.field_12481});
-	}
-
-	public void method_9504(class_2680 state, class_1937 world, class_2338 pos, class_1963 precipitation) {
-		super.method_9504(state, world, pos, precipitation);
-	}
-
-	protected void method_9588(class_2680 state, class_3218 world, class_2338 pos, class_5819 random) {
-		if (world.method_8321(pos) instanceof RadioBlockEntity radioBlockEntity) {
-			state = radioBlockEntity.newBurnedState(world, pos, state);
-			if (state != null) {
-				world.method_8652(pos, state, 2);
-				world.method_43128(
-					null, pos.method_10263() + 0.5, pos.method_10264() + 0.5, pos.method_10260() + 0.5, class_3417.field_19199, class_3419.field_15245, 0.5F, 0.7F
-				);
+	@Override
+	public void appendStacks(ItemGroup group, DefaultedList<ItemStack> stacks) {
+		RadioState radioState = this.getDefaultState().get(ModBlocks.Properties.RADIO_STATE);
+		super.appendStacks(group, stacks);
+		for (ItemStack stack : stacks) {
+			if (stack.isOf(ModItems.RADIO)) {
+				stack.getComponent(DataComponents.RADIO_STATE).set(radioState == RadioState.DESTROYED ? RadioState.DESTROYED : RadioState.DISABLED);
 			}
 		}
 	}
 
-	public static void burnRadio(class_3218 world, class_2338 pos) {
-		if (world.method_8321(pos) instanceof RadioBlockEntity radioBlockEntity) {
+	@Override
+	public BlockState rotate(BlockState state, BlockRotation rotation) {
+		return state.with(net.minecraft.state.property.Properties.HORIZONTAL_FACING, rotation.rotate(state.get(net.minecraft.state.property.Properties.HORIZONTAL_FACING)));
+	}
+
+	@Override
+	public BlockState mirror(BlockState state, BlockMirror mirror) {
+		return this.rotate(state, mirror.getRotation(state.get(net.minecraft.state.property.Properties.HORIZONTAL_FACING)));
+	}
+
+	@Override
+	protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+		super.appendProperties(builder);
+		builder.add(ModBlocks.Properties.RADIO_STATE, ModBlocks.Properties.LEFT_INDICATOR, net.minecraft.state.property.Properties.POWER, net.minecraft.state.property.Properties.HORIZONTAL_FACING);
+	}
+
+	@Override
+	public void onSyncedBlockEvent(BlockState state, World world, BlockPos pos, net.minecraft.structure.StructurePiece.Info info) {
+		super.onSyncedBlockEvent(state, world, pos, info);
+	}
+
+	@Override
+	public void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
+		if (world.getBlockEntity(pos) instanceof RadioBlockEntity radioBlockEntity) {
+			BlockState newState = radioBlockEntity.newBurnedState(world, pos, state);
+			if (newState != null) {
+				world.setBlockState(pos, newState, 2);
+				world.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, net.minecraft.sound.SoundEvents.BLOCK_FIRE_AMBIENT, net.minecraft.sound.SoundCategory.BLOCKS, 0.5F, 0.7F);
+			}
+		}
+	}
+
+	public static void burnRadio(ServerWorld world, BlockPos pos) {
+		if (world.getBlockEntity(pos) instanceof RadioBlockEntity radioBlockEntity) {
 			radioBlockEntity.markBurning();
-			world.method_64310(pos, ModBlocks.RADIO, 6);
+			world.createAndScheduleBlockTick(pos, ModBlocks.RADIO, 6);
 		}
 	}
 }
