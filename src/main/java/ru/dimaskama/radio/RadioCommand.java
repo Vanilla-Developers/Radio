@@ -27,17 +27,14 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.class_124;
-import net.minecraft.class_156;
-import net.minecraft.class_2168;
-import net.minecraft.class_2170;
-import net.minecraft.class_2172;
-import net.minecraft.class_2561;
-import net.minecraft.class_5242;
-import net.minecraft.class_7157;
-import net.minecraft.class_2170.class_5364;
-import net.minecraft.class_2558.class_10610;
-import net.minecraft.class_2568.class_10613;
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.text.Text;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.util.Formatting;
+import net.minecraft.command.argument.UuidArgumentType;
 import ru.dimaskama.radio.extend.ServerWorldExtend;
 
 public class RadioCommand implements CommandRegistrationCallback {
@@ -52,51 +49,52 @@ public class RadioCommand implements CommandRegistrationCallback {
 	private static final SimpleCommandExceptionType INVALID_URL = new SimpleCommandExceptionType(new LiteralMessage("Invalid URL"));
 	private static final IntSet ALL_RADIO_CHANNELS = IntSet.of(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15});
 
-	public void register(CommandDispatcher<class_2168> commandDispatcher, class_7157 commandRegistryAccess, class_5364 registrationEnvironment) {
+	@Override
+	public void register(CommandDispatcher<ServerCommandSource> commandDispatcher, net.minecraft.server.command.CommandRegistryAccess commandRegistryAccess, CommandManager.RegistrationEnvironment registrationEnvironment) {
 		commandDispatcher.register(
-			(LiteralArgumentBuilder)((LiteralArgumentBuilder)class_2170.method_9247("radio").requires(src -> Permissions.check(src, "radio.command", 2)))
+			(LiteralArgumentBuilder<ServerCommandSource>) (CommandManager.literal("radio").requires(src -> Permissions.check(src, "radio.command", 2)))
 				.then(
-					((LiteralArgumentBuilder)((LiteralArgumentBuilder)((LiteralArgumentBuilder)class_2170.method_9247("fakesound")
-									.then(
-										class_2170.method_9247("play")
-											.then(
-												class_2170.method_9244("FileName", StringArgumentType.string())
-													.suggests(this::suggestFilenames)
-													.then(
-														class_2170.method_9244("Channels", StringArgumentType.word())
-															.suggests(this::suggestRadioChannels)
-															.then(
-																class_2170.method_9244("Lock", BoolArgumentType.bool())
-																	.then(
-																		((RequiredArgumentBuilder)class_2170.method_9244("LeftIndicator", BoolArgumentType.bool())
-																				.executes(ctx -> this.executeFakeSoundPlay(ctx, UUID.randomUUID())))
-																			.then(
-																				class_2170.method_9244("UUID", class_5242.method_27643())
-																					.executes(ctx -> this.executeFakeSoundPlay(ctx, class_5242.method_27645(ctx, "UUID")))
-																			)
-																	)
-															)
-													)
-											)
-									))
+					CommandManager.literal("fakesound")
+						.then(
+							CommandManager.literal("play")
 								.then(
-									class_2170.method_9247("stop")
-										.then(class_2170.method_9244("UUID", class_5242.method_27643()).suggests(this::suggestFakesounds).executes(this::executeFakeSoundStop))
-								))
-							.then(
-								class_2170.method_9247("upload_file")
-									.then(
-										class_2170.method_9244("FileName", StringArgumentType.string())
-											.then(class_2170.method_9244("URL", StringArgumentType.greedyString()).executes(this::executeFakeSoundUploadFile))
-									)
-							))
-						.then(class_2170.method_9247("clearCache").executes(this::executeFakeSoundClearCache))
+									CommandManager.argument("FileName", StringArgumentType.string())
+										.suggests(this::suggestFilenames)
+										.then(
+											CommandManager.argument("Channels", StringArgumentType.word())
+												.suggests(this::suggestRadioChannels)
+												.then(
+													CommandManager.argument("Lock", BoolArgumentType.bool())
+														.then(
+															((RequiredArgumentBuilder) CommandManager.argument("LeftIndicator", BoolArgumentType.bool())
+																	.executes(ctx -> this.executeFakeSoundPlay(ctx, UUID.randomUUID())))
+																.then(
+																	CommandManager.argument("UUID", UuidArgumentType.uuid())
+																		.executes(ctx -> this.executeFakeSoundPlay(ctx, UuidArgumentType.getUuid(ctx, "UUID")))
+																)
+														)
+												)
+										)
+								)
+						)
+						.then(
+							CommandManager.literal("stop")
+								.then(CommandManager.argument("UUID", UuidArgumentType.uuid()).suggests(this::suggestFakesounds).executes(this::executeFakeSoundStop))
+						)
+						.then(
+							CommandManager.literal("upload_file")
+								.then(
+									CommandManager.argument("FileName", StringArgumentType.string())
+										.then(CommandManager.argument("URL", StringArgumentType.greedyString()).executes(this::executeFakeSoundUploadFile))
+								)
+						)
 				)
+				.then(CommandManager.literal("clearCache").executes(this::executeFakeSoundClearCache))
 		);
 	}
 
-	private int executeFakeSoundPlay(CommandContext<class_2168> context, UUID uuid) throws CommandSyntaxException {
-		WorldRadioManager worldRadioManager = ((ServerWorldExtend)((class_2168)context.getSource()).method_9225()).radio_getRadioManager();
+	private int executeFakeSoundPlay(CommandContext<ServerCommandSource> context, UUID uuid) throws CommandSyntaxException {
+		WorldRadioManager worldRadioManager = ((ServerWorldExtend) context.getSource().getWorld()).radio_getRadioManager();
 		if (worldRadioManager == null) {
 			return 0;
 		} else {
@@ -117,18 +115,19 @@ public class RadioCommand implements CommandRegistrationCallback {
 				boolean lock = BoolArgumentType.getBool(context, "Lock");
 				boolean leftIndicator = BoolArgumentType.getBool(context, "LeftIndicator");
 				CompletableFuture<short[]> future = FileSoundCache.getFuture(fullPath);
-				if (!future.isDone() || !future.isCompletedExceptionally() && ((short[])future.join()).length != 0) {
+				// keep original behavior: if future not done OR not completed exceptionally and non-empty -> play
+				if (!future.isDone() || (!future.isCompletedExceptionally() && future.join().length != 0)) {
 					worldRadioManager.playFakeSound(uuid, channels, fullPath, lock, leftIndicator);
-					((class_2168)context.getSource())
-						.method_9226(
-							() -> class_2561.method_43470("Playing sound " + filename + " with uuid ")
-								.method_10852(
-									class_2561.method_43470(uuid.toString())
-										.method_27694(
-											s -> s.method_10977(class_124.field_1054)
-												.method_10949(new class_10613(class_2561.method_43470("Click to stop")))
-												.method_10958(new class_10610("/radio fakesound stop " + uuid))
-										)
+					context.getSource()
+						.sendFeedback(
+							() -> Text.literal("Playing sound " + filename + " with uuid ")
+								.append(
+									Text.literal(uuid.toString())
+										.styled(style -> style.withColor(Formatting.GRAY)
+											.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to stop")))
+											.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/radio fakesound stop " + uuid))
+										),
+									false
 								),
 							true
 						);
@@ -141,22 +140,22 @@ public class RadioCommand implements CommandRegistrationCallback {
 		}
 	}
 
-	private int executeFakeSoundStop(CommandContext<class_2168> context) throws CommandSyntaxException {
-		WorldRadioManager worldRadioManager = ((ServerWorldExtend)((class_2168)context.getSource()).method_9225()).radio_getRadioManager();
+	private int executeFakeSoundStop(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+		WorldRadioManager worldRadioManager = ((ServerWorldExtend) context.getSource().getWorld()).radio_getRadioManager();
 		if (worldRadioManager == null) {
 			return 0;
 		} else {
-			UUID uuid = class_5242.method_27645(context, "UUID");
+			UUID uuid = UuidArgumentType.getUuid(context, "UUID");
 			if (!worldRadioManager.stopFakeSound(uuid)) {
 				throw NO_SOUND_PLAYING.create();
 			} else {
-				((class_2168)context.getSource()).method_9226(() -> class_2561.method_43470("Stopped sound " + UndashedUuid.toString(uuid)), true);
+				context.getSource().sendFeedback(() -> Text.literal("Stopped sound " + UndashedUuid.toString(uuid)), true);
 				return 1;
 			}
 		}
 	}
 
-	private int executeFakeSoundUploadFile(CommandContext<class_2168> context) throws CommandSyntaxException {
+	private int executeFakeSoundUploadFile(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
 		String filename = StringArgumentType.getString(context, "FileName");
 		String urlString = StringArgumentType.getString(context, "URL");
 
@@ -167,49 +166,39 @@ public class RadioCommand implements CommandRegistrationCallback {
 			throw INVALID_URL.create();
 		}
 
-		class_2168 source = (class_2168)context.getSource();
-		source.method_9226(() -> class_2561.method_43470("Downloading sound from " + urlString + "..."), true);
-		class_156.method_27958().execute(() -> {
-			try {
-				InputStream in = url.openConnection().getInputStream();
+		ServerCommandSource source = context.getSource();
+		source.sendFeedback(() -> Text.literal("Downloading sound from " + urlString + "..."), true);
 
+		// Run download asynchronously on common pool (matches original intent to not block server thread)
+		CompletableFuture.runAsync(() -> {
+			try (InputStream in = url.openConnection().getInputStream()) {
 				try {
 					Path path = RadioMod.SOUNDS_DIR.resolve(filename);
 					byte[] bytes = in.readAllBytes();
 					Files.write(path, bytes, new OpenOption[0]);
-					source.method_9211().execute(() -> {
+					// schedule task back on server thread
+					source.getServer().execute(() -> {
 						FileSoundCache.remove(path);
-						source.method_9226(() -> class_2561.method_43470("Upload finished: " + filename), true);
+						source.sendFeedback(() -> Text.literal("Upload finished: " + filename), true);
 					});
 				} catch (Throwable var7) {
-					if (in != null) {
-						try {
-							in.close();
-						} catch (Throwable var6x) {
-							var7.addSuppressed(var6x);
-						}
-					}
-
+					// ensure InputStream closed by try-with-resources and rethrow
 					throw var7;
 				}
-
-				if (in != null) {
-					in.close();
-				}
 			} catch (Exception var8) {
-				source.method_9211().execute(() -> source.method_9213(class_2561.method_43470("Failed to download sound: " + var8)));
+				source.getServer().execute(() -> source.sendError(Text.literal("Failed to download sound: " + var8)));
 				RadioMod.LOGGER.warn("Failed to download sound", var8);
 			}
 		});
 		return 1;
 	}
 
-	private int executeFakeSoundClearCache(CommandContext<class_2168> context) {
+	private int executeFakeSoundClearCache(CommandContext<ServerCommandSource> context) {
 		FileSoundCache.clear();
 		return 1;
 	}
 
-	private CompletableFuture<Suggestions> suggestRadioChannels(CommandContext<class_2168> context, SuggestionsBuilder builder) throws CommandSyntaxException {
+	private CompletableFuture<Suggestions> suggestRadioChannels(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
 		String remain = builder.getRemainingLowerCase();
 		boolean suggested = false;
 		if ("all".startsWith(remain)) {
@@ -224,7 +213,6 @@ public class RadioCommand implements CommandRegistrationCallback {
 			if (!suggested) {
 				throw var7;
 			}
-
 			return builder.buildFuture();
 		}
 
@@ -267,7 +255,7 @@ public class RadioCommand implements CommandRegistrationCallback {
 		}
 	}
 
-	private CompletableFuture<Suggestions> suggestFilenames(CommandContext<class_2168> context, SuggestionsBuilder builder) {
+	private CompletableFuture<Suggestions> suggestFilenames(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) {
 		return CompletableFuture.supplyAsync(() -> {
 			String remain = builder.getRemainingLowerCase();
 			File[] files = RadioMod.SOUNDS_DIR.toFile().listFiles();
@@ -279,13 +267,18 @@ public class RadioCommand implements CommandRegistrationCallback {
 					}
 				}
 			}
-
 			return builder.build();
-		}, class_156.method_27958());
+		});
 	}
 
-	private CompletableFuture<Suggestions> suggestFakesounds(CommandContext<class_2168> context, SuggestionsBuilder builder) {
-		WorldRadioManager worldRadioManager = ((ServerWorldExtend)((class_2168)context.getSource()).method_9225()).radio_getRadioManager();
-		return worldRadioManager == null ? builder.buildFuture() : class_2172.method_9264(worldRadioManager.getFakeSounds().map(UUID::toString), builder);
+	private CompletableFuture<Suggestions> suggestFakesounds(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) {
+		WorldRadioManager worldRadioManager = ((ServerWorldExtend) context.getSource().getWorld()).radio_getRadioManager();
+		if (worldRadioManager == null) return builder.buildFuture();
+
+		// Build suggestions from currently playing fake sounds
+		return CompletableFuture.supplyAsync(() -> {
+			worldRadioManager.getFakeSounds().map(UUID::toString).forEach(builder::suggest);
+			return builder.build();
+		});
 	}
 }
