@@ -18,7 +18,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.block.entity.BlockEntity;
 
 import net.minecraft.registry.RegistryKeys;
-import net.minecraft.tag.TagKey;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.block.Block;
 import net.minecraft.util.Identifier;
 
@@ -27,7 +27,7 @@ import ru.dimaskama.radio.RadioMod;
 import ru.dimaskama.radio.RadioState;
 import ru.dimaskama.radio.WorldRadioManager;
 import ru.dimaskama.radio.block.ModBlocks;
-import ru.dimaskama.radio.block.ModBlockEntities;
+import ru.dimaskama.radio.blockentity.ModBlockEntities;
 import ru.dimaskama.radio.extend.ServerWorldExtend;
 
 public class RadioBlockEntity extends BlockEntity {
