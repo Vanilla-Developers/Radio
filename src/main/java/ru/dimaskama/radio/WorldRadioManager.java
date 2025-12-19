@@ -14,19 +14,19 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import net.minecraft.class_2338;
-import net.minecraft.class_243;
-import net.minecraft.class_3218;
-import net.minecraft.class_3222;
-import net.minecraft.class_3532;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.MathHelper;
 
 public class WorldRadioManager implements AutoCloseable {
-	private final class_3218 world;
-	private final Int2ObjectMap<RadioChannel> channels = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap());
+	private final ServerWorld world;
+	private final Int2ObjectMap<RadioChannel> channels = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
 	private final Set<UUID> radioAudioChannels = Sets.newConcurrentHashSet();
-	private final Set<PlayingSound> fakeSounds = new HashSet();
+	private final Set<PlayingSound> fakeSounds = new HashSet<>();
 
-	public WorldRadioManager(class_3218 world) {
+	public WorldRadioManager(ServerWorld world) {
 		this.world = world;
 	}
 
@@ -42,15 +42,15 @@ public class WorldRadioManager implements AutoCloseable {
 		this.channels.values().removeIf(RadioChannel::tickRemove);
 	}
 
-	public void registerRadioAudioListener(int channel, class_2338 pos) {
+	public void registerRadioAudioListener(int channel, BlockPos pos) {
 		this.runForChannelOrCreate(channel, ch -> ch.registerListener(pos));
 	}
 
-	public void registerRadioAudioPlayer(int channel, class_2338 pos) {
+	public void registerRadioAudioPlayer(int channel, BlockPos pos) {
 		this.runForChannelOrCreate(channel, ch -> ch.registerPlayer(pos));
 	}
 
-	public void unregisterRadio(int channel, class_2338 pos) {
+	public void unregisterRadio(int channel, BlockPos pos) {
 		this.runForChannel(channel, ch -> {
 			ch.unregisterListener(pos);
 			ch.unregisterPlayer(pos);
@@ -61,14 +61,14 @@ public class WorldRadioManager implements AutoCloseable {
 		VoicechatServerApi api = VoiceIntegration.getServerApi();
 		if (api != null) {
 			synchronized (this.channels) {
-				consumer.accept((RadioChannel)this.channels.computeIfAbsent(channel, i -> this.createChannel(api)));
+				consumer.accept(this.channels.computeIfAbsent(channel, i -> this.createChannel(api)));
 			}
 		}
 	}
 
 	private void runForChannel(int channel, Consumer<RadioChannel> consumer) {
 		synchronized (this.channels) {
-			RadioChannel ch = (RadioChannel)this.channels.get(channel);
+			RadioChannel ch = this.channels.get(channel);
 			if (ch != null) {
 				consumer.accept(ch);
 			}
@@ -82,8 +82,8 @@ public class WorldRadioManager implements AutoCloseable {
 				IntIterator var5 = channelIds.iterator();
 
 				while (var5.hasNext()) {
-					int id = (Integer)var5.next();
-					consumer.accept((RadioChannel)this.channels.computeIfAbsent(id, i -> this.createChannel(api)));
+					int id = var5.nextInt();
+					consumer.accept(this.channels.computeIfAbsent(id, i -> this.createChannel(api)));
 				}
 			}
 		}
@@ -94,8 +94,8 @@ public class WorldRadioManager implements AutoCloseable {
 			IntIterator var4 = channelIds.iterator();
 
 			while (var4.hasNext()) {
-				int id = (Integer)var4.next();
-				RadioChannel ch = (RadioChannel)this.channels.get(id);
+				int id = var4.nextInt();
+				RadioChannel ch = this.channels.get(id);
 				if (ch != null) {
 					consumer.accept(ch);
 				}
@@ -131,18 +131,18 @@ public class WorldRadioManager implements AutoCloseable {
 		return this.fakeSounds.stream().map(PlayingSound::getUuid);
 	}
 
-	public void handlePluginLocPacket(class_243 pos, UUID id, byte[] data, float distance) {
+	public void handlePluginLocPacket(Vec3d pos, UUID id, byte[] data, float distance) {
 		if (!this.radioAudioChannels.contains(id)) {
 			double maxDistSq = distance * distance;
 			this.channels.forEach((index, channel) -> channel.handleAudioPacket(id, pos, maxDistSq, data));
 		}
 	}
 
-	public void handleMicPacket(class_3222 player, MicrophonePacket packet) {
-		double maxDistSq = class_3532.method_33723(
+	public void handleMicPacket(ServerPlayerEntity player, MicrophonePacket packet) {
+		double maxDistSq = MathHelper.square(
 			packet.isWhispering() ? RadioMod.CONFIG.getData().whisperingRecordMaxDist() : RadioMod.CONFIG.getData().recordMaxDist()
 		);
-		this.channels.forEach((index, channel) -> channel.handleAudioPacket(player.method_5667(), player.method_33571(), maxDistSq, packet.getOpusEncodedData()));
+		this.channels.forEach((index, channel) -> channel.handleAudioPacket(player.getUuid(), player.getPos(), maxDistSq, packet.getOpusEncodedData()));
 	}
 
 	public void close() {
