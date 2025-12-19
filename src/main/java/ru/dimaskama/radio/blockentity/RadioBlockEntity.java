@@ -52,7 +52,7 @@ public class RadioBlockEntity extends BlockEntity {
     protected void readNbt(NbtCompound tag, net.minecraft.registry.RegistryWrapper.WrapperLookup registryLookup) {
         if (tag.contains("LastEnabledState")) {
             try {
-                this.lastEnabledState = RadioState.valueOf(tag.getString("LastEnabledState"));
+                this.lastEnabledState = RadioState.valueOf(String.valueOf(tag.getString("LastEnabledState")));
             } catch (IllegalArgumentException e) {
                 this.lastEnabledState = null;
             }
