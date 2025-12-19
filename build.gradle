@@ -28,12 +28,9 @@ dependencies {
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation 'me.lucko:fabric-permissions-api:0.4.0'
 
-	modImplementation "de.maxhenkel.voicechat:voicechat-api:${project.voicechat_api}"
-	modImplementation "maven.modrinth:simple-voice-chat:${project.voicechat_version}"
-
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-    implementation "de.maxhenkel.voicechat:voicechat-api:${voicechat_api_version}"
+    implementation "de.maxhenkel.voicechat:voicechat-api:${project.voicechat_api}"
 	
 }
 
