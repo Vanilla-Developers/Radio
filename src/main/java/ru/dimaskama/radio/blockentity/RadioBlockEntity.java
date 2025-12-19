@@ -44,14 +44,12 @@ public class RadioBlockEntity extends BlockEntity {
     }
 
     protected void writeNbt(NbtCompound tag, net.minecraft.registry.RegistryWrapper.WrapperLookup registryLookup) {
-        super.writeNbt(tag, registryLookup);
         if (this.lastEnabledState != null) {
             tag.putString("LastEnabledState", this.lastEnabledState.name());
         }
     }
 
     protected void readNbt(NbtCompound tag, net.minecraft.registry.RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(tag, registryLookup);
         if (tag.contains("LastEnabledState")) {
             try {
                 this.lastEnabledState = RadioState.valueOf(tag.getString("LastEnabledState"));
@@ -72,7 +70,6 @@ public class RadioBlockEntity extends BlockEntity {
     }
 
     public void onLoad() {
-        super.onLoad();
         assert this.getWorld() != null;
         if (!this.getWorld().isClient() && this.getWorld() instanceof ServerWorld serverWorld) {
             BlockState bs = this.getCachedState();
