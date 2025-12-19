@@ -9,6 +9,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.MapColor;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKey;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.util.Identifier;
 import net.minecraft.state.property.EnumProperty;
@@ -35,8 +36,8 @@ public final class ModBlocks {
 
 	private static <T extends Block> T registerOnInit(String radioModId, AbstractBlock.Settings settings, Function<AbstractBlock.Settings, T> factory) {
 		Identifier id = RadioMod.id(radioModId);
-		// Если требуется автоматически назначать креативную вкладку для BlockItem,
-		// это обычно делается при создании BlockItem (например new BlockItem(block, new Item.Settings().group(...))).
+		// Fabric требует, чтобы у блока был установлен registry key до создания экземпляра
+		settings.registryKey(RegistryKey.of(Registries.BLOCK.getKey(), id));
 		T block = factory.apply(settings);
 		BLOCKS_TO_REGISTER.add(new Pair<>(id, block));
 		return block;
