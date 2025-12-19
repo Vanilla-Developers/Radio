@@ -1,21 +1,24 @@
 package ru.dimaskama.radio.client;
 
 import com.mojang.serialization.MapCodec;
+import net.minecraft.client.render.item.property.bool.BooleanProperty;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.item.ItemDisplayContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.LivingEntity;
 import org.jetbrains.annotations.Nullable;
 import ru.dimaskama.radio.RadioState;
 import ru.dimaskama.radio.item.ModItems.DataComponents;
 
-public record RadioDestroyedProperty() /* implements <интерфейс-предикат-пункт> */ {
+public record RadioDestroyedProperty() implements BooleanProperty {
     public static final MapCodec<RadioDestroyedProperty> CODEC = MapCodec.unit(new RadioDestroyedProperty());
 
-    public boolean test(ItemStack stack, @Nullable ClientWorld world, @Nullable LivingEntity entity, int seed, /*ModelTransformation.Mode*/ Object displayContext) {
-        return stack.get(DataComponents.RADIO_STATE) == RadioState.DESTROYED;
+    public MapCodec<RadioDestroyedProperty> getCodec() {
+        return CODEC;
     }
 
-    public MapCodec<RadioDestroyedProperty> codec() {
-        return CODEC;
+    @Override
+    public boolean test(ItemStack stack, @Nullable ClientWorld world, @Nullable LivingEntity entity, int seed, ItemDisplayContext displayContext) {
+        return stack.get(DataComponents.RADIO_STATE) == RadioState.DESTROYED;
     }
 }
