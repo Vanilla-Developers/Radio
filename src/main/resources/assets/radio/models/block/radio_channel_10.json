@@ -1,0 +1,6 @@
+{
+  "parent": "radio:block/template_radio_channel",
+  "textures": {
+    "texture": "radio:block/radio_front_10"
+  }
+}

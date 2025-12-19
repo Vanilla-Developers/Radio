@@ -3,7 +3,9 @@
 	"package": "ru.dimaskama.radio.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin"
+        "LightningEntityMixin",
+        "ServerWorldMixin",
+        "voicechat.LocationalAudioChannelImplMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

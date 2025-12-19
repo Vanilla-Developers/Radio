@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "P": "#minecraft:planks",
+    "C": [
+      "minecraft:chiseled_copper",
+      "minecraft:waxed_chiseled_copper"
+    ],
+    "N": "minecraft:note_block",
+    "R": "minecraft:redstone",
+    "I": "minecraft:netherite_ingot"
+  },
+  "pattern": [
+    "PCP",
+    "NRN",
+    "PIP"
+  ],
+  "result": {
+    "count": 1,
+    "id": "radio:radio"
+  }
+}

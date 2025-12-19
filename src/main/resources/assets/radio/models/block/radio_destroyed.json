@@ -1,0 +1,10 @@
+{
+  "parent": "radio:block/radio_disabled",
+  "textures": {
+    "bottom": "radio:block/radio_bottom_destroyed",
+    "top": "radio:block/radio_top_destroyed",
+    "front": "radio:block/radio_front_destroyed",
+    "side": "radio:block/radio_side_destroyed",
+    "back": "radio:block/radio_back_destroyed"
+  }
+}

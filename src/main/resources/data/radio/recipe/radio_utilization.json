@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 200,
+  "experience": 3.0,
+  "ingredient": {
+    "fabric:type": "fabric:components",
+    "base": "radio:radio",
+    "components": {
+      "radio:radio_state": "destroyed"
+    }
+  },
+  "result": {
+    "id": "minecraft:netherite_ingot"
+  }
+}
