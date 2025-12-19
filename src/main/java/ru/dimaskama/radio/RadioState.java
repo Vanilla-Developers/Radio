@@ -1,40 +1,50 @@
 package ru.dimaskama.radio;
 
 import com.mojang.serialization.Codec;
-import io.netty.buffer.ByteBuf;
-import net.minecraft.class_3542;
-import net.minecraft.class_9135;
-import net.minecraft.class_9139;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.StringIdentifiable;
 
-public enum RadioState implements class_3542 {
+public enum RadioState implements StringIdentifiable {
 	DISABLED("disabled"),
 	LISTEN("listen"),
 	BROADCAST("broadcast"),
 	DESTROYED("destroyed");
 
-	public static final Codec<RadioState> CODEC = class_3542.method_53955(RadioState::values);
-	public static final class_9139<ByteBuf, RadioState> PACKET_CODEC = class_9139.method_56434(class_9135.field_48550, Enum::ordinal, i -> values()[i]);
-	private final String key;
+public static final Codec<RadioState> CODEC = StringIdentifiable.createCodec(RadioState::values);
 
-	private RadioState(String key) {
-		this.key = key;
-	}
+private final String key;
 
-	public String method_15434() {
-		return this.key;
-	}
+private RadioState(String key) {
+	this.key = key;
+}
 
-	public RadioState getSwitched(int antennaLength) {
-		return this == DISABLED
-			? DISABLED
-			: (this == DESTROYED ? DESTROYED : (this == LISTEN && isAcceptAntennaLengthForBroadcast(antennaLength) ? BROADCAST : LISTEN));
-	}
+@Override
+public String asString() {
+	return this.key;
+}
 
-	public boolean isEnabled() {
-		return this == LISTEN || this == BROADCAST;
-	}
+public RadioState getSwitched(int antennaLength) {
+	return this == DISABLED
+		? DISABLED
+		: (this == DESTROYED ? DESTROYED : (this == LISTEN && isAcceptAntennaLengthForBroadcast(antennaLength) ? BROADCAST : LISTEN));
+}
 
-	public static boolean isAcceptAntennaLengthForBroadcast(int len) {
-		return len >= 5;
-	}
+public boolean isEnabled() {
+	return this == LISTEN || this == BROADCAST;
+}
+
+public static boolean isAcceptAntennaLengthForBroadcast(int len) {
+	return len >= 5;
+}
+
+/* Network helpers (Fabric / PacketByteBuf) for Minecraft 1.21.9:
+   Replaced the obfuscated/unknown PACKET_CODEC with explicit read/write helpers.
+   Use RadioState.write(buf, state) and RadioState.read(buf) when serializing over PacketByteBuf.
+*/
+public static void write(PacketByteBuf buf, RadioState state) {
+	buf.writeEnumConstant(state);
+}
+
+public static RadioState read(PacketByteBuf buf) {
+	return buf.readEnumConstant(RadioState.class);
 }
