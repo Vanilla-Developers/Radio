@@ -4,7 +4,6 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.block.Block;
 import net.minecraft.text.Text;
-import net.minecraft.item.Item.Settings;
 
 import ru.dimaskama.radio.RadioState;
 import ru.dimaskama.radio.item.ModItems.DataComponents;
@@ -20,8 +19,9 @@ public class RadioItem extends BlockItem {
 
     @Override
     public Text getName(ItemStack stack) {
-        return stack.get(DataComponents.RADIO_STATE) != RadioState.DESTROYED
-                ? super.getName(stack)
-                : DESTROYED_TEXT;
+        if (stack.get(DataComponents.RADIO_STATE) == RadioState.DESTROYED) {
+            return DESTROYED_TEXT;
+        }
+        return Text.translatable(this.getBlock().getTranslationKey());
     }
 }
