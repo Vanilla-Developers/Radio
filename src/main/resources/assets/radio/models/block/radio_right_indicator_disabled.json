@@ -1,6 +1,0 @@
-{
-  "parent": "radio:block/template_radio_right_indicator",
-  "textures": {
-    "texture": "radio:block/radio_front_disabled"
-  }
-}

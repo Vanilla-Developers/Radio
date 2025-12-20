@@ -1,39 +1,37 @@
 {
 	"schemaVersion": 1,
-	"id": "radio",
+	"id": "vpl",
 	"version": "${version}",
-	"name": "Radio",
+	"name": "Vanilla+ Radio",
 	"description": "This is an example description! Tell everyone what your mod is about!",
 	"authors": [
-		"Damir00109",
-        ""
+		"Damir00109"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/radio/icon.png",
+	"icon": "assets/vpl/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"ru.dimaskama.radio.RadioMod"
+			"com.damir00109.RadioMod"
 		],
 		"client": [
-			"ru.dimaskama.radio.client.RadioModClient"
+			"com.damir00109.client.RadioModClient"
 		],
 		"voicechat": [
-			"ru.dimaskama.radio.VoicePlugin"
+			"com.damir00109.VoicePlugin"
 		]
 	},
 	"mixins": [
-		"radio.mixins.json"
+		"vpl.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.18.3",
-		"minecraft": "~1.21.9",
+		"minecraft": "~1.21.10",
 		"java": ">=21",
-		"fabric-api": "*",
-		"voicechat": "*"
+		"fabric-api": "*"
 	}
 }

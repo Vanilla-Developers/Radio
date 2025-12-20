@@ -11,11 +11,11 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "radio:radio"
+          "name": "vpl:radio"
         }
       ],
       "rolls": 1.0
     }
   ],
-  "random_sequence": "radio:blocks/radio"
+  "random_sequence": "vpl:blocks/radio"
 }

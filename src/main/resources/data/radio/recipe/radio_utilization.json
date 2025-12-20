@@ -5,9 +5,9 @@
   "experience": 3.0,
   "ingredient": {
     "fabric:type": "fabric:components",
-    "base": "radio:radio",
+    "base": "vpl:radio",
     "components": {
-      "radio:radio_state": "destroyed"
+      "vpl:radio_state": "destroyed"
     }
   },
   "result": {

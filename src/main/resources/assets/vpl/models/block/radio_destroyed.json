@@ -1,0 +1,10 @@
+{
+  "parent": "vpl:block/radio_disabled",
+  "textures": {
+    "bottom": "vpl:block/radio_bottom_destroyed",
+    "top": "vpl:block/radio_top_destroyed",
+    "front": "vpl:block/radio_front_destroyed",
+    "side": "vpl:block/radio_side_destroyed",
+    "back": "vpl:block/radio_back_destroyed"
+  }
+}

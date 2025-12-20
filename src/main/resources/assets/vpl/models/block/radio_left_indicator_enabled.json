@@ -1,0 +1,6 @@
+{
+  "parent": "vpl:block/template_radio_left_indicator",
+  "textures": {
+    "texture": "vpl:block/radio_front_enabled"
+  }
+}
