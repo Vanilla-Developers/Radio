@@ -258,8 +258,8 @@ public class RadioChannel implements AutoCloseable {
         }
 
         public OpusDecoder getDecoder() {
-            if (this.decoder != null) {
-                this.decoder.close();
+            if (this.decoder == null) {
+                this.decoder = this.api.createDecoder();
             }
 
             return this.decoder;

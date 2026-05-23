@@ -50,7 +50,7 @@ public class VoiceIntegration {
         radios = api.volumeCategoryBuilder()
                 .setId("radios")
                 .setName("Radios")
-                .setIcon(loadIcon("assets/radio/category_icon.png"))
+                .setIcon(loadIcon("assets/" + RadioMod.MOD_ID + "/category_icon.png"))
                 .build();
         api.registerVolumeCategory(radios);
     }

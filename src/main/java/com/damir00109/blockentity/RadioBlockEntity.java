@@ -10,6 +10,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Heightmap;
@@ -219,8 +220,7 @@ public class RadioBlockEntity extends BlockEntity {
         for (int y = world.getTopY(Heightmap.Type.WORLD_SURFACE, mutable.getX(), mutable.getZ()); y > radioY; y--) {
             mutable.setY(y);
             BlockState state = world.getBlockState(mutable);
-            if (state.isIn(TagKey.of(RegistryKeys.BLOCK, Identifier.of("radio", "antenna_segments")))
-                    && state.get(Properties.AXIS) == net.minecraft.util.math.Direction.Axis.Y) {
+            if (state.isIn(TagKey.of(RegistryKeys.BLOCK, RadioMod.id("antenna_segments"))) && isVerticalAntennaSegment(state)) {
                 antennaCount++;
             } else if (antennaCount > 0 || !isAcceptableBlockAboveAntenna(world, mutable, state)) {
                 return 0;
@@ -228,6 +228,16 @@ public class RadioBlockEntity extends BlockEntity {
         }
 
         return antennaCount;
+    }
+
+    private static boolean isVerticalAntennaSegment(BlockState state) {
+        if (state.contains(Properties.AXIS)) {
+            return state.get(Properties.AXIS) == Direction.Axis.Y;
+        }
+        if (state.contains(Properties.FACING)) {
+            return state.get(Properties.FACING).getAxis() == Direction.Axis.Y;
+        }
+        return true;
     }
 
     private static boolean isAcceptableBlockAboveAntenna(World world, BlockPos pos, BlockState state) {

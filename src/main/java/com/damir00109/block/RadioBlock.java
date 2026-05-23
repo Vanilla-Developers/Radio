@@ -27,7 +27,9 @@ import net.minecraft.util.math.random.Random;
 import net.minecraft.util.BlockMirror;
 import net.minecraft.util.BlockRotation;
 import net.minecraft.world.World;
+import net.minecraft.world.BlockView;
 import net.minecraft.world.WorldView;
+import net.minecraft.world.block.WireOrientation;
 import net.minecraft.loot.context.LootWorldContext;
 import org.jetbrains.annotations.Nullable;
 
@@ -82,8 +84,8 @@ public class RadioBlock extends BlockWithEntity {
         }
     }
 
-    // neighborUpdate исправлено
-    public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, BlockPos fromPos, boolean notify) {
+    @Override
+    protected void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify) {
         if (world instanceof ServerWorld serverWorld) {
             update(pos, state, serverWorld);
         }
@@ -120,13 +122,14 @@ public class RadioBlock extends BlockWithEntity {
         return ActionResult.PASS;
     }
 
+    @Override
     protected ActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos,
                                          PlayerEntity player, Hand hand, net.minecraft.util.hit.BlockHitResult hit) {
         if (stack.getItem() instanceof BlockItem
                 && new ItemPlacementContext(player, hand, stack, hit).canPlace()) {
             return ActionResult.FAIL;
         }
-        return ActionResult.PASS;
+        return ActionResult.PASS_TO_DEFAULT_BLOCK_ACTION;
     }
 
     @Override
@@ -134,7 +137,7 @@ public class RadioBlock extends BlockWithEntity {
         return true;
     }
 
-    protected int getComparatorOutput(BlockState state, World world, BlockPos pos) {
+    public int getComparatorOutput(BlockState state, BlockView world, BlockPos pos) {
         if (world.getBlockEntity(pos) instanceof RadioBlockEntity radio) {
             return radio.getComparatorOutput();
         }
@@ -195,7 +198,7 @@ public class RadioBlock extends BlockWithEntity {
         );
     }
 
-    // scheduledTick без @Override
+    @Override
     protected void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
         if (world.getBlockEntity(pos) instanceof RadioBlockEntity radio) {
             BlockState newState = radio.newBurnedState(world, pos, state);
