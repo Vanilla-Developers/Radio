@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -52,7 +51,7 @@ public class RadioCommand implements CommandRegistrationCallback {
 	@Override
 	public void register(CommandDispatcher<ServerCommandSource> commandDispatcher, net.minecraft.command.CommandRegistryAccess commandRegistryAccess, CommandManager.RegistrationEnvironment registrationEnvironment) {
 		commandDispatcher.register(
-			(LiteralArgumentBuilder<ServerCommandSource>) (CommandManager.literal("radio").requires(src -> Permissions.check(src, "radio.command", 2)))
+			(LiteralArgumentBuilder<ServerCommandSource>) (CommandManager.literal("radio").requires(RadioCommand::hasCommandPermission))
 				.then(
 					CommandManager.literal("fakesound")
 						.then(
@@ -91,6 +90,17 @@ public class RadioCommand implements CommandRegistrationCallback {
 				)
 				.then(CommandManager.literal("clearCache").executes(this::executeFakeSoundClearCache))
 		);
+	}
+
+	private static boolean hasCommandPermission(ServerCommandSource source) {
+		try {
+			Class<?> permissions = Class.forName("me.lucko.fabric.api.permissions.v0.Permissions");
+			return (Boolean) permissions
+				.getMethod("check", ServerCommandSource.class, String.class, int.class)
+				.invoke(null, source, RadioMod.COMMAND_PERMISSION, 2);
+		} catch (ReflectiveOperationException | LinkageError e) {
+			return source.hasPermissionLevel(2);
+		}
 	}
 
 	private int executeFakeSoundPlay(CommandContext<ServerCommandSource> context, UUID uuid) throws CommandSyntaxException {
