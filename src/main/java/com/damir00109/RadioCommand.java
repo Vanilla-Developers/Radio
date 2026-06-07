@@ -30,8 +30,6 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.text.Text;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
 import net.minecraft.util.Formatting;
 import net.minecraft.command.argument.UuidArgumentType;
 import com.damir00109.extend.ServerWorldExtend;
@@ -133,10 +131,7 @@ public class RadioCommand implements CommandRegistrationCallback {
 							() -> Text.literal("Playing sound " + filename + " with uuid ")
 								.append(
 									Text.literal(uuid.toString())
-										.styled(style -> style.withColor(Formatting.GRAY)
-											.withHoverEvent(() -> null)
-											.withClickEvent(() -> null)
-										)
+										.formatted(Formatting.GRAY)
                                 ),
 							true
 						);

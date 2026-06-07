@@ -173,7 +173,8 @@ public class RadioBlockEntity extends BlockEntity {
     }
 
     public void updateComparators(ServerWorld world, int output) {
-        if (this.comparatorOutput != (this.comparatorOutput = output)) {
+        if (this.comparatorOutput != output) {
+            this.comparatorOutput = output;
             world.updateComparators(this.getPos(), this.getCachedState().getBlock());
         }
     }

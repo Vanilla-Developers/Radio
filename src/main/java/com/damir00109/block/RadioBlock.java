@@ -27,7 +27,6 @@ import net.minecraft.util.math.random.Random;
 import net.minecraft.util.BlockMirror;
 import net.minecraft.util.BlockRotation;
 import net.minecraft.world.World;
-import net.minecraft.world.BlockView;
 import net.minecraft.world.WorldView;
 import net.minecraft.world.block.WireOrientation;
 import net.minecraft.loot.context.LootWorldContext;
@@ -137,7 +136,8 @@ public class RadioBlock extends BlockWithEntity {
         return true;
     }
 
-    public int getComparatorOutput(BlockState state, BlockView world, BlockPos pos) {
+    @Override
+    protected int getComparatorOutput(BlockState state, World world, BlockPos pos, Direction direction) {
         if (world.getBlockEntity(pos) instanceof RadioBlockEntity radio) {
             return radio.getComparatorOutput();
         }
@@ -218,8 +218,19 @@ public class RadioBlock extends BlockWithEntity {
 
     public static void burnRadio(ServerWorld world, BlockPos pos) {
         if (world.getBlockEntity(pos) instanceof RadioBlockEntity radio) {
-            radio.markBurning();
-            world.setBlockState(pos, ModBlocks.RADIO.getDefaultState(), Block.NOTIFY_ALL);
+            BlockState newState = radio.newBurnedState(world, pos, world.getBlockState(pos));
+            if (newState == null) {
+                newState = world.getBlockState(pos).with(ModBlocks.Properties.RADIO_STATE, RadioState.DESTROYED);
+            }
+            world.setBlockState(pos, newState, Block.NOTIFY_ALL);
+            world.playSound(
+                    null,
+                    pos,
+                    SoundEvents.BLOCK_FIRE_EXTINGUISH,
+                    SoundCategory.BLOCKS,
+                    0.5F,
+                    0.7F
+            );
         }
     }
 }
