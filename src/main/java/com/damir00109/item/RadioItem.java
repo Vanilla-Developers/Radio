@@ -11,7 +11,7 @@ import com.damir00109.item.ModItems.DataComponents;
 public class RadioItem extends BlockItem {
 
     private static final Text DESTROYED_TEXT =
-            Text.translatable("block.radio.radio.destroyed");
+            Text.translatable("block.vpl.radio.destroyed");
 
     public RadioItem(Block block, Settings settings) {
         super(block, settings);
