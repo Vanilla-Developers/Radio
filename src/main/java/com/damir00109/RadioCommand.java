@@ -26,12 +26,12 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.UuidArgument;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.command.argument.UuidArgumentType;
 import com.damir00109.extend.ServerWorldExtend;
 
 public class RadioCommand implements CommandRegistrationCallback {
@@ -47,27 +47,27 @@ public class RadioCommand implements CommandRegistrationCallback {
 	private static final IntSet ALL_RADIO_CHANNELS = IntSet.of(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15});
 
 	@Override
-	public void register(CommandDispatcher<ServerCommandSource> commandDispatcher, net.minecraft.command.CommandRegistryAccess commandRegistryAccess, CommandManager.RegistrationEnvironment registrationEnvironment) {
+	public void register(CommandDispatcher<CommandSourceStack> commandDispatcher, net.minecraft.commands.CommandBuildContext commandRegistryAccess, Commands.CommandSelection registrationEnvironment) {
 		commandDispatcher.register(
-			(LiteralArgumentBuilder<ServerCommandSource>) (CommandManager.literal("radio").requires(RadioCommand::hasCommandPermission))
+			(LiteralArgumentBuilder<CommandSourceStack>) (Commands.literal("radio").requires(RadioCommand::hasCommandPermission))
 				.then(
-					CommandManager.literal("fakesound")
+					Commands.literal("fakesound")
 						.then(
-							CommandManager.literal("play")
+							Commands.literal("play")
 								.then(
-									CommandManager.argument("FileName", StringArgumentType.string())
+									Commands.argument("FileName", StringArgumentType.string())
 										.suggests(this::suggestFilenames)
 										.then(
-											CommandManager.argument("Channels", StringArgumentType.word())
+											Commands.argument("Channels", StringArgumentType.word())
 												.suggests(this::suggestRadioChannels)
 												.then(
-													CommandManager.argument("Lock", BoolArgumentType.bool())
+													Commands.argument("Lock", BoolArgumentType.bool())
 														.then(
-															((RequiredArgumentBuilder) CommandManager.argument("LeftIndicator", BoolArgumentType.bool())
+															((RequiredArgumentBuilder) Commands.argument("LeftIndicator", BoolArgumentType.bool())
 																	.executes(ctx -> this.executeFakeSoundPlay(ctx, UUID.randomUUID())))
 																.then(
-																	CommandManager.argument("UUID", UuidArgumentType.uuid())
-																		.executes(ctx -> this.executeFakeSoundPlay(ctx, UuidArgumentType.getUuid(ctx, "UUID")))
+																	Commands.argument("UUID", UuidArgument.uuid())
+																		.executes(ctx -> this.executeFakeSoundPlay(ctx, UuidArgument.getUuid(ctx, "UUID")))
 																)
 														)
 												)
@@ -75,34 +75,34 @@ public class RadioCommand implements CommandRegistrationCallback {
 								)
 						)
 						.then(
-							CommandManager.literal("stop")
-								.then(CommandManager.argument("UUID", UuidArgumentType.uuid()).suggests(this::suggestFakesounds).executes(this::executeFakeSoundStop))
+							Commands.literal("stop")
+								.then(Commands.argument("UUID", UuidArgument.uuid()).suggests(this::suggestFakesounds).executes(this::executeFakeSoundStop))
 						)
 						.then(
-							CommandManager.literal("upload_file")
+							Commands.literal("upload_file")
 								.then(
-									CommandManager.argument("FileName", StringArgumentType.string())
-										.then(CommandManager.argument("URL", StringArgumentType.greedyString()).executes(this::executeFakeSoundUploadFile))
+									Commands.argument("FileName", StringArgumentType.string())
+										.then(Commands.argument("URL", StringArgumentType.greedyString()).executes(this::executeFakeSoundUploadFile))
 								)
 						)
 				)
-				.then(CommandManager.literal("clearCache").executes(this::executeFakeSoundClearCache))
+				.then(Commands.literal("clearCache").executes(this::executeFakeSoundClearCache))
 		);
 	}
 
-	private static boolean hasCommandPermission(ServerCommandSource source) {
+	private static boolean hasCommandPermission(CommandSourceStack source) {
 		try {
 			Class<?> permissions = Class.forName("me.lucko.fabric.api.permissions.v0.Permissions");
 			return (Boolean) permissions
-				.getMethod("check", ServerCommandSource.class, String.class, int.class)
+				.getMethod("check", CommandSourceStack.class, String.class, int.class)
 				.invoke(null, source, RadioMod.COMMAND_PERMISSION, 2);
 		} catch (ReflectiveOperationException | LinkageError e) {
-			return source.hasPermissionLevel(2);
+			return source.hasPermission(2);
 		}
 	}
 
-	private int executeFakeSoundPlay(CommandContext<ServerCommandSource> context, UUID uuid) throws CommandSyntaxException {
-		WorldRadioManager worldRadioManager = ((ServerWorldExtend) context.getSource().getWorld()).radio_getRadioManager();
+	private int executeFakeSoundPlay(CommandContext<CommandSourceStack> context, UUID uuid) throws CommandSyntaxException {
+		WorldRadioManager worldRadioManager = ((ServerWorldExtend) context.getSource().getLevel()).radio_getRadioManager();
 		if (worldRadioManager == null) {
 			return 0;
 		} else {
@@ -127,11 +127,11 @@ public class RadioCommand implements CommandRegistrationCallback {
 				if (!future.isDone() || (!future.isCompletedExceptionally() && future.join().length != 0)) {
 					worldRadioManager.playFakeSound(uuid, channels, fullPath, lock, leftIndicator);
 					context.getSource()
-						.sendFeedback(
-							() -> Text.literal("Playing sound " + filename + " with uuid ")
+						.sendSuccess(
+							() -> Component.literal("Playing sound " + filename + " with uuid ")
 								.append(
-									Text.literal(uuid.toString())
-										.formatted(Formatting.GRAY)
+									Component.literal(uuid.toString())
+										.withStyle(ChatFormatting.GRAY)
                                 ),
 							true
 						);
@@ -144,22 +144,22 @@ public class RadioCommand implements CommandRegistrationCallback {
 		}
 	}
 
-	private int executeFakeSoundStop(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-		WorldRadioManager worldRadioManager = ((ServerWorldExtend) context.getSource().getWorld()).radio_getRadioManager();
+	private int executeFakeSoundStop(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+		WorldRadioManager worldRadioManager = ((ServerWorldExtend) context.getSource().getLevel()).radio_getRadioManager();
 		if (worldRadioManager == null) {
 			return 0;
 		} else {
-			UUID uuid = UuidArgumentType.getUuid(context, "UUID");
+			UUID uuid = UuidArgument.getUuid(context, "UUID");
 			if (!worldRadioManager.stopFakeSound(uuid)) {
 				throw NO_SOUND_PLAYING.create();
 			} else {
-				context.getSource().sendFeedback(() -> Text.literal("Stopped sound " + UndashedUuid.toString(uuid)), true);
+				context.getSource().sendSuccess(() -> Component.literal("Stopped sound " + UndashedUuid.toString(uuid)), true);
 				return 1;
 			}
 		}
 	}
 
-	private int executeFakeSoundUploadFile(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+	private int executeFakeSoundUploadFile(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
 		String filename = StringArgumentType.getString(context, "FileName");
 		String urlString = StringArgumentType.getString(context, "URL");
 
@@ -170,8 +170,8 @@ public class RadioCommand implements CommandRegistrationCallback {
 			throw INVALID_URL.create();
 		}
 
-		ServerCommandSource source = context.getSource();
-		source.sendFeedback(() -> Text.literal("Downloading sound from " + urlString + "..."), true);
+		CommandSourceStack source = context.getSource();
+		source.sendSuccess(() -> Component.literal("Downloading sound from " + urlString + "..."), true);
 
 		// Run download asynchronously on common pool (matches original intent to not block server thread)
 		CompletableFuture.runAsync(() -> {
@@ -183,26 +183,26 @@ public class RadioCommand implements CommandRegistrationCallback {
 					// schedule task back on server thread
 					source.getServer().execute(() -> {
 						FileSoundCache.remove(path);
-						source.sendFeedback(() -> Text.literal("Upload finished: " + filename), true);
+						source.sendSuccess(() -> Component.literal("Upload finished: " + filename), true);
 					});
 				} catch (Throwable var7) {
 					// ensure InputStream closed by try-with-resources and rethrow
 					throw var7;
 				}
 			} catch (Exception var8) {
-				source.getServer().execute(() -> source.sendError(Text.literal("Failed to download sound: " + var8)));
+				source.getServer().execute(() -> source.sendFailure(Component.literal("Failed to download sound: " + var8)));
 				RadioMod.LOGGER.warn("Failed to download sound", var8);
 			}
 		});
 		return 1;
 	}
 
-	private int executeFakeSoundClearCache(CommandContext<ServerCommandSource> context) {
+	private int executeFakeSoundClearCache(CommandContext<CommandSourceStack> context) {
 		FileSoundCache.clear();
 		return 1;
 	}
 
-	private CompletableFuture<Suggestions> suggestRadioChannels(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
+	private CompletableFuture<Suggestions> suggestRadioChannels(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) throws CommandSyntaxException {
 		String remain = builder.getRemainingLowerCase();
 		boolean suggested = false;
 		if ("all".startsWith(remain)) {
@@ -259,7 +259,7 @@ public class RadioCommand implements CommandRegistrationCallback {
 		}
 	}
 
-	private CompletableFuture<Suggestions> suggestFilenames(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) {
+	private CompletableFuture<Suggestions> suggestFilenames(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
 		return CompletableFuture.supplyAsync(() -> {
 			String remain = builder.getRemainingLowerCase();
 			File[] files = RadioMod.SOUNDS_DIR.toFile().listFiles();
@@ -275,8 +275,8 @@ public class RadioCommand implements CommandRegistrationCallback {
 		});
 	}
 
-	private CompletableFuture<Suggestions> suggestFakesounds(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) {
-		WorldRadioManager worldRadioManager = ((ServerWorldExtend) context.getSource().getWorld()).radio_getRadioManager();
+	private CompletableFuture<Suggestions> suggestFakesounds(CommandContext<CommandSourceStack> context, SuggestionsBuilder builder) {
+		WorldRadioManager worldRadioManager = ((ServerWorldExtend) context.getSource().getLevel()).radio_getRadioManager();
 		if (worldRadioManager == null) return builder.buildFuture();
 
 		// Build suggestions from currently playing fake sounds

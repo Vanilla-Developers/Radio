@@ -1,6 +1,5 @@
 package com.damir00109.mixin;
 
-import net.minecraft.server.world.ServerWorld;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -9,8 +8,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.damir00109.WorldRadioManager;
 import com.damir00109.extend.ServerWorldExtend;
+import net.minecraft.server.level.ServerLevel;
 
-@Mixin({ServerWorld.class})
+@Mixin({ServerLevel.class})
 abstract class ServerWorldMixin implements ServerWorldExtend {
 
     @Unique
@@ -23,7 +23,7 @@ abstract class ServerWorldMixin implements ServerWorldExtend {
     )
     private void initTail(CallbackInfo ci) {
         // Исправление: приводим this к Object, затем к ServerWorld
-        ServerWorld thisServerWorld = (ServerWorld) (Object) this;
+        ServerLevel thisServerWorld = (ServerLevel) (Object) this;
         this.radio_radioManager = new WorldRadioManager(thisServerWorld);
     }
 

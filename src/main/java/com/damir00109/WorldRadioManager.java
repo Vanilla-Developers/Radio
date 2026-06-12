@@ -14,19 +14,19 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 
 public class WorldRadioManager implements AutoCloseable {
-    private final ServerWorld world;
+    private final ServerLevel world;
     private final Int2ObjectMap<RadioChannel> channels = Int2ObjectMaps.synchronize(new Int2ObjectOpenHashMap<>());
     private final Set<UUID> radioAudioChannels = Sets.newConcurrentHashSet();
     private final Set<PlayingSound> fakeSounds = new HashSet<>();
 
-    public WorldRadioManager(ServerWorld world) {
+    public WorldRadioManager(ServerLevel world) {
         this.world = world;
     }
 
@@ -131,20 +131,20 @@ public class WorldRadioManager implements AutoCloseable {
         return this.fakeSounds.stream().map(PlayingSound::getUuid);
     }
 
-    public void handlePluginLocPacket(Vec3d pos, UUID id, byte[] data, float distance) {
+    public void handlePluginLocPacket(Vec3 pos, UUID id, byte[] data, float distance) {
         if (!this.radioAudioChannels.contains(id)) {
             double maxDistSq = distance * distance;
             this.channels.forEach((index, channel) -> channel.handleAudioPacket(id, pos, maxDistSq, data));
         }
     }
 
-    public void handleMicPacket(ServerPlayerEntity player, MicrophonePacket packet) {
-        double maxDistSq = MathHelper.square(
+    public void handleMicPacket(ServerPlayer player, MicrophonePacket packet) {
+        double maxDistSq = Mth.square(
                 packet.isWhispering() ? RadioMod.CONFIG.getData().whisperingRecordMaxDist() : RadioMod.CONFIG.getData().recordMaxDist()
         );
         // Исправление: getPos() заменено на getPosition()
-        Vec3d playerPos = new Vec3d(player.getX(), player.getY(), player.getZ());
-        this.channels.forEach((index, channel) -> channel.handleAudioPacket(player.getUuid(), playerPos, maxDistSq, packet.getOpusEncodedData()));
+        Vec3 playerPos = new Vec3(player.getX(), player.getY(), player.getZ());
+        this.channels.forEach((index, channel) -> channel.handleAudioPacket(player.getUUID(), playerPos, maxDistSq, packet.getOpusEncodedData()));
     }
 
     public void close() {

@@ -10,11 +10,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.server.world.ServerWorld;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import com.damir00109.blockentity.RadioBlockEntity;
 
@@ -27,10 +27,10 @@ public class RadioChannel implements AutoCloseable {
     private final Set<PlayingSound> fakeSounds = Sets.newConcurrentHashSet();
     private final Set<UUID> radioAudioChannels;
     private final VoicechatServerApi api;
-    private final ServerWorld world;
+    private final ServerLevel world;
     private boolean lastLeftIndicator;
 
-    public RadioChannel(VoicechatServerApi api, ServerWorld world, Set<UUID> radioAudioChannels) {
+    public RadioChannel(VoicechatServerApi api, ServerLevel world, Set<UUID> radioAudioChannels) {
         this.api = api;
         this.world = world;
         this.radioAudioChannels = radioAudioChannels;
@@ -71,7 +71,7 @@ public class RadioChannel implements AutoCloseable {
         this.unregisterListener(pos);
         this.radioPlayers.computeIfAbsent(pos, p -> {
             // Исправление: Создаем BlockHitResult из BlockPos
-            Vec3d hitPos = new Vec3d(p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5);
+            Vec3 hitPos = new Vec3(p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5);
             BlockHitResult hitResult = new BlockHitResult(hitPos, Direction.UP, p, false);
             return new RadioPlayer(this.api, this.world, hitResult, this.radioAudioChannels);
         });
@@ -96,13 +96,13 @@ public class RadioChannel implements AutoCloseable {
         return !this.fakeSounds.isEmpty() && this.fakeSounds.stream().anyMatch(PlayingSound::hasLeftIndicator);
     }
 
-    public void handleAudioPacket(UUID id, Vec3d pos, double maxDistSquared, byte[] encoded) {
+    public void handleAudioPacket(UUID id, Vec3 pos, double maxDistSquared, byte[] encoded) {
         if (encoded.length != 0 && !this.isLocked()) {
             RadioListener closestListener = null;
             double minSqDist = Double.MAX_VALUE;
 
             for (RadioListener listener : this.radioListeners.values()) {
-                double d = listener.pos.squaredDistanceTo(pos);
+                double d = listener.pos.distanceToSqr(pos);
                 if (minSqDist > d) {
                     closestListener = listener;
                     minSqDist = d;

@@ -1,7 +1,7 @@
 package com.damir00109;
 
-import net.minecraft.util.math.MathHelper;
 import java.util.Random;
+import net.minecraft.util.Mth;
 
 
 public class RadioAudioEffect {
@@ -64,10 +64,10 @@ public class RadioAudioEffect {
 	private float bandpassFilter(float inputSample) {
 		float bandwidth = this.normalizedBandwidth * (1.0F - this.severity * 0.1F);
 		float w0 = (float) (Math.PI * 2) * this.normalizedCenterFrequency;
-		float sin = MathHelper.sin(w0);
+		float sin = Mth.sin(w0);
 		float alpha = sin * (float)Math.sinh(LN_2 * 0.5F * bandwidth * w0 / sin);
 		float a0 = 1.0F + alpha;
-		float cos = MathHelper.cos(w0);
+		float cos = Mth.cos(w0);
 		float b0 = (1.0F - cos) * 0.5F;
 		float b1 = 1.0F - cos;
 		float a1 = -2.0F * cos;

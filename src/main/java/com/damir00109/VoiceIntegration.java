@@ -13,9 +13,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.UUID;
 import javax.imageio.ImageIO;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import com.damir00109.extend.ServerWorldExtend;
 
@@ -60,7 +60,7 @@ public class VoiceIntegration {
         radios = null;
     }
 
-    public static void onPluginLocationPacket(ServerWorld world, Vec3d pos, UUID id, byte[] data, float distance) {
+    public static void onPluginLocationPacket(ServerLevel world, Vec3 pos, UUID id, byte[] data, float distance) {
         WorldRadioManager radioManager = ((ServerWorldExtend) world).radio_getRadioManager();
         if (radioManager != null) {
             radioManager.handlePluginLocPacket(pos, id, data, distance);
@@ -71,9 +71,9 @@ public class VoiceIntegration {
         VoicechatConnection con;
         WorldRadioManager radioManager;
         if ((con = event.getSenderConnection()) != null
-                && con.getPlayer().getPlayer() instanceof ServerPlayerEntity player
+                && con.getPlayer().getPlayer() instanceof ServerPlayer player
                 // Исправление: player.getEntityWorld() и проверка на ServerWorld
-                && player.getEntityWorld() instanceof ServerWorld serverWorld
+                && player.level() instanceof ServerLevel serverWorld
                 && (radioManager = ((ServerWorldExtend) serverWorld).radio_getRadioManager()) != null) {
             radioManager.handleMicPacket(player, (MicrophonePacket) event.getPacket());
         }

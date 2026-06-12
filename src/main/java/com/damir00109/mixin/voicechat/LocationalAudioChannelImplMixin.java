@@ -1,9 +1,8 @@
 package com.damir00109.mixin.voicechat;
 
 import de.maxhenkel.voicechat.api.ServerLevel;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
@@ -28,11 +27,11 @@ abstract class LocationalAudioChannelImplMixin {
             remap = false
     )
     private void broadcastHead(@Coerce Object packet, CallbackInfo ci) {
-        if (this.level.getServerLevel() instanceof ServerWorld world) {
+        if (this.level.getServerLevel() instanceof net.minecraft.server.level.ServerLevel world) {
             try {
                 VoiceIntegration.onPluginLocationPacket(
                         world,
-                        Vec3d.of((BlockPos) packet.getClass().getMethod("getPosition").invoke(packet)),
+                        Vec3.atLowerCornerOf((BlockPos) packet.getClass().getMethod("getPosition").invoke(packet)),
                         (java.util.UUID) packet.getClass().getMethod("getChannelId").invoke(packet),
                         (byte[]) packet.getClass().getMethod("getOpusEncodedData").invoke(packet),
                         ((Number) packet.getClass().getMethod("getDistance").invoke(packet)).floatValue()

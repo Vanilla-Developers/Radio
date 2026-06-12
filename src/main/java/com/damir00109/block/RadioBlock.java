@@ -3,33 +3,32 @@ package com.damir00109.block;
 import com.mojang.serialization.MapCodec;
 import java.util.List;
 import java.util.function.BiConsumer;
-
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.BlockWithEntity;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityTicker;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.util.BlockMirror;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldView;
-import net.minecraft.world.block.WireOrientation;
-import net.minecraft.loot.context.LootWorldContext;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.world.level.storage.loot.LootParams;
 import org.jetbrains.annotations.Nullable;
 
 import com.damir00109.RadioState;
@@ -38,37 +37,37 @@ import com.damir00109.blockentity.RadioBlockEntity;
 import com.damir00109.item.ModItems;
 import com.damir00109.item.ModItems.DataComponents;
 
-public class RadioBlock extends BlockWithEntity {
+public class RadioBlock extends BaseEntityBlock {
 
-    public static final MapCodec<RadioBlock> CODEC = createCodec(RadioBlock::new);
+    public static final MapCodec<RadioBlock> CODEC = simpleCodec(RadioBlock::new);
 
-    public RadioBlock(Settings settings) {
+    public RadioBlock(Properties settings) {
         super(settings);
-        this.setDefaultState(
-                this.getStateManager().getDefaultState()
-                        .with(ModBlocks.Properties.RADIO_STATE, RadioState.DISABLED)
-                        .with(ModBlocks.Properties.LEFT_INDICATOR, false)
-                        .with(Properties.POWER, 0)
-                        .with(Properties.HORIZONTAL_FACING, Direction.NORTH)
+        this.registerDefaultState(
+                this.getStateDefinition().any()
+                        .setValue(ModBlocks.Properties.RADIO_STATE, RadioState.DISABLED)
+                        .setValue(ModBlocks.Properties.LEFT_INDICATOR, false)
+                        .setValue(BlockStateProperties.POWER, 0)
+                        .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
         );
     }
 
-    protected MapCodec<? extends BlockWithEntity> getCodec() {
+    protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }
 
     @Nullable
     @Override
-    public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new RadioBlockEntity(pos, state);
     }
 
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
-            World world, BlockState state, BlockEntityType<T> type
+            Level world, BlockState state, BlockEntityType<T> type
     ) {
-        if (world.isClient()) return null;
+        if (world.isClientSide()) return null;
         if (type != ModBlockEntities.RADIO_TYPE) return null;
 
         return (world1, pos, state1, be) ->
@@ -76,68 +75,68 @@ public class RadioBlock extends BlockWithEntity {
     }
 
     @Override
-    protected void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
-        super.onBlockAdded(state, world, pos, oldState, notify);
-        if (!oldState.isOf(state.getBlock()) && world instanceof ServerWorld serverWorld) {
+    protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+        super.onPlace(state, world, pos, oldState, notify);
+        if (!oldState.is(state.getBlock()) && world instanceof ServerLevel serverWorld) {
             update(pos, state, serverWorld);
         }
     }
 
     @Override
-    protected void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify) {
-        if (world instanceof ServerWorld serverWorld) {
+    protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, @Nullable Orientation wireOrientation, boolean notify) {
+        if (world instanceof ServerLevel serverWorld) {
             update(pos, state, serverWorld);
         }
     }
 
-    private void update(BlockPos pos, BlockState state, ServerWorld world) {
+    private void update(BlockPos pos, BlockState state, ServerLevel world) {
         if (world.getBlockEntity(pos) instanceof RadioBlockEntity blockEntity) {
             BlockState newState = blockEntity.updateState(pos, state, world, false);
             if (newState != null) {
-                world.setBlockState(pos, newState, Block.NOTIFY_ALL);
+                world.setBlock(pos, newState, Block.UPDATE_ALL);
             }
         }
     }
 
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, net.minecraft.util.hit.BlockHitResult hit) {
+    public InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, net.minecraft.world.phys.BlockHitResult hit) {
         return tryToggle(state, world, pos);
     }
 
     @Override
-    protected void onExploded(BlockState state, ServerWorld world, BlockPos pos,
-                              net.minecraft.world.explosion.Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
+    protected void onExplosionHit(BlockState state, ServerLevel world, BlockPos pos,
+                              net.minecraft.world.level.Explosion explosion, BiConsumer<ItemStack, BlockPos> stackMerger) {
         if (explosion.canTriggerBlocks()) {
             tryToggle(state, world, pos);
         }
-        super.onExploded(state, world, pos, explosion, stackMerger);
+        super.onExplosionHit(state, world, pos, explosion, stackMerger);
     }
 
-    protected ActionResult tryToggle(BlockState state, World world, BlockPos pos) {
-        if (world instanceof ServerWorld serverWorld
+    protected InteractionResult tryToggle(BlockState state, Level world, BlockPos pos) {
+        if (world instanceof ServerLevel serverWorld
                 && world.getBlockEntity(pos) instanceof RadioBlockEntity blockEntity) {
             return blockEntity.tryToggle(serverWorld, pos, state);
         }
-        return ActionResult.PASS;
+        return InteractionResult.PASS;
     }
 
     @Override
-    protected ActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos,
-                                         PlayerEntity player, Hand hand, net.minecraft.util.hit.BlockHitResult hit) {
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos,
+                                         Player player, InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
         if (stack.getItem() instanceof BlockItem
-                && new ItemPlacementContext(player, hand, stack, hit).canPlace()) {
-            return ActionResult.FAIL;
+                && new BlockPlaceContext(player, hand, stack, hit).canPlace()) {
+            return InteractionResult.FAIL;
         }
-        return ActionResult.PASS_TO_DEFAULT_BLOCK_ACTION;
+        return InteractionResult.TRY_WITH_EMPTY_HAND;
     }
 
     @Override
-    protected boolean hasComparatorOutput(BlockState state) {
+    protected boolean hasAnalogOutputSignal(BlockState state) {
         return true;
     }
 
     @Override
-    protected int getComparatorOutput(BlockState state, World world, BlockPos pos, Direction direction) {
+    protected int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos, Direction direction) {
         if (world.getBlockEntity(pos) instanceof RadioBlockEntity radio) {
             return radio.getComparatorOutput();
         }
@@ -146,18 +145,18 @@ public class RadioBlock extends BlockWithEntity {
 
     @Nullable
     @Override
-    public BlockState getPlacementState(ItemPlacementContext ctx) {
-        return this.getDefaultState()
-                .with(Properties.HORIZONTAL_FACING, ctx.getHorizontalPlayerFacing().getOpposite())
-                .with(ModBlocks.Properties.RADIO_STATE,
-                        ctx.getStack().getOrDefault(DataComponents.RADIO_STATE, RadioState.DISABLED));
+    public BlockState getStateForPlacement(BlockPlaceContext ctx) {
+        return this.defaultBlockState()
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, ctx.getHorizontalDirection().getOpposite())
+                .setValue(ModBlocks.Properties.RADIO_STATE,
+                        ctx.getItemInHand().getOrDefault(DataComponents.RADIO_STATE, RadioState.DISABLED));
     }
 
     // Убрали @Override
-    protected ItemStack getPickStack(WorldView world, BlockPos pos, BlockState state, boolean includeData) {
-        ItemStack stack = super.getPickStack(world, pos, state, includeData);
+    protected ItemStack getCloneItemStack(LevelReader world, BlockPos pos, BlockState state, boolean includeData) {
+        ItemStack stack = super.getCloneItemStack(world, pos, state, includeData);
 
-        RadioState radioState = state.get(ModBlocks.Properties.RADIO_STATE);
+        RadioState radioState = state.getValue(ModBlocks.Properties.RADIO_STATE);
         stack.set(DataComponents.RADIO_STATE,
                 radioState == RadioState.DESTROYED ? RadioState.DESTROYED : RadioState.DISABLED);
 
@@ -165,12 +164,12 @@ public class RadioBlock extends BlockWithEntity {
     }
 
     @Override
-    protected List<ItemStack> getDroppedStacks(BlockState state, LootWorldContext.Builder builder) {
-        RadioState radioState = state.get(ModBlocks.Properties.RADIO_STATE);
-        List<ItemStack> list = super.getDroppedStacks(state, builder);
+    protected List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
+        RadioState radioState = state.getValue(ModBlocks.Properties.RADIO_STATE);
+        List<ItemStack> list = super.getDrops(state, builder);
 
         for (ItemStack stack : list) {
-            if (stack.isOf(ModItems.RADIO)) {
+            if (stack.is(ModItems.RADIO)) {
                 stack.set(DataComponents.RADIO_STATE,
                         radioState == RadioState.DESTROYED ? RadioState.DESTROYED : RadioState.DISABLED);
             }
@@ -179,36 +178,36 @@ public class RadioBlock extends BlockWithEntity {
     }
 
     @Override
-    protected BlockState rotate(BlockState state, BlockRotation rotation) {
-        return state.with(Properties.HORIZONTAL_FACING, rotation.rotate(state.get(Properties.HORIZONTAL_FACING)));
+    protected BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(BlockStateProperties.HORIZONTAL_FACING, rotation.rotate(state.getValue(BlockStateProperties.HORIZONTAL_FACING)));
     }
 
     @Override
-    protected BlockState mirror(BlockState state, BlockMirror mirror) {
-        return rotate(state, mirror.getRotation(state.get(Properties.HORIZONTAL_FACING)));
+    protected BlockState mirror(BlockState state, Mirror mirror) {
+        return rotate(state, mirror.getRotation(state.getValue(BlockStateProperties.HORIZONTAL_FACING)));
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(
                 ModBlocks.Properties.RADIO_STATE,
                 ModBlocks.Properties.LEFT_INDICATOR,
-                Properties.POWER,
-                Properties.HORIZONTAL_FACING
+                BlockStateProperties.POWER,
+                BlockStateProperties.HORIZONTAL_FACING
         );
     }
 
     @Override
-    protected void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
+    protected void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
         if (world.getBlockEntity(pos) instanceof RadioBlockEntity radio) {
             BlockState newState = radio.newBurnedState(world, pos, state);
             if (newState != null) {
-                world.setBlockState(pos, newState, Block.NOTIFY_ALL);
+                world.setBlock(pos, newState, Block.UPDATE_ALL);
                 world.playSound(
                         null,
                         pos,
-                        SoundEvents.BLOCK_FIRE_EXTINGUISH,
-                        SoundCategory.BLOCKS,
+                        SoundEvents.FIRE_EXTINGUISH,
+                        SoundSource.BLOCKS,
                         0.5F,
                         0.7F
                 );
@@ -216,18 +215,18 @@ public class RadioBlock extends BlockWithEntity {
         }
     }
 
-    public static void burnRadio(ServerWorld world, BlockPos pos) {
+    public static void burnRadio(ServerLevel world, BlockPos pos) {
         if (world.getBlockEntity(pos) instanceof RadioBlockEntity radio) {
             BlockState newState = radio.newBurnedState(world, pos, world.getBlockState(pos));
             if (newState == null) {
-                newState = world.getBlockState(pos).with(ModBlocks.Properties.RADIO_STATE, RadioState.DESTROYED);
+                newState = world.getBlockState(pos).setValue(ModBlocks.Properties.RADIO_STATE, RadioState.DESTROYED);
             }
-            world.setBlockState(pos, newState, Block.NOTIFY_ALL);
+            world.setBlock(pos, newState, Block.UPDATE_ALL);
             world.playSound(
                     null,
                     pos,
-                    SoundEvents.BLOCK_FIRE_EXTINGUISH,
-                    SoundCategory.BLOCKS,
+                    SoundEvents.FIRE_EXTINGUISH,
+                    SoundSource.BLOCKS,
                     0.5F,
                     0.7F
             );

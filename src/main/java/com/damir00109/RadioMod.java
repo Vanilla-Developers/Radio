@@ -8,8 +8,8 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.damir00109.block.ModBlocks;
@@ -37,7 +37,7 @@ public class RadioMod implements ModInitializer {
         ModBlockEntities.init();
         ModItems.init();
         CommandRegistrationCallback.EVENT.register(new RadioCommand());
-        ServerTickEvents.END_WORLD_TICK.register((ServerWorld world) -> {
+        ServerTickEvents.END_WORLD_TICK.register((ServerLevel world) -> {
             if (world.getServer().isRunning()) {
                 WorldRadioManager radioManager = ((ServerWorldExtend) world).radio_getRadioManager();
                 if (radioManager != null) {
@@ -55,8 +55,8 @@ public class RadioMod implements ModInitializer {
         }
     }
 
-    public static Identifier id(String path) {
+    public static ResourceLocation id(String path) {
         // Исправление: new Identifier() -> Identifier.of()
-        return Identifier.of(MOD_ID, path);
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
     }
 }

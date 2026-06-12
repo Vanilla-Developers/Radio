@@ -6,29 +6,27 @@ import java.util.List;
 import java.util.function.Function;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents.ModifyEntries;
-
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.item.ItemGroups;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.component.ComponentType;
-import net.minecraft.item.Item.Settings;
-
+import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Item.Properties;
+import net.minecraft.world.item.Items;
 import com.damir00109.RadioMod;
 import com.damir00109.RadioState;
 import com.damir00109.block.ModBlocks;
 
 public final class ModItems {
 
-    private static final List<Pair<Identifier, Item>> ITEMS_TO_REGISTER = new ArrayList<>();
+    private static final List<Pair<ResourceLocation, Item>> ITEMS_TO_REGISTER = new ArrayList<>();
 
     public static final RadioItem RADIO = registerOnInit(
             "radio",
-            new Settings()
-                    .maxCount(64)
+            new Properties()
+                    .stacksTo(64)
                     .component(ModItems.DataComponents.RADIO_STATE, RadioState.DISABLED),
             settings -> new RadioItem(ModBlocks.RADIO, settings)
     );
@@ -39,14 +37,14 @@ public final class ModItems {
 
         ITEMS_TO_REGISTER.forEach(pair ->
                 Registry.register(
-                        Registries.ITEM,
+                        BuiltInRegistries.ITEM,
                         pair.getFirst(),
                         pair.getSecond()
                 )
         );
         ITEMS_TO_REGISTER.clear();
 
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS)
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
                 .register((ModifyEntries) entries ->
                         entries.addAfter(Items.COMPASS, RADIO)
                 );
@@ -54,12 +52,12 @@ public final class ModItems {
 
     private static <T extends Item> T registerOnInit(
             String radioModId,
-            Settings settings,
-            Function<Settings, T> factory
+            Properties settings,
+            Function<Properties, T> factory
     ) {
-        Identifier id = RadioMod.id(radioModId);
+        ResourceLocation id = RadioMod.id(radioModId);
 
-        settings.registryKey(RegistryKey.of(Registries.ITEM.getKey(), id));
+        settings.setId(ResourceKey.create(BuiltInRegistries.ITEM.key(), id));
 
         T item = factory.apply(settings);
         ITEMS_TO_REGISTER.add(new Pair<>(id, item));
@@ -68,15 +66,15 @@ public final class ModItems {
 
     public static final class DataComponents {
 
-        public static final ComponentType<RadioState> RADIO_STATE =
-                ComponentType.<RadioState>builder()
-                        .codec(RadioState.CODEC)
-                        .packetCodec(RadioState.PACKET_CODEC)
+        public static final DataComponentType<RadioState> RADIO_STATE =
+                DataComponentType.<RadioState>builder()
+                        .persistent(RadioState.CODEC)
+                        .networkSynchronized(RadioState.PACKET_CODEC)
                         .build();
 
         private static void init() {
             Registry.register(
-                    Registries.DATA_COMPONENT_TYPE,
+                    BuiltInRegistries.DATA_COMPONENT_TYPE,
                     RadioMod.id("radio_state"),
                     RADIO_STATE
             );

@@ -2,20 +2,20 @@ package com.damir00109;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 
 public class RadioListener {
 	public static final int AMPLITUDES_QUEUE_SIZE = 40;
 	public final AtomicInteger idleTicks = new AtomicInteger();
 	public final IntArrayList amplitudes = new IntArrayList();
 	public final BlockPos blockPos;
-	public final Vec3d pos;
+	public final Vec3 pos;
 	public int comparatorOutput;
 
 	public RadioListener(BlockPos blockPos) {
 		this.blockPos = blockPos;
-		this.pos = blockPos.toCenterPos();
+		this.pos = blockPos.getCenter();
 	}
 
 	public void writeAmplitude(short[] audio) {

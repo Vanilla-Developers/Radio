@@ -8,19 +8,19 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.BlockHitResult;
 
 public class RadioPlayer implements AutoCloseable {
 	public final AtomicBoolean isNew = new AtomicBoolean(true);
 	private final Map<UUID, LocationalAudioChannel> shadowChannels = new ConcurrentHashMap<>();
 	private final VoicechatServerApi api;
-	private final ServerWorld world;
+	private final ServerLevel world;
 	public final BlockPos pos;
 	private final Set<UUID> radioAudioChannels;
 
-	public RadioPlayer(VoicechatServerApi api, ServerWorld world, BlockHitResult hitResult, Set<UUID> radioAudioChannels) {
+	public RadioPlayer(VoicechatServerApi api, ServerLevel world, BlockHitResult hitResult, Set<UUID> radioAudioChannels) {
 		this.api = api;
 		this.world = world;
 		this.pos = hitResult.getBlockPos();

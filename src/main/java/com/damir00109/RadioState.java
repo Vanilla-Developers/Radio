@@ -2,19 +2,19 @@ package com.damir00109;
 
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.util.StringIdentifiable;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.util.StringRepresentable;
 
-public enum RadioState implements StringIdentifiable {
+public enum RadioState implements StringRepresentable {
 	DISABLED("disabled"),
 	LISTEN("listen"),
 	BROADCAST("broadcast"),
 	DESTROYED("destroyed");
 
-	public static final Codec<RadioState> CODEC = StringIdentifiable.createCodec(RadioState::values);
-	public static final PacketCodec<ByteBuf, RadioState> PACKET_CODEC = PacketCodec.tuple(PacketCodecs.VAR_INT, Enum::ordinal, i -> values()[i]);
+	public static final Codec<RadioState> CODEC = StringRepresentable.fromEnum(RadioState::values);
+	public static final StreamCodec<ByteBuf, RadioState> PACKET_CODEC = StreamCodec.composite(ByteBufCodecs.VAR_INT, Enum::ordinal, i -> values()[i]);
 
 	private final String key;
 
@@ -23,7 +23,7 @@ public enum RadioState implements StringIdentifiable {
 	}
 
 	@Override
-	public String asString() {
+	public String getSerializedName() {
 		return this.key;
 	}
 
@@ -45,11 +45,11 @@ public enum RadioState implements StringIdentifiable {
 	   Replaced the obfuscated/unknown PACKET_CODEC with explicit read/write helpers.
 	   Use RadioState.write(buf, state) and RadioState.read(buf) when serializing over PacketByteBuf.
 	*/
-	public static void write(PacketByteBuf buf, RadioState state) {
-		buf.writeEnumConstant(state);
+	public static void write(FriendlyByteBuf buf, RadioState state) {
+		buf.writeEnum(state);
 	}
 
-	public static RadioState read(PacketByteBuf buf) {
-		return buf.readEnumConstant(RadioState.class);
+	public static RadioState read(FriendlyByteBuf buf) {
+		return buf.readEnum(RadioState.class);
 	}
 }

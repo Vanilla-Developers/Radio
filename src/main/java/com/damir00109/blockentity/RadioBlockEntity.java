@@ -1,28 +1,23 @@
 package com.damir00109.blockentity;
 
 import java.util.Set;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-
-import net.minecraft.block.BlockState;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.World;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.block.entity.BlockEntity;
-
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.block.Block;
-import net.minecraft.util.Identifier;
-
 import com.damir00109.RadioListener;
 import com.damir00109.RadioMod;
 import com.damir00109.RadioState;
@@ -44,13 +39,13 @@ public class RadioBlockEntity extends BlockEntity {
         super(ModBlockEntities.RADIO_TYPE, pos, state);
     }
 
-    protected void writeNbt(NbtCompound tag, net.minecraft.registry.RegistryWrapper.WrapperLookup registryLookup) {
+    protected void writeNbt(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registryLookup) {
         if (this.lastEnabledState != null) {
             tag.putString("LastEnabledState", this.lastEnabledState.name());
         }
     }
 
-    protected void readNbt(NbtCompound tag, net.minecraft.registry.RegistryWrapper.WrapperLookup registryLookup) {
+    protected void readNbt(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registryLookup) {
         if (tag.contains("LastEnabledState")) {
             try {
                 this.lastEnabledState = RadioState.valueOf(String.valueOf(tag.getString("LastEnabledState")));
@@ -63,31 +58,31 @@ public class RadioBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void markRemoved() {
-        super.markRemoved();
-        if (this.getWorld() instanceof ServerWorld serverWorld) {
-            this.unregister(serverWorld, this.getPos());
+    public void setRemoved() {
+        super.setRemoved();
+        if (this.getLevel() instanceof ServerLevel serverWorld) {
+            this.unregister(serverWorld, this.getBlockPos());
         }
     }
 
     public void onLoad() {
-        assert this.getWorld() != null;
-        if (!this.getWorld().isClient() && this.getWorld() instanceof ServerWorld serverWorld) {
-            BlockState bs = this.getCachedState();
-            RadioState state = bs.get(ModBlocks.Properties.RADIO_STATE);
-            this.register(serverWorld, this.getPos(), state);
+        assert this.getLevel() != null;
+        if (!this.getLevel().isClientSide() && this.getLevel() instanceof ServerLevel serverWorld) {
+            BlockState bs = this.getBlockState();
+            RadioState state = bs.getValue(ModBlocks.Properties.RADIO_STATE);
+            this.register(serverWorld, this.getBlockPos(), state);
         }
     }
 
     @Nullable
-    public BlockState updateState(BlockPos pos, BlockState state, ServerWorld world, boolean isAntennaUpdate) {
+    public BlockState updateState(BlockPos pos, BlockState state, ServerLevel world, boolean isAntennaUpdate) {
         int len = findAntennaLength(world, pos);
         if (isAntennaUpdate && this.lastAntennaLength == len) {
             return null;
         }
 
-        int power = world.getReceivedRedstonePower(pos);
-        RadioState prevRadioState = state.get(ModBlocks.Properties.RADIO_STATE);
+        int power = world.getBestNeighborSignal(pos);
+        RadioState prevRadioState = state.getValue(ModBlocks.Properties.RADIO_STATE);
         RadioState newRadioState = getUpdatedRadioState(prevRadioState, this.lastEnabledState, power, len);
 
         if (!newRadioState.isEnabled()) {
@@ -106,55 +101,55 @@ public class RadioBlockEntity extends BlockEntity {
         boolean changed = false;
 
         if (prevRadioState != newRadioState) {
-            state = state.with(ModBlocks.Properties.RADIO_STATE, newRadioState);
-            if (state.get(ModBlocks.Properties.LEFT_INDICATOR)) {
-                state = state.with(ModBlocks.Properties.LEFT_INDICATOR, false);
+            state = state.setValue(ModBlocks.Properties.RADIO_STATE, newRadioState);
+            if (state.getValue(ModBlocks.Properties.LEFT_INDICATOR)) {
+                state = state.setValue(ModBlocks.Properties.LEFT_INDICATOR, false);
             }
             changed = true;
         }
 
-        if (state.get(Properties.POWER) != power) {
-            state = state.with(Properties.POWER, power);
+        if (state.getValue(BlockStateProperties.POWER) != power) {
+            state = state.setValue(BlockStateProperties.POWER, power);
             changed = true;
         }
 
         return changed ? state : null;
     }
 
-    public ActionResult tryToggle(ServerWorld world, BlockPos pos, BlockState state) {
-        ActionResult result = ActionResult.PASS;
+    public InteractionResult tryToggle(ServerLevel world, BlockPos pos, BlockState state) {
+        InteractionResult result = InteractionResult.PASS;
         BlockState newState = this.updateState(pos, state, world, false);
         if (newState == null) newState = state;
 
-        RadioState radioState = newState.get(ModBlocks.Properties.RADIO_STATE);
+        RadioState radioState = newState.getValue(ModBlocks.Properties.RADIO_STATE);
         RadioState switched = radioState.getSwitched(this.lastAntennaLength);
         if (switched != radioState) {
             this.updateLastEnabledState(world, switched);
-            newState = newState.with(ModBlocks.Properties.RADIO_STATE, switched).with(ModBlocks.Properties.LEFT_INDICATOR, false);
-            world.playSound(null, pos, SoundEvents.BLOCK_LEVER_CLICK, SoundCategory.BLOCKS, 1.0F, 1.0F);
-            result = ActionResult.SUCCESS;
+            newState = newState.setValue(ModBlocks.Properties.RADIO_STATE, switched).setValue(ModBlocks.Properties.LEFT_INDICATOR, false);
+            world.playSound(null, pos, SoundEvents.LEVER_CLICK, SoundSource.BLOCKS, 1.0F, 1.0F);
+            result = InteractionResult.SUCCESS;
             this.register(world, pos, switched);
         }
 
         if (newState != state) {
-            world.setBlockState(pos, newState, 2);
+            world.setBlock(pos, newState, 2);
         }
 
         return result;
     }
 
-    private void updateLastEnabledState(ServerWorld world, RadioState newRadioState) {
+    private void updateLastEnabledState(ServerLevel world, RadioState newRadioState) {
         if (newRadioState.isEnabled() && this.lastEnabledState != newRadioState) {
             this.lastEnabledState = newRadioState;
-            world.updateNeighborsAlways(this.getPos(), this.getCachedState().getBlock(), null);
+            world.updateNeighborsAt(this.getBlockPos(), this.getBlockState().getBlock(), null);
         }
     }
 
     @Nullable
-    public BlockState newBurnedState(ServerWorld world, BlockPos pos, BlockState state) {
-        if (this.burningTicks > 0 && state.get(ModBlocks.Properties.RADIO_STATE) != RadioState.DESTROYED) {
+    public BlockState newBurnedState(ServerLevel world, BlockPos pos, BlockState state) {
+        if (this.burningTicks > 0 && state.getValue(ModBlocks.Properties.RADIO_STATE) != RadioState.DESTROYED) {
             this.unregister(world, pos);
-            state = state.with(ModBlocks.Properties.RADIO_STATE, RadioState.DESTROYED);
+            state = state.setValue(ModBlocks.Properties.RADIO_STATE, RadioState.DESTROYED);
             BlockState newState = this.updateState(pos, state, world, false);
             return newState != null ? newState : state;
         }
@@ -166,32 +161,32 @@ public class RadioBlockEntity extends BlockEntity {
     }
 
     public void setLeftIndicator(boolean leftIndicator) {
-        BlockState state = this.getWorld().getBlockState(this.getPos());
-        if (state.get(ModBlocks.Properties.LEFT_INDICATOR) != leftIndicator) {
-            this.getWorld().setBlockState(this.getPos(), state.with(ModBlocks.Properties.LEFT_INDICATOR, leftIndicator), 3);
+        BlockState state = this.getLevel().getBlockState(this.getBlockPos());
+        if (state.getValue(ModBlocks.Properties.LEFT_INDICATOR) != leftIndicator) {
+            this.getLevel().setBlock(this.getBlockPos(), state.setValue(ModBlocks.Properties.LEFT_INDICATOR, leftIndicator), 3);
         }
     }
 
-    public void updateComparators(ServerWorld world, int output) {
+    public void updateComparators(ServerLevel world, int output) {
         if (this.comparatorOutput != output) {
             this.comparatorOutput = output;
-            world.updateComparators(this.getPos(), this.getCachedState().getBlock());
+            world.updateNeighbourForOutputSignal(this.getBlockPos(), this.getBlockState().getBlock());
         }
     }
 
-    public void updateComparators(ServerWorld world, Set<RadioListener> activeBroadcasters) {
+    public void updateComparators(ServerLevel world, Set<RadioListener> activeBroadcasters) {
         int output;
         if (activeBroadcasters.isEmpty()) {
             output = 0;
         } else {
-            Vec3d thisPos = Vec3d.ofCenter(this.getPos());
+            Vec3 thisPos = Vec3.atCenterOf(this.getBlockPos());
             double minDistSquared = Double.MAX_VALUE;
             for (RadioListener radioListener : activeBroadcasters) {
-                Vec3d listenerPos = radioListener.pos;
-                double distSq = thisPos.squaredDistanceTo(listenerPos);
+                Vec3 listenerPos = radioListener.pos;
+                double distSq = thisPos.distanceToSqr(listenerPos);
                 if (distSq < minDistSquared) minDistSquared = distSq;
             }
-            output = MathHelper.clamp(15 - (int)(15.0 * Math.sqrt(Math.sqrt(minDistSquared) / RadioMod.CONFIG.getData().comparatorMaxDistance())), 0, 15);
+            output = Mth.clamp(15 - (int)(15.0 * Math.sqrt(Math.sqrt(minDistSquared) / RadioMod.CONFIG.getData().comparatorMaxDistance())), 0, 15);
         }
         this.updateComparators(world, output);
     }
@@ -200,12 +195,12 @@ public class RadioBlockEntity extends BlockEntity {
         return Math.max(0, this.comparatorOutput);
     }
 
-    private void unregister(ServerWorld world, BlockPos pos) {
+    private void unregister(ServerLevel world, BlockPos pos) {
         WorldRadioManager manager = ((ServerWorldExtend) world).radio_getRadioManager();
         if (manager != null) manager.unregisterRadio(this.lastChannel, pos);
     }
 
-    private void register(ServerWorld world, BlockPos pos, RadioState state) {
+    private void register(ServerLevel world, BlockPos pos, RadioState state) {
         WorldRadioManager manager = ((ServerWorldExtend) world).radio_getRadioManager();
         if (manager != null && this.lastChannel >= 1 && this.lastChannel <= 15) {
             if (state == RadioState.BROADCAST) manager.registerRadioAudioListener(this.lastChannel, pos);
@@ -213,15 +208,15 @@ public class RadioBlockEntity extends BlockEntity {
         }
     }
 
-    private static int findAntennaLength(World world, BlockPos radioPos) {
+    private static int findAntennaLength(Level world, BlockPos radioPos) {
         int radioY = radioPos.getY();
-        BlockPos.Mutable mutable = radioPos.mutableCopy();
+        BlockPos.MutableBlockPos mutable = radioPos.mutable();
         int antennaCount = 0;
 
-        for (int y = world.getTopY(Heightmap.Type.WORLD_SURFACE, mutable.getX(), mutable.getZ()); y > radioY; y--) {
+        for (int y = world.getHeight(Heightmap.Types.WORLD_SURFACE, mutable.getX(), mutable.getZ()); y > radioY; y--) {
             mutable.setY(y);
             BlockState state = world.getBlockState(mutable);
-            if (state.isIn(TagKey.of(RegistryKeys.BLOCK, RadioMod.id("antenna_segments"))) && isVerticalAntennaSegment(state)) {
+            if (state.is(TagKey.create(Registries.BLOCK, RadioMod.id("antenna_segments"))) && isVerticalAntennaSegment(state)) {
                 antennaCount++;
             } else if (antennaCount > 0 || !isAcceptableBlockAboveAntenna(world, mutable, state)) {
                 return 0;
@@ -232,17 +227,17 @@ public class RadioBlockEntity extends BlockEntity {
     }
 
     private static boolean isVerticalAntennaSegment(BlockState state) {
-        if (state.contains(Properties.AXIS)) {
-            return state.get(Properties.AXIS) == Direction.Axis.Y;
+        if (state.hasProperty(BlockStateProperties.AXIS)) {
+            return state.getValue(BlockStateProperties.AXIS) == Direction.Axis.Y;
         }
-        if (state.contains(Properties.FACING)) {
-            return state.get(Properties.FACING).getAxis() == Direction.Axis.Y;
+        if (state.hasProperty(BlockStateProperties.FACING)) {
+            return state.getValue(BlockStateProperties.FACING).getAxis() == Direction.Axis.Y;
         }
         return true;
     }
 
-    private static boolean isAcceptableBlockAboveAntenna(World world, BlockPos pos, BlockState state) {
-        return state.isAir() || !state.isSolidBlock(world, pos);
+    private static boolean isAcceptableBlockAboveAntenna(Level world, BlockPos pos, BlockState state) {
+        return state.isAir() || !state.isRedstoneConductor(world, pos);
     }
 
     private static RadioState getUpdatedRadioState(RadioState prevState, @Nullable RadioState lastEnabledState, int power, int antennaLen) {
@@ -258,7 +253,7 @@ public class RadioBlockEntity extends BlockEntity {
     }
 
     // Метод tick, который вызывается из тикера
-    public void tick(World world, BlockPos pos, BlockState state) {
+    public void tick(Level world, BlockPos pos, BlockState state) {
         // Обработка горения
         if (this.burningTicks > 0) {
             this.burningTicks++;
