@@ -8,7 +8,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,8 +55,26 @@ public class RadioMod implements ModInitializer {
         }
     }
 
-    public static ResourceLocation id(String path) {
-        // Исправление: new Identifier() -> Identifier.of()
-        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+    public static Identifier id(String path) {
+        // Создаём Identifier через рефлексию или статический метод
+        try {
+            // Попытка использовать Identifier.of() (может быть в более новых версиях)
+            java.lang.reflect.Method ofMethod = Identifier.class.getDeclaredMethod("of", String.class, String.class);
+            return (Identifier) ofMethod.invoke(null, MOD_ID, path);
+        } catch (ReflectiveOperationException e1) {
+            try {
+                // Попытка использовать fromNamespaceAndPath
+                java.lang.reflect.Method fromMethod = Identifier.class.getDeclaredMethod("fromNamespaceAndPath", String.class, String.class);
+                return (Identifier) fromMethod.invoke(null, MOD_ID, path);
+            } catch (ReflectiveOperationException e2) {
+                // Крайняя мера: попробуем Identifier.tryParse() или другой способ
+                try {
+                    java.lang.reflect.Method parseMethod = Identifier.class.getDeclaredMethod("tryParse", String.class);
+                    return (Identifier) parseMethod.invoke(null, MOD_ID + ":" + path);
+                } catch (ReflectiveOperationException e3) {
+                    throw new RuntimeException("Cannot create Identifier for " + MOD_ID + ":" + path, e3);
+                }
+            }
+        }
     }
 }

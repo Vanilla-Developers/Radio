@@ -97,7 +97,18 @@ public class RadioCommand implements CommandRegistrationCallback {
 				.getMethod("check", CommandSourceStack.class, String.class, int.class)
 				.invoke(null, source, RadioMod.COMMAND_PERMISSION, 2);
 		} catch (ReflectiveOperationException | LinkageError e) {
-			return source.hasPermission(2);
+			// Попытка вызвать через рефлексию на случай изменений имени метода между маппингами
+			try {
+				java.lang.reflect.Method m = CommandSourceStack.class.getMethod("hasPermission", int.class);
+				return (Boolean) m.invoke(source, 2);
+			} catch (Exception ex1) {
+				try {
+					java.lang.reflect.Method m2 = CommandSourceStack.class.getMethod("hasPermissionLevel", int.class);
+					return (Boolean) m2.invoke(source, 2);
+				} catch (Exception ex2) {
+					return false;
+				}
+			}
 		}
 	}
 

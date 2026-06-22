@@ -7,7 +7,7 @@ import java.util.function.Function;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -17,7 +17,7 @@ import com.damir00109.RadioMod;
 import com.damir00109.RadioState;
 
 public final class ModBlocks {
-	private static final List<Pair<ResourceLocation, Block>> BLOCKS_TO_REGISTER = new ArrayList<>();
+	private static final List<Pair<Identifier, Block>> BLOCKS_TO_REGISTER = new ArrayList<>();
 	public static final RadioBlock RADIO = registerOnInit(
 		"radio",
 			BlockBehaviour.Properties.of()
@@ -34,7 +34,7 @@ public final class ModBlocks {
 	}
 
 	private static <T extends Block> T registerOnInit(String radioModId, BlockBehaviour.Properties settings, Function<BlockBehaviour.Properties, T> factory) {
-		ResourceLocation id = RadioMod.id(radioModId);
+		Identifier id = RadioMod.id(radioModId);
 		// Fabric требует, чтобы у блока был установлен registry key до создания экземпляра
 		settings.setId(ResourceKey.create(BuiltInRegistries.BLOCK.key(), id));
 		T block = factory.apply(settings);

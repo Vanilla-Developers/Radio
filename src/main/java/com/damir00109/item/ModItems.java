@@ -10,7 +10,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Item.Properties;
@@ -21,7 +21,7 @@ import com.damir00109.block.ModBlocks;
 
 public final class ModItems {
 
-    private static final List<Pair<ResourceLocation, Item>> ITEMS_TO_REGISTER = new ArrayList<>();
+    private static final List<Pair<Identifier, Item>> ITEMS_TO_REGISTER = new ArrayList<>();
 
     public static final RadioItem RADIO = registerOnInit(
             "radio",
@@ -55,7 +55,7 @@ public final class ModItems {
             Properties settings,
             Function<Properties, T> factory
     ) {
-        ResourceLocation id = RadioMod.id(radioModId);
+        Identifier id = RadioMod.id(radioModId);
 
         settings.setId(ResourceKey.create(BuiltInRegistries.ITEM.key(), id));
 
