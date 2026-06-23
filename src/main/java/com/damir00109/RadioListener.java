@@ -15,7 +15,8 @@ public class RadioListener {
 
 	public RadioListener(BlockPos blockPos) {
 		this.blockPos = blockPos;
-		this.pos = blockPos.getCenter();
+		this.pos = Vec3.atCenterOf(blockPos);
+
 	}
 
 	public void writeAmplitude(short[] audio) {
