@@ -136,7 +136,7 @@ public class RadioBlock extends BaseEntityBlock {
     }
 
     @Override
-    protected int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos, Direction direction) {
+    protected int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos) {
         if (world.getBlockEntity(pos) instanceof RadioBlockEntity radio) {
             return radio.getComparatorOutput();
         }
