@@ -1,0 +1,537 @@
+{
+  "multipart": [
+
+    {
+      "apply": {"model": "vpl:block/radio_disabled", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "disabled"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_base", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_left_indicator_disabled", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"left_indicator": "false"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_left_indicator_enabled", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"left_indicator": "true"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_right_indicator_disabled", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_right_indicator_enabled", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "broadcast"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_1", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "1"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_2", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "2"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_3", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "3"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_4", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "4"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_5", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "5"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_6", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "6"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_7", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "7"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_8", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "8"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_9", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "9"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_10", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "10"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_11", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "11"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_12", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "12"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_13", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "13"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_14", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "14"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_15", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "listen|broadcast"}, {"power": "15"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_destroyed", "y": 0},
+      "when": {
+        "AND": [{"facing": "north"}, {"radio_state": "destroyed"}]
+      }
+    },
+
+    {
+      "apply": {"model": "vpl:block/radio_disabled", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "disabled"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_base", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_left_indicator_disabled", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"left_indicator": "false"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_left_indicator_enabled", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"left_indicator": "true"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_right_indicator_disabled", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_right_indicator_enabled", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "broadcast"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_1", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "1"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_2", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "2"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_3", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "3"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_4", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "4"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_5", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "5"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_6", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "6"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_7", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "7"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_8", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "8"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_9", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "9"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_10", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "10"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_11", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "11"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_12", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "12"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_13", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "13"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_14", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "14"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_15", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "listen|broadcast"}, {"power": "15"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_destroyed", "y": 90},
+      "when": {
+        "AND": [{"facing": "east"}, {"radio_state": "destroyed"}]
+      }
+    },
+
+    {
+      "apply": {"model": "vpl:block/radio_disabled", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "disabled"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_base", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_left_indicator_disabled", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"left_indicator": "false"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_left_indicator_enabled", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"left_indicator": "true"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_right_indicator_disabled", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_right_indicator_enabled", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "broadcast"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_1", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "1"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_2", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "2"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_3", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "3"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_4", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "4"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_5", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "5"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_6", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "6"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_7", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "7"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_8", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "8"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_9", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "9"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_10", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "10"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_11", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "11"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_12", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "12"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_13", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "13"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_14", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "14"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_15", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "listen|broadcast"}, {"power": "15"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_destroyed", "y": 180},
+      "when": {
+        "AND": [{"facing": "south"}, {"radio_state": "destroyed"}]
+      }
+    },
+
+    {
+      "apply": {"model": "vpl:block/radio_disabled", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "disabled"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_base", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_left_indicator_disabled", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"left_indicator": "false"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_left_indicator_enabled", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"left_indicator": "true"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_right_indicator_disabled", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_right_indicator_enabled", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "broadcast"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_1", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "1"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_2", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "2"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_3", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "3"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_4", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "4"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_5", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "5"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_6", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "6"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_7", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "7"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_8", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "8"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_9", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "9"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_10", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "10"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_11", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "11"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_12", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "12"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_13", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "13"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_14", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "14"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_channel_15", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "listen|broadcast"}, {"power": "15"}]
+      }
+    },
+    {
+      "apply": {"model": "vpl:block/radio_destroyed", "y": 270},
+      "when": {
+        "AND": [{"facing": "west"}, {"radio_state": "destroyed"}]
+      }
+    }
+
+  ]
+}

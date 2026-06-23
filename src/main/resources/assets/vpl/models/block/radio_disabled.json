@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "bottom": "vpl:block/radio_bottom",
+    "top": "vpl:block/radio_top",
+    "front": "vpl:block/radio_front_disabled",
+    "side": "vpl:block/radio_side",
+    "back": "vpl:block/radio_back",
+    "particle": "#side"
+  },
+  "elements": [
+    {
+      "from": [ 0, 0, 0 ],
+      "to": [ 16, 16, 16 ],
+      "faces": {
+        "down":  { "uv": [ 0, 0, 16, 16 ], "texture": "#bottom", "cullface": "down"  },
+        "up":    { "uv": [ 0, 0, 16, 16 ], "texture": "#top",    "cullface": "up"    },
+        "north": { "uv": [ 0, 0, 16, 16 ], "texture": "#front",  "cullface": "north" },
+        "south": { "uv": [ 0, 0, 16, 16 ], "texture": "#back",   "cullface": "south" },
+        "west":  { "uv": [ 0, 0, 16, 16 ], "texture": "#side",   "cullface": "west"  },
+        "east":  { "uv": [ 0, 0, 16, 16 ], "texture": "#side",   "cullface": "east"  }
+      }
+    }
+  ]
+}

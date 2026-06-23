@@ -1,0 +1,6 @@
+{
+  "parent": "vpl:block/template_radio_channel",
+  "textures": {
+    "texture": "vpl:block/radio_front_15"
+  }
+}

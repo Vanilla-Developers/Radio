@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "vpl",
+	"version": "${version}",
+	"name": "Vanilla+ Radio",
+	"authors": [
+		"Damir00109",
+		"Savin1play140"
+	],
+	"contact": {
+		"homepage": "https://github.com/Vanilla-Developers/Radio",
+		"sources": "https://github.com/Vanilla-Developers/Radio",
+		"issues": "https://github.com/Vanilla-Developers/Radio/issues"
+	},
+	"license": "All Rights Reserved",
+	"icon": "assets/vpl/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.damir00109.RadioMod"
+		],
+		"client": [
+			"com.damir00109.client.RadioModClient"
+		],
+		"voicechat": [
+			"com.damir00109.VoicePlugin"
+		]
+	},
+	"mixins": [
+		"vpl.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.3",
+		"minecraft": ["26.1"],
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

@@ -1,0 +1,35 @@
+package com.damir00109.mixin;
+
+import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import com.damir00109.WorldRadioManager;
+import com.damir00109.extend.ServerWorldExtend;
+import net.minecraft.server.level.ServerLevel;
+
+@Mixin({ServerLevel.class})
+abstract class ServerWorldMixin implements ServerWorldExtend {
+
+    @Unique
+    @Nullable
+    private WorldRadioManager radio_radioManager;
+
+    @Inject(
+            method = {"<init>"},
+            at = {@At("TAIL")}
+    )
+    private void initTail(CallbackInfo ci) {
+        // Исправление: приводим this к Object, затем к ServerWorld
+        ServerLevel thisServerWorld = (ServerLevel) (Object) this;
+        this.radio_radioManager = new WorldRadioManager(thisServerWorld);
+    }
+
+    @Nullable
+    @Override
+    public WorldRadioManager radio_getRadioManager() {
+        return this.radio_radioManager;
+    }
+}
