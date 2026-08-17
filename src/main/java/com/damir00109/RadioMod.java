@@ -8,8 +8,10 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
+//? if >=1.21.11 {
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
+//?} else
+//import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +43,7 @@ public class RadioMod implements ModInitializer {
         LOGGER.info("Registering radio command...");
         CommandRegistrationCallback.EVENT.register(new RadioCommand());
         LOGGER.info("Radio command registered successfully");
+        //? if >=26.1 {
         ServerTickEvents.END_SERVER_TICK.register(server -> {
             if (server.isRunning()) {
                 for (ServerLevel world : server.getAllLevels()) {
@@ -51,6 +54,16 @@ public class RadioMod implements ModInitializer {
                 }
             }
         });
+        //?} else {
+        /*ServerTickEvents.END_WORLD_TICK.register((ServerLevel world) -> {
+            if (world.getServer().isRunning()) {
+                WorldRadioManager radioManager = ((ServerWorldExtend) world).radio_getRadioManager();
+                if (radioManager != null) {
+                    radioManager.tick();
+                }
+            }
+        });
+        *///?}
     }
 
     private static void createDir(Path path) {
@@ -61,26 +74,13 @@ public class RadioMod implements ModInitializer {
         }
     }
 
+    //? if >=1.21.11 {
     public static Identifier id(String path) {
-        // Создаём Identifier через рефлексию или статический метод
-        try {
-            // Попытка использовать Identifier.of() (может быть в более новых версиях)
-            java.lang.reflect.Method ofMethod = Identifier.class.getDeclaredMethod("of", String.class, String.class);
-            return (Identifier) ofMethod.invoke(null, MOD_ID, path);
-        } catch (ReflectiveOperationException e1) {
-            try {
-                // Попытка использовать fromNamespaceAndPath
-                java.lang.reflect.Method fromMethod = Identifier.class.getDeclaredMethod("fromNamespaceAndPath", String.class, String.class);
-                return (Identifier) fromMethod.invoke(null, MOD_ID, path);
-            } catch (ReflectiveOperationException e2) {
-                // Крайняя мера: попробуем Identifier.tryParse() или другой способ
-                try {
-                    java.lang.reflect.Method parseMethod = Identifier.class.getDeclaredMethod("tryParse", String.class);
-                    return (Identifier) parseMethod.invoke(null, MOD_ID + ":" + path);
-                } catch (ReflectiveOperationException e3) {
-                    throw new RuntimeException("Cannot create Identifier for " + MOD_ID + ":" + path, e3);
-                }
-            }
-        }
+        return Identifier.fromNamespaceAndPath(MOD_ID, path);
     }
+    //?} else {
+    /*public static ResourceLocation id(String path) {
+        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+    }
+    *///?}
 }

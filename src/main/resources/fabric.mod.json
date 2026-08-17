@@ -1,8 +1,8 @@
 {
 	"schemaVersion": 1,
-	"id": "vpl",
+	"id": "${id}",
 	"version": "${version}",
-	"name": "Vanilla+ Radio",
+	"name": "${name}",
 	"authors": [
 		"Damir00109",
 		"Savin1play140"
@@ -31,7 +31,7 @@
 	],
 	"depends": {
 		"fabricloader": ">=0.18.3",
-		"minecraft": ["26.1","26.1.1","26.1.2","26.2"],
+		"minecraft": "${minecraft}",
 		"java": ">=21",
 		"fabric-api": "*"
 	}

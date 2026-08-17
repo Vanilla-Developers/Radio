@@ -216,7 +216,12 @@ public class RadioBlockEntity extends BlockEntity {
         for (int y = world.getHeight(Heightmap.Types.WORLD_SURFACE, mutable.getX(), mutable.getZ()); y > radioY; y--) {
             mutable.setY(y);
             BlockState state = world.getBlockState(mutable);
-            if (state.is(TagKey.create(Registries.BLOCK, RadioMod.id("antenna_segments"))) && isVerticalAntennaSegment(state)) {
+            //? if >=26.1 {
+            // `BlockState#is(TagKey)` was removed in 26.1+; check via the block's Holder instead.
+            boolean isAntennaSegment = state.typeHolder().is(TagKey.create(Registries.BLOCK, RadioMod.id("antenna_segments")));
+            //?} else
+            //boolean isAntennaSegment = state.is(TagKey.create(Registries.BLOCK, RadioMod.id("antenna_segments")));
+            if (isAntennaSegment && isVerticalAntennaSegment(state)) {
                 antennaCount++;
             } else if (antennaCount > 0 || !isAcceptableBlockAboveAntenna(world, mutable, state)) {
                 return 0;

@@ -49,62 +49,63 @@ public class RadioCommand implements CommandRegistrationCallback {
 
 	@Override
 	public void register(CommandDispatcher<CommandSourceStack> commandDispatcher, net.minecraft.commands.CommandBuildContext commandRegistryAccess, Commands.CommandSelection registrationEnvironment) {
-		RadioMod.LOGGER.info("RadioCommand.register() called with environment: {}", registrationEnvironment);
 		try {
 			commandDispatcher.register(
-			(LiteralArgumentBuilder<CommandSourceStack>) (Commands.literal("radio"))
-				.then(
-					Commands.literal("fakesound")
-						.then(
-							Commands.literal("play")
-								.then(
-									Commands.argument("FileName", StringArgumentType.string())
-										.suggests(this::suggestFilenames)
-										.then(
-											Commands.argument("Channels", StringArgumentType.word())
-												.suggests(this::suggestRadioChannels)
-												.then(
-													Commands.argument("Lock", BoolArgumentType.bool())
-														.then(
-															((RequiredArgumentBuilder) Commands.argument("LeftIndicator", BoolArgumentType.bool())
-																	.executes(ctx -> this.executeFakeSoundPlay(ctx, UUID.randomUUID())))
-																.then(
-																	Commands.argument("UUID", UuidArgument.uuid())
-																		.executes(ctx -> this.executeFakeSoundPlay(ctx, UuidArgument.getUuid(ctx, "UUID")))
-																)
-														)
-												)
-										)
-								)
-						)
-						.then(
-							Commands.literal("stop")
-								.then(Commands.argument("UUID", UuidArgument.uuid()).suggests(this::suggestFakesounds).executes(this::executeFakeSoundStop))
-						)
-						.then(
-							Commands.literal("upload_file")
-								.then(
-									Commands.argument("FileName", StringArgumentType.string())
-										.then(Commands.argument("URL", StringArgumentType.greedyString()).executes(this::executeFakeSoundUploadFile))
-								)
-						)
-						)
-						.then(Commands.literal("clearCache").executes(this::executeFakeSoundClearCache))
-					);
-					RadioMod.LOGGER.info("Radio command registered successfully!");
-					} catch (Exception e) {
-						RadioMod.LOGGER.error("Failed to register radio command", e);
-					}
-				}
+				(LiteralArgumentBuilder<CommandSourceStack>) (Commands.literal("radio").requires(RadioCommand::hasCommandPermission))
+					.then(
+						Commands.literal("fakesound")
+							.then(
+								Commands.literal("play")
+									.then(
+										Commands.argument("FileName", StringArgumentType.string())
+											.suggests(this::suggestFilenames)
+											.then(
+												Commands.argument("Channels", StringArgumentType.word())
+													.suggests(this::suggestRadioChannels)
+													.then(
+														Commands.argument("Lock", BoolArgumentType.bool())
+															.then(
+																((RequiredArgumentBuilder) Commands.argument("LeftIndicator", BoolArgumentType.bool())
+																		.executes(ctx -> this.executeFakeSoundPlay(ctx, UUID.randomUUID())))
+																	.then(
+																		Commands.argument("UUID", UuidArgument.uuid())
+																			.executes(ctx -> this.executeFakeSoundPlay(ctx, UuidArgument.getUuid(ctx, "UUID")))
+																	)
+															)
+													)
+											)
+									)
+							)
+							.then(
+								Commands.literal("stop")
+									.then(Commands.argument("UUID", UuidArgument.uuid()).suggests(this::suggestFakesounds).executes(this::executeFakeSoundStop))
+							)
+							.then(
+								Commands.literal("upload_file")
+									.then(
+										Commands.argument("FileName", StringArgumentType.string())
+											.then(Commands.argument("URL", StringArgumentType.greedyString()).executes(this::executeFakeSoundUploadFile))
+									)
+							)
+					)
+					.then(Commands.literal("clearCache").executes(this::executeFakeSoundClearCache))
+			);
+			RadioMod.LOGGER.info("Radio command registered successfully!");
+		} catch (Exception e) {
+			RadioMod.LOGGER.error("Failed to register radio command", e);
+		}
+	}
 
 	private static boolean hasCommandPermission(CommandSourceStack source) {
 		try {
-			// Новый API для fabric-permissions-api 0.7.0
 			return Permissions.check(source, RadioMod.COMMAND_PERMISSION, 2);
 		} catch (Throwable e) {
-			// Fallback если permissions-api не установлена 
-			RadioMod.LOGGER.warn("Failed to check permissions using Permissions API, using fallback permission level", e);
+			RadioMod.LOGGER.warn("Failed to check permissions using fabric-permissions-api, using fallback permission level", e);
+			//? if >=1.21.11 {
+			// `CommandSourceStack#hasPermission(int)` was replaced by the PermissionSet system in 1.21.11+.
 			return false;
+			//?} else
+			//return source.hasPermission(2);
 		}
 	}
 
