@@ -3,6 +3,7 @@ plugins {
     // remap flow) and `net.fabricmc.fabric-loom` on unobfuscated versions (>=26.1) automatically.
     id("dev.kikugie.loom-back-compat")
     id("maven-publish")
+    id("com.modrinth.minotaur") version "2.8.7"
 }
 
 val modId = property("mod.id") as String
@@ -89,6 +90,24 @@ publishing {
     repositories {
         // Add repositories to publish to here.
     }
+}
+
+if (project != rootProject) {
+    val mcReleases: List<String> = sc.properties.raw("mod:mc_releases").to()
+
+    modrinth {
+        token.set(System.getenv("MODRINTH_TOKEN") ?: "")
+        projectId.set("vanilla_radio")
+        versionNumber.set("${property("mod.version")}-${project.name}")
+        versionName.set("${property("mod.name")} ${property("mod.version")} for ${project.name}")
+        versionType.set("release")
+        uploadFile.set(loomx.modJar.flatMap { it.archiveFile })
+        gameVersions.set(mcReleases)
+        loaders.set(listOf("fabric"))
+        changelog.set("Automated Stonecutter build for ${project.name}.")
+    }
+} else {
+    tasks.named("modrinth") { enabled = false }
 }
 
 tasks.register<Copy>("buildAndCollect") {

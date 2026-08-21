@@ -14,54 +14,16 @@ deps.permissions_api = "0.7.0"
 
 loomx.loom_version = "1.17-SNAPSHOT"
 
-["1.21.4"]
-mod.mc_compat = "1.21.4"
-mod.mc_releases = ["1.21.4"]
+["1.21.4-1.21.8"]
+mod.mc_compat = ">=1.21.4 <=1.21.8"
+mod.mc_releases = ["1.21.4", "1.21.5", "1.21.6", "1.21.7", "1.21.8"]
 
+# Compile against the lowest version in the range for forward compatibility.
 deps.fabric_loader = "0.18.3"
 deps.fabric_api = "0.119.4+1.21.4"
 deps.voicechat = "fabric-1.21.4-2.6.16"
 deps.permissions_api = "0.3.3"
 loomx.loom_version = "1.16-SNAPSHOT"
-
-["1.21.5"]
-mod.mc_compat = "1.21.5"
-mod.mc_releases = ["1.21.5"]
-
-deps.fabric_loader = "0.18.3"
-deps.fabric_api = "0.125.3+1.21.5"
-deps.voicechat = "fabric-1.21.5-2.6.15"
-deps.permissions_api = "0.3.3"
-loomx.loom_version = "1.16-SNAPSHOT"
-
-["1.21.6"]
-mod.mc_compat = "1.21.6"
-mod.mc_releases = ["1.21.6"]
-
-deps.fabric_loader = "0.18.3"
-deps.fabric_api = "0.128.2+1.21.6"
-deps.voicechat = "fabric-1.21.6-2.5.32"
-deps.permissions_api = "0.4.0"
-loomx.loom_version = "1.16-SNAPSHOT"
-
-["1.21.7"]
-mod.mc_compat = "1.21.7"
-mod.mc_releases = ["1.21.7"]
-
-deps.fabric_loader = "0.18.3"
-deps.fabric_api = "0.129.0+1.21.7"
-deps.voicechat = "fabric-1.21.7-2.5.34"
-deps.permissions_api = "0.4.0"
-loomx.loom_version = "1.16-SNAPSHOT"
-
-["1.21.8"]
-mod.mc_compat = "1.21.8"
-mod.mc_releases = ["1.21.8"]
-
-deps.fabric_loader = "0.18.3"
-deps.fabric_api = "0.136.1+1.21.8"
-deps.voicechat = "fabric-1.21.8-2.6.20"
-deps.permissions_api = "0.4.0"
 
 ["1.21.9-1.21.10"]
 # Covers both 1.21.9 and 1.21.10 - Fabric API didn't change between the two.

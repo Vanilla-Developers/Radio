@@ -7,11 +7,7 @@ A single Fabric mod codebase built for multiple Minecraft versions at once using
 
 | Node             | Minecraft            | Notes                                             |
 |------------------|-----------------------|----------------------------------------------------|
-| `1.21.4`         | 1.21.4                | Obfuscated, `getAnalogOutputSignal` old signature   |
-| `1.21.5`         | 1.21.5                | Obfuscated, `getAnalogOutputSignal` old signature   |
-| `1.21.6`         | 1.21.6                | Obfuscated, `getAnalogOutputSignal` old signature   |
-| `1.21.7`         | 1.21.7                | Obfuscated, `getAnalogOutputSignal` old signature   |
-| `1.21.8`         | 1.21.8                | Obfuscated, `getAnalogOutputSignal` old signature   |
+| `1.21.4-1.21.8`| 1.21.4 - 1.21.8       | Obfuscated, shared `getAnalogOutputSignal` signature |
 | `1.21.9-1.21.10` | 1.21.9 - 1.21.10      | Obfuscated, shared Fabric API surface               |
 | `1.21.11`        | 1.21.11               | Obfuscated, last version before `Identifier` rename |
 | `26.1-26.2`      | 26.1 - 26.2           | Unobfuscated (year-based versioning), Java 25       |
