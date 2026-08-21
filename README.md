@@ -7,7 +7,7 @@ A single Fabric mod codebase built for multiple Minecraft versions at once using
 
 | Node             | Minecraft            | Notes                                             |
 |------------------|-----------------------|----------------------------------------------------|
-| `1.21.8`         | 1.21.8                | Obfuscated, `getAnalogOutputSignal` old signature   |
+| `1.21.4-1.21.8`  | 1.21.4 - 1.21.8       | Obfuscated, `getAnalogOutputSignal` old signature   |
 | `1.21.9-1.21.10` | 1.21.9 - 1.21.10      | Obfuscated, shared Fabric API surface               |
 | `1.21.11`        | 1.21.11               | Obfuscated, last version before `Identifier` rename |
 | `26.1-26.2`      | 26.1 - 26.2           | Unobfuscated (year-based versioning), Java 25       |
@@ -37,7 +37,7 @@ To edit code for a specific version in your IDE, switch the active version first
 as "Set active project to ..." tasks in your IDE's Gradle panel):
 
 ```sh
-./gradlew "stonecutterSwitchTo1.21.8"
+./gradlew "stonecutterSwitchTo1.21.4-1.21.8"
 ```
 
 Run `./gradlew "stonecutterSwitchTo26.1-26.2"` before committing, so `src/` reflects the latest version.
