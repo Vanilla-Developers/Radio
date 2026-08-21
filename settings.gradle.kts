@@ -23,11 +23,12 @@ plugins {
 stonecutter {
     create(rootProject) {
         // Real dependency (Minecraft) versions this mod is built against.
-        // 1.21.9/1.21.10 share one API surface, so a single "1.21.10" node covers both.
-        versions("1.21.8", "1.21.10", "1.21.11")
+        // 1.21.9/1.21.10 share one API surface, so a single node covers both.
+        versions("1.21.8", "1.21.11")
+        version("1.21.9-1.21.10", "1.21.10")
         // Minecraft switched to year-based versioning after 1.21.11 (26.1, 26.2, ...).
-        version("26.2", "26.2")
-        vcsVersion = "26.2"
+        version("26.1-26.2", "26.2")
+        vcsVersion = "26.1-26.2"
     }
 }
 

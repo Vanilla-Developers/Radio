@@ -23,7 +23,7 @@ deps.fabric_api = "0.136.1+1.21.8"
 deps.voicechat = "fabric-1.21.8-2.6.20"
 deps.permissions_api = "0.4.0"
 
-["1.21.10"]
+["1.21.9-1.21.10"]
 # Covers both 1.21.9 and 1.21.10 - Fabric API didn't change between the two.
 mod.mc_compat = ">=1.21.9 <=1.21.10"
 mod.mc_releases = ["1.21.9", "1.21.10"]
@@ -43,7 +43,7 @@ deps.fabric_api = "0.141.4+1.21.11"
 deps.voicechat = "fabric-1.21.11-2.6.20"
 deps.permissions_api = "0.6.1"
 
-["26.2"]
+["26.1-26.2"]
 # Minecraft switched to year-based versions after 1.21.11: 26.1, 26.1.x, 26.2, ...
 mod.mc_compat = ">=26.1 <=26.2"
 mod.mc_releases = ["26.1", "26.1.1", "26.1.2", "26.2"]
